@@ -8,6 +8,13 @@ Forked from [rustforce](https://github.com/sile/rustforce) and from [tance77](ht
 
 This crate tries to support all Salesforce APIs.
 
+- Rest API
+- Bulk API v1
+- Bulk API v2
+- Streaming API
+- Tooling API  (todo)
+- Metadata API  (todo)
+
 
 ## Usage
 

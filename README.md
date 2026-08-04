@@ -70,7 +70,14 @@ client.set_instance_url("https://na1.salesforce.com");
 client.set_access_token(token, issued_at, token_type);
 ```
 
-### Refresh Token
+#### SFDX AUTH URL
+
+```rust
+let mut client = Client::new();
+client.login_by_sfdx_auth_url("secret key").await?;
+```
+
+#### Refresh Token
 
 ```rust
 client.set_refresh_token("your_refresh_token");
@@ -85,25 +92,25 @@ All REST API methods are accessed through `RestApi`:
 let mut api = RestApi::new(client);
 ```
 
-### Query Records
+#### Query Records
 
 ```rust
 let res: QueryResponse<Account> = api.query("SELECT Id, Name FROM Account").await?;
 ```
 
-### Query All Records
+#### Query All Records
 
 ```rust
 let res: QueryResponse<Account> = api.query_all("SELECT Id, Name FROM Account").await?;
 ```
 
-### Find By Id
+#### Find By Id
 
 ```rust
 let account: Account = api.find_by_id("Account", "{sf_id}").await?;
 ```
 
-### Create Record
+#### Create Record
 
 ```rust
 use rustforce::CreateResponse;
@@ -114,26 +121,26 @@ let res: CreateResponse = api.create("Account", params).await?;
 println!("{:?}", res);
 ```
 
-### Update Record
+#### Update Record
 
 ```rust
 api.update("Account", "{sobject_id}", params).await?;
 ```
 
-### Upsert Record
+#### Upsert Record
 
 ```rust
 let res = api.upsert("Account", "{external_key_name}", "{external_key}", params).await?;
 println!("{:?}", res.status()); // 200 = updated, 201 = created
 ```
 
-### Delete Record
+#### Delete Record
 
 ```rust
 api.destroy("Account", "{sobject_id}").await?;
 ```
 
-### Describe Global
+#### Describe Global
 
 ```rust
 use rustforce::DescribeGlobalResponse;
@@ -141,7 +148,7 @@ use rustforce::DescribeGlobalResponse;
 let res: DescribeGlobalResponse = api.describe_global().await?;
 ```
 
-### Describe SObject
+#### Describe SObject
 
 ```rust
 use rustforce::DescribeResponse;
@@ -149,7 +156,7 @@ use rustforce::DescribeResponse;
 let res: DescribeResponse = api.describe("Account").await?;
 ```
 
-### Versions
+#### Versions
 
 ```rust
 use rustforce::VersionResponse;
@@ -157,7 +164,7 @@ use rustforce::VersionResponse;
 let versions: Vec<VersionResponse> = api.versions().await?;
 ```
 
-### Search (SOSL)
+#### Search (SOSL)
 
 ```rust
 use rustforce::SearchResponse;

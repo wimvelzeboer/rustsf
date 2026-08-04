@@ -3,25 +3,20 @@ use crate::errors::Error;
 use crate::responses::error_response::ErrorResponse;
 use reqwest::Response;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde::de::DeserializeOwned;
 use crate::responses::create_response::CreateResponse;
+use crate::responses::describe_global_response::DescribeGlobalResponse;
+use crate::responses::describe_response::DescribeResponse;
+use crate::responses::query_response::QueryResponse;
+use crate::responses::search_response::SearchResponse;
+use crate::responses::version_response::VersionResponse;
 
 #[derive(Default)]
 pub struct RestApi {
     pub(crate) client: Client,
 }
 
-async fn handle_json_response(response: Response) -> Result<Value, Error> {
-    if response.status().is_success() {
-        Ok(response.json::<Value>().await?)
-    } else {
-        let errors: Vec<ErrorResponse> = response.json().await?;
-        Err(Error::ErrorResponses(errors))
-    }
-}
-
-async fn handle_response<T: for<'a> Deserialize<'a>>(response: Response) -> Result<T, Error> {
-    if response.status().is_success() {
+async fn handle_json_response<T: DeserializeOwned>(response: Response) -> Result<T, Error> {    if response.status().is_success() {
         Ok(response.json().await?)
     } else {
         let errors: Vec<ErrorResponse> = response.json().await?;
@@ -44,7 +39,7 @@ impl RestApi {
     }
 
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_query.htm>
-    pub async fn query(&mut self, query: &str) -> Result<Value, Error> {
+    pub async fn query<T: DeserializeOwned>(&mut self, query: &str) -> Result<QueryResponse<T>, Error> {
         let query_url = format!("{}/query/", self.client.base_path()?);
         let params = vec![("q".to_string(), query.to_string())];
         let response = self.client.get(query_url, params).await?;
@@ -52,7 +47,7 @@ impl RestApi {
     }
 
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_queryall.htm>
-    pub async fn query_all(&mut self, query: &str) -> Result<Value, Error> {
+    pub async fn query_all<T: DeserializeOwned>(&mut self, query: &str) -> Result<QueryResponse<T>, Error> {
         let query_url = format!("{}/queryAll/", self.client.base_path()?);
         let params = vec![("q".to_string(), query.to_string())];
         let response = self.client.get(query_url, params).await?;
@@ -60,7 +55,7 @@ impl RestApi {
     }
 
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_queryall_more_results.htm>
-    pub async fn query_more(&mut self, next_records_url: &str) -> Result<Value, Error> {
+    pub async fn query_more<T: DeserializeOwned>(&mut self, next_records_url: &str) -> Result<QueryResponse<T>, Error> {
         let instance_url = self
             .client
             .instance_url
@@ -74,7 +69,7 @@ impl RestApi {
     /// Salesforce Object Search Language (SOSL)
     ///
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_search.htm>
-    pub async fn search_sosl(&mut self, query: &str) -> Result<Value, Error> {
+    pub async fn search_sosl(&mut self, query: &str) -> Result<SearchResponse, Error> {
         let query_url = format!("{}/search/", self.client.base_path()?);
         let params = vec![("q".to_string(), query.to_string())];
         let response = self.client.get(query_url, params).await?;
@@ -82,7 +77,7 @@ impl RestApi {
     }
 
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_versions.htm>
-    pub async fn versions(&mut self) -> Result<Value, Error> {
+    pub async fn versions(&mut self) -> Result<Vec<VersionResponse>, Error> {
         let instance_url = match self.client.instance_url.as_ref() {
             Some(url) => url,
             None => return Err(Error::NotLoggedIn),
@@ -93,11 +88,11 @@ impl RestApi {
     }
 
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_sobject_retrieve_get.htm>
-    pub async fn find_by_id(
+    pub async fn find_by_id<T :DeserializeOwned>(
         &mut self,
         sobject_name: &str,
         id: &str,
-    ) -> Result<Value, Error> {
+    ) -> Result<T, Error> {
         let resource_url = format!("{}/sobjects/{}/{}", self.client.base_path()?, sobject_name, id);
         let response = self.client.get(resource_url, vec![]).await?;
         handle_json_response(response).await
@@ -111,7 +106,7 @@ impl RestApi {
     ) -> Result<CreateResponse, Error> {
         let resource_url = format!("{}/sobjects/{}", self.client.base_path()?, object_name);
         let response = self.client.post(resource_url, params, vec![]).await?;
-        handle_response(response).await
+        handle_json_response(response).await
     }
 
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_sobject_retrieve_get.htm>
@@ -152,14 +147,14 @@ impl RestApi {
     }
 
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_describeGlobal.htm>
-    pub async fn describe_global(&mut self) -> Result<Value, Error> {
+    pub async fn describe_global(&mut self) -> Result<DescribeGlobalResponse, Error> {
         let resource_url = format!("{}/sobjects", self.client.base_path()?);
         let response = self.client.get(resource_url, vec![]).await?;
         handle_json_response(response).await
     }
 
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_sobject_describe.htm>
-    pub async fn describe(&mut self, object_name: &str) -> Result<Value, Error> {
+    pub async fn describe(&mut self, object_name: &str) -> Result<DescribeResponse, Error> {
         let resource_url = format!("{}/sobjects/{}/describe", self.client.base_path()?, object_name);
         let response = self.client.get(resource_url, vec![]).await?;
         handle_json_response(response).await
@@ -215,6 +210,13 @@ mod tests {
         }
     }
 
+    #[derive(Deserialize, Serialize)]
+    #[serde(rename_all = "PascalCase")]
+    struct Account {
+        id: String,
+        name: String,
+    }
+
     #[tokio::test]
     async fn test_query() {
         let mut server = Server::new_async().await;
@@ -238,10 +240,10 @@ mod tests {
             .await;
 
         let mut api = create_test_rest_api(&server.url());
-        let res = api.query("SELECT Id FROM Account").await.unwrap();
-        assert_eq!(res["totalSize"], 1);
-        assert_eq!(res["done"], true);
-        assert!(res["records"].as_array().unwrap().is_empty());
+        let res : QueryResponse<Account> = api.query("SELECT Id FROM Account").await.unwrap();
+        assert_eq!(res.total_size, 1);
+        assert_eq!(res.done, true);
+        assert!(res.records.is_empty());
         mock.assert_async().await;
     }
 
@@ -268,8 +270,8 @@ mod tests {
             .await;
 
         let mut api = create_test_rest_api(&server.url());
-        let res = api.query_all("SELECT Id FROM Account").await.unwrap();
-        assert_eq!(res["done"], true);
+        let res = api.query_all::<Account>("SELECT Id FROM Account").await.unwrap();
+        assert_eq!(res.done, true);
         mock.assert_async().await;
     }
 
@@ -293,10 +295,10 @@ mod tests {
 
         let mut api = create_test_rest_api(&server.url());
         let res = api
-            .query_more("services/data/v60.0/query/01gxx-2000")
+            .query_more::<Account>("services/data/v60.0/query/01gxx-2000")
             .await
             .unwrap();
-        assert_eq!(res["totalSize"], 5000);
+        assert_eq!(res.total_size, 5000);
         mock.assert_async().await;
     }
 
@@ -317,7 +319,7 @@ mod tests {
 
         let mut api = create_test_rest_api(&server.url());
         let res = api.search_sosl("FIND {test}").await.unwrap();
-        assert!(res["searchRecords"].as_array().unwrap().is_empty());
+        assert!(res.search_records.is_empty());
         mock.assert_async().await;
     }
 
@@ -341,8 +343,8 @@ mod tests {
 
         let mut api = create_test_rest_api(&server.url());
         let res = api.versions().await.unwrap();
-        assert_eq!(res.as_array().unwrap().len(), 1);
-        assert_eq!(res[0]["version"], "60.0");
+        assert_eq!(res.len(), 1);
+        assert_eq!(res.iter().nth(0).unwrap().version, "60.0");
         mock.assert_async().await;
     }
 
@@ -370,13 +372,13 @@ mod tests {
             .await;
 
         let mut api = create_test_rest_api(&server.url());
-        let res = api.find_by_id("Account", "001xx000003DGbX").await.unwrap();
-        assert_eq!(res["Id"], "001xx000003DGbX");
-        assert_eq!(res["Name"], "Acme");
+        let res = api.find_by_id::<Account>("Account", "001xx000003DGbX").await.unwrap();
+        assert_eq!(res.id, "001xx000003DGbX");
+        assert_eq!(res.name, "Acme");
         mock.assert_async().await;
     }
 
-   /* #[tokio::test]
+    #[tokio::test]
     async fn test_create() {
         let mut server = Server::new_async().await;
         let mock = server
@@ -391,10 +393,10 @@ mod tests {
         let mut params = std::collections::HashMap::new();
         params.insert("Name", "Test Account");
         let res = api.create("Account", params).await.unwrap();
-        assert_eq!(res["id"], "001xx000003DGbX");
-        assert_eq!(res["success"], true);
+        assert_eq!(res.id, "001xx000003DGbX");
+        assert_eq!(res.success, true);
         mock.assert_async().await;
-    }*/
+    }
 
     #[tokio::test]
     async fn test_update() {
@@ -472,8 +474,8 @@ mod tests {
 
         let mut api = create_test_rest_api(&server.url());
         let res = api.describe_global().await.unwrap();
-        assert_eq!(res["encoding"], "UTF-8");
-        assert_eq!(res["maxBatchSize"], 200);
+        assert_eq!(res.encoding, "UTF-8");
+        assert_eq!(res.max_batch_size, 200);
         mock.assert_async().await;
     }
 
@@ -487,7 +489,24 @@ mod tests {
             .with_body(
                 json!({
                     "name": "Account",
-                    "createable": true
+                    "childRelationships": [],
+                    "label": "Account",
+                    "labelPlural": "Accounts",
+                    "createable": true,
+                    "urls": {
+                        "compactLayouts" : "value",
+                        "rowTemplate" : "value",
+                        "approvalLayouts" : "value",
+                        "uiDetailTemplate" : "value",
+                        "uiEditTemplate" : "value",
+                        "defaultValues" : "value",
+                        "listviews" : "value",
+                        "describe" : "value",
+                        "uiNewRecord" : "value",
+                        "quickActions" : "value",
+                        "layouts" : "value",
+                        "sobject" : "value",
+                    },
                 })
                 .to_string(),
             )
@@ -496,8 +515,8 @@ mod tests {
 
         let mut api = create_test_rest_api(&server.url());
         let res = api.describe("Account").await.unwrap();
-        assert_eq!(res["name"], "Account");
-        assert_eq!(res["createable"], true);
+        assert_eq!(res.name, "Account");
+        assert_eq!(res.createable, true);
         mock.assert_async().await;
     }
 }

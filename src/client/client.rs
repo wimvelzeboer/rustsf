@@ -1,3 +1,8 @@
+//! Salesforce API Client
+//!
+//! This crate provides a client with several authentication types for the Salesforce APIs.
+//!
+
 use crate::access_token::AccessToken;
 use crate::errors::Error;
 use crate::responses::error_response::ErrorResponse;
@@ -30,6 +35,26 @@ impl Default for Client {
 }
 
 impl Client {
+    /// Creates a new `Client` instance with default configuration.
+    ///
+    /// This function initializes a `Client` with the following default properties:
+    /// - A new `reqwest::Client` instance for making HTTP requests.
+    /// - `client_id`: `None`
+    /// - `client_secret`: `None`
+    /// - `login_endpoint`: Set to `"https://login.salesforce.com"`.
+    /// - `access_token`: `None`
+    /// - `instance_url`: `None`
+    /// - `refresh_token`: `None`
+    /// - `secret_required`: Set to `true`.
+    /// - `version`: Set to `"v60.0"`.
+    ///
+    /// # Returns
+    /// A configured `Client` instance ready for use.
+    ///
+    /// # Examples
+    /// ```
+    /// let client = Client::new();
+    /// ```
     pub fn new() -> Client {
         let http_client = reqwest::Client::new();
         Client {
@@ -47,38 +72,163 @@ impl Client {
 
     // --- Read-only getters ---
 
+    /// Retrieves the client ID associated with the current object, if it exists.
+    ///
+    /// # Returns
+    /// - `Option<&str>`:
+    ///    - `Some(&str)` containing the reference to the client ID if it is present.
+    ///    - `None` if the client ID is not set.
+    ///
+    /// # Example
+    /// ```
+    /// let client_id = client.client_id();
+    /// ```
+    ///
+    /// This method allows for safely accessing the client ID without taking ownership of the value.
     pub fn client_id(&self) -> Option<&str> {
         self.client_id.as_deref()
     }
 
+    /// Retrieves the client secret as an optional reference to a string slice.
+    ///
+    /// # Returns
+    /// - `Some(&str)` if the `client_secret` field is set in the struct.
+    /// - `None` if the `client_secret` field is `None`.
+    ///
+    /// This method allows safe access to the client secret without consuming the value.
+    ///
+    /// # Example
+    /// ```rust
+    /// let client_id = client.client_secret();
+    /// ```
     pub fn client_secret(&self) -> Option<&str> {
         self.client_secret.as_deref()
     }
 
+    /// Returns the login endpoint URL as a string slice.
+    ///
+    /// # Example
+    /// ```
+    /// let endpoint = client.login_endpoint();
+    /// assert_eq!(endpoint, "https://login.salesforce.com");
+    /// ```
+    ///
+    /// # Returns
+    /// * `&str` - A reference to the login endpoint URL.
     pub fn login_endpoint(&self) -> &str {
         &self.login_endpoint
     }
 
+    /// Retrieves the instance URL as an optional string slice.
+    ///
+    /// This function returns the value of `instance_url` if it is present,
+    /// or `None` if the value is absent.
+    ///
+    /// # Returns
+    ///
+    /// - `Some(&str)` if `instance_url` contains a value.
+    /// - `None` if `instance_url` is `None`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let endpoint = client.instance_url();
+    /// ```
     pub fn instance_url(&self) -> Option<&str> {
         self.instance_url.as_deref()
     }
 
+    /// Retrieves a reference to the `AccessToken` if it exists.
+    ///
+    /// # Returns
+    ///
+    /// - `Some(&AccessToken)` - A reference to the `AccessToken` if it is available.
+    /// - `None` - If the `access_token` is not set.
+    ///
+    /// This method provides a way to access the `AccessToken` field of the
+    /// struct without taking ownership of it. It is useful when you want
+    /// to inspect or work with the token without modifying the struct.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// let token = client.access_token();
+    /// ```
     pub fn access_token(&self) -> Option<&AccessToken> {
         self.access_token.as_ref()
     }
 
+    /// Retrieves the value of the access token, if it exists.
+    ///
+    /// This method accesses the `access_token` field of the struct and extracts its
+    /// `value` as a string slice. If the `access_token` is `None`, this method will
+    /// return `None`.
+    ///
+    /// # Returns
+    /// * `Option<&str>` - `Some(&str)` containing the value of the access token if it exists,
+    ///   or `None` if the `access_token` is not present.
+    ///
+    /// # Example
+    /// ```
+    /// let token_value = client.access_token_value();
+    /// ```
     pub fn access_token_value(&self) -> Option<&str> {
         self.access_token.as_ref().map(|t| t.value.as_str())
     }
 
+    /// Returns the version of the current instance.
+    ///
+    /// # Returns
+    /// A string slice that holds the version information.
+    ///
+    /// # Examples
+    /// ```
+    /// assert_eq!(client.version(), "v60.0");
+    /// ```
     pub fn version(&self) -> &str {
         &self.version
     }
 
+    /// Returns an optional reference to the refresh token.
+    ///
+    /// This method provides a way to retrieve the refresh token, returning it as an
+    /// `Option<&str>`. If a refresh token exists within the structure, it is returned
+    /// as a `Some(&str)`; otherwise, `None` is returned.
+    ///
+    /// # Returns
+    /// - `Some(&str)` if the refresh token is present.
+    /// - `None` if the refresh token is absent.
+    ///
+    /// # Example
+    /// ```rust
+    /// let token = client.refresh_token();
+    /// ```
     pub fn refresh_token(&self) -> Option<&str> {
         self.refresh_token.as_deref()
     }
 
+    /// Constructs the base path URL for the API, incorporating the instance URL and version.
+    ///
+    /// # Returns
+    ///
+    /// - `Ok(String)` containing the formatted base path URL if the `instance_url` is available.
+    /// - `Err(Error::NotLoggedIn)` if the `instance_url` is not set.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error of type `Error::NotLoggedIn` if the user is not logged in and the `instance_url`
+    /// is unavailable.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let base_path = client.base_path()?;
+    /// assert_eq!(base_path, "https://myorg.my.salesforce.com/services/data/v56.0");
+    /// ```
+    ///
+    /// # Note
+    ///
+    /// This method assumes that `version` is a valid string and does not perform validation on it.
     pub fn base_path(&self) -> Result<String, Error> {
         let instance_url = self.instance_url.as_ref().ok_or(Error::NotLoggedIn)?;
         Ok(format!("{}/services/data/{}", instance_url, self.version))
@@ -86,42 +236,194 @@ impl Client {
 
     // --- Setters ---
 
+    /// Sets the login endpoint for the current instance.
+    ///
+    /// This method allows you to specify a custom login endpoint URL
+    /// for the object. It internally converts the provided string slice (`&str`)
+    /// into a `String` and assigns it to the `login_endpoint` field.
+    ///
+    /// # Arguments
+    ///
+    /// * `endpoint` - A string slice that specifies the login endpoint URL to be set.
+    ///
+    /// # Returns
+    ///
+    /// A mutable reference to the current instance, allowing method chaining.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// client.set_login_endpoint("https://test.salesforce.com/login");
+    /// ```
     pub fn set_login_endpoint(&mut self, endpoint: &str) -> &mut Self {
         self.login_endpoint = endpoint.to_string();
         self
     }
 
+    /// Sets the version for the current instance.
+    ///
+    /// This method updates the `version` field of the struct to the provided string.
+    /// It consumes a string slice, converts it to a `String`, and assigns it to the
+    /// instance's `version` field.
+    ///
+    /// # Parameters
+    /// - `version`: A string slice representing the new version to be set.
+    ///
+    /// # Returns
+    /// A mutable reference to the current instance, allowing for method chaining.
+    ///
+    /// # Example
+    /// ```rust
+    /// client.set_version("v65.0);
+    /// ```
     pub fn set_version(&mut self, version: &str) -> &mut Self {
         self.version = version.to_string();
         self
     }
 
+    /// Sets the instance URL for the current object.
+    ///
+    /// This method allows you to set the `instance_url` field of the object to the specified
+    /// URL string. The provided URL is converted into an owned `String` and stored inside
+    /// the object. The method then returns a mutable reference to the current object,
+    /// allowing for method chaining.
+    ///
+    /// # Arguments
+    ///
+    /// * `instance_url` - A string slice that represents the URL to be set.
+    ///
+    /// # Returns
+    ///
+    /// A mutable reference to the current object (`&mut Self`) to enable method chaining.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// client.set_instance_url("https://develop.sandbox.mu.salesforce.com");
+    /// ```
     pub fn set_instance_url(&mut self, instance_url: &str) -> &mut Self {
         self.instance_url = Some(instance_url.to_string());
         self
     }
 
+    /// Sets the refresh token for the current instance.
+    ///
+    /// This method takes a string slice representing a refresh token,
+    /// converts it to a `String`, and assigns it to the `refresh_token` field
+    /// of the struct. After setting the value, it returns a mutable reference
+    /// to `self`, allowing method chaining.
+    ///
+    /// # Arguments
+    ///
+    /// * `refresh_token` - A string slice representing the refresh token to be set.
+    ///
+    /// # Returns
+    ///
+    /// * `&mut Self` - A mutable reference to the current instance, enabling method chaining.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// client.set_refresh_token("new_refresh_token");
+    /// ```
     pub fn set_refresh_token(&mut self, refresh_token: &str) -> &mut Self {
         self.refresh_token = Some(refresh_token.to_string());
         self
     }
 
+    /// Sets whether a secret is required for the entity and returns a mutable reference to the instance.
+    ///
+    /// # Parameters
+    /// - `secret_required`: A boolean value indicating whether the entity requires a secret.
+    ///    - `true`: A secret is required.
+    ///    - `false`: A secret is not required.
+    ///
+    /// # Returns
+    /// A mutable reference to the current instance of the object, enabling method chaining.
+    ///
+    /// # Example
+    /// ```rust
+    /// client.set_secret_required(true);
+    /// ```
     pub fn set_secret_required(&mut self, secret_required: bool) -> &mut Self {
         self.secret_required = secret_required;
         self
     }
 
+    /// Sets the client ID for the instance.
+    ///
+    /// This method allows you to assign a client ID to the current instance.
+    /// The provided string reference is converted into an owned `String` and
+    /// stored internally. It returns a mutable reference to the instance,
+    /// allowing for method chaining.
+    ///
+    /// # Arguments
+    ///
+    /// * `client_id` - A string slice that holds the client ID to be set.
+    ///
+    /// # Returns
+    ///
+    /// * A mutable reference to the current instance (`Self`), enabling method chaining.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let mut client = Client::new();
+    ///  client.set_client_id(&client_id);
+    /// ```
     pub fn set_client_id(&mut self, client_id: &str) -> &mut Self {
         self.client_id = Some(client_id.to_string());
         self
     }
 
+    /// Sets the client secret for the current instance.
+    ///
+    /// This method allows you to set the client secret, which is typically
+    /// used for authentication purposes or identifying the client in API requests.
+    ///
+    /// # Arguments
+    ///
+    /// * `client_secret` - A string slice containing the client secret to be set.
+    ///
+    /// # Returns
+    ///
+    /// Returns a mutable reference to the current instance, allowing method
+    /// chaining.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let mut client = Client::new();
+    ///  client.set_client_secret(&client_secret);
+    /// ```
     pub fn set_client_secret(&mut self, client_secret: &str) -> &mut Self {
         self.client_secret = Some(client_secret.to_string());
         self
     }
 
-    /// Set Access token if you've already obtained one via one of the OAuth2 flows
+    /// Sets the access token for the current instance.
+    ///
+    /// This function updates the access token along with its type and issuance time.
+    /// It allows method chaining by returning a mutable reference to the instance.
+    ///
+    /// # Arguments
+    ///
+    /// * `access_token` - A `String` containing the access token value.
+    /// * `issued_at` - A `String` representing the time at which the token was issued.
+    /// * `token_type` - A `String` denoting the type of the token, e.g., "Bearer".
+    ///
+    /// # Returns
+    ///
+    /// A mutable reference to the current instance (`&mut Self`), enabling method chaining.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let mut client = Client::new();
+    ///  client.set_access_token("abc123".to_string(), "2023-01-01T00:00:00Z".to_string(), "Bearer".to_string());
+    /// ```
+    ///
+    /// This sets the access token, token type, and issuance time for the client.
     pub fn set_access_token(
         &mut self,
         access_token: String,
@@ -136,6 +438,50 @@ impl Client {
         self
     }
 
+    /// Asynchronously retrieves the identity from the provided URL.
+    ///
+    /// This function sends a GET request to the specified `identity_url`
+    /// without any additional headers. If the response has a successful
+    /// status code, the response body is returned as a `String`. Otherwise,
+    /// an error is returned, containing a detailed description of the
+    /// failure.
+    ///
+    /// # Arguments
+    ///
+    /// * `identity_url` - A `String` containing the URL to fetch the identity from.
+    ///
+    /// # Returns
+    ///
+    /// * `Result<String, Error>` - Returns `Ok(String)` containing the response body if the
+    ///   request was successful, or `Err(Error)` if an error occurred.
+    ///
+    /// # Errors
+    ///
+    /// This function returns an error in these cases:
+    /// - If the HTTP GET request fails.
+    /// - If the response status is not successful.
+    /// - If there is an issue reading or parsing the response body.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let mut client = Client::new();
+    /// let identity_url = "https://example.com/identity".to_string();
+    ///
+    /// match client.get_identity(identity_url).await {
+    ///     Ok(identity) => println!("Identity: {}", identity),
+    ///     Err(e) => eprintln!("Failed to fetch identity: {:?}", e),
+    /// }
+    /// ```
+    ///
+    /// # Dependencies
+    ///
+    /// This function depends on the `get` method of the client object and assumes that:
+    /// * The `get` method takes a URL and headers as parameters.
+    /// * The `res` object has `status`, `text`, and `json` methods, where:
+    ///   - `status()` returns the status of the response.
+    ///   - `text().await` retrieves the response body as a `String`.
+    ///   - `json().await` deserializes the response body into an error description.
     pub async fn get_identity(&mut self, identity_url: String) -> Result<String, Error> {
         let res = self.get(identity_url, vec![]).await?;
         if res.status().is_success() {
@@ -145,6 +491,38 @@ impl Client {
         }
     }
 
+    /// Asynchronously ensures that the access token is refreshed if it has expired or
+    /// if it cannot be parsed for comparison.
+    ///
+    /// # Behavior
+    /// - If `self.access_token` is `None`, this function does nothing and returns `Ok(self)`.
+    /// - If the `issued_at` timestamp of the `access_token` cannot be parsed as a Unix
+    ///   timestamp (milliseconds since epoch), the function will attempt to refresh
+    ///   the access token immediately.
+    /// - If the `issued_at` timestamp is successfully parsed and the corresponding access token
+    ///   is still valid (within 2 hours of being issued), no action is taken.
+    /// - If the access token has expired (2 hours past the `issued_at` time), the function
+    ///   will attempt to refresh the token.
+    ///
+    /// # Returns
+    /// - `Ok(&mut Self)` if the access token is valid or successfully refreshed.
+    /// - `Err(Error)` if there is an error during the refresh process.
+    ///
+    /// # Logs
+    /// - Logs an informational message if the `issued_at` timestamp cannot be parsed.
+    /// - Logs an informational message if the access token has expired and a refresh is attempted.
+    ///
+    /// # Errors
+    /// Returns an `Error` if the refresh operation fails.
+    ///
+    /// # Examples
+    /// ```rust
+    /// async fn example() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     client.ensure_refresh().await?;
+    ///     Ok(())
+    /// }
+    /// ```
     pub async fn ensure_refresh(&mut self) -> Result<&mut Self, Error> {
         if self.access_token.is_none() {
             return Ok(self);
@@ -177,6 +555,34 @@ impl Client {
         }
     }
 
+    /// Generates a vector of key-value pairs representing parameters
+    /// required for a token refresh request.
+    ///
+    /// # Returns
+    ///
+    /// A `Vec` of tuples where each tuple contains:
+    /// - A `String` representing the parameter name.
+    /// - A `String` representing the parameter value.
+    ///
+    /// The parameters include:
+    /// - `"grant_type"`: Always set to `"refresh_token"`.
+    /// - `"refresh_token"`: The `refresh_token` value (empty if not provided).
+    /// - `"client_id"`: The `client_id` value (empty if not provided).
+    ///
+    /// If the `secret_required` field is `true`, the following parameter is also included:
+    /// - `"client_secret"`: The `client_secret` value (empty if not provided).
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let params = client.get_refresh_params();
+    /// for (key, value) in params {
+    ///     println!("{}: {}", key, value);
+    /// }
+    /// ```
+    ///
+    /// This function ensures that default values are used if any of the required
+    /// fields (`refresh_token`, `client_id`, `client_secret`) are not set.
     fn get_refresh_params(&self) -> Vec<(String, String)> {
         let refresh_token = self.refresh_token.clone().unwrap_or_default();
         let client_id = self.client_id.clone().unwrap_or_default();
@@ -196,7 +602,50 @@ impl Client {
         params
     }
 
-    /// This will fetch an access token when provided with a refresh token
+    /// Refreshes the authentication token using the refresh token flow.
+    ///
+    /// This asynchronous function performs the following steps:
+    /// 1. Constructs a token endpoint URL using the `login_endpoint`.
+    /// 2. Retrieves the required parameters for token refresh using `get_refresh_params()`.
+    /// 3. Sends an HTTP POST request with the parameters to the token endpoint.
+    /// 4. Processes the response:
+    ///    - If the HTTP request fails, an error is returned.
+    ///    - If the response status is not successful, it attempts to parse
+    ///      and return a token-specific error.
+    ///    - If the response is successful, it parses the token response,
+    ///      updates the current access token, sets the token issuance time,
+    ///      token type, and updates the instance URL.
+    ///
+    /// # Returns
+    /// - `Ok(&mut Self)` if the token has been successfully refreshed.
+    /// - `Err(Error)` if the token refresh fails due to an HTTP error,
+    ///   a server-side error, or an unexpected response structure.
+    ///
+    /// # Errors
+    /// Returns an `Error` in the following cases:
+    /// - HTTP transmission error during the token refresh request.
+    /// - Unsuccessful HTTP response due to invalid credentials or other
+    ///   server-side errors.
+    /// - Failure to parse the error or token response JSON into the
+    ///   appropriate data structures.
+    ///
+    /// # Example
+    /// ```rust
+    /// match client.refresh().await {
+    ///     Ok(updated_client) => {
+    ///         println!("Token refreshed successfully!");
+    ///     },
+    ///     Err(e) => {
+    ///         eprintln!("Failed to refresh token: {:?}", e);
+    ///     }
+    /// }
+    /// ```
+    ///
+    /// # Dependencies
+    /// - This function expects that the struct has an `http_client` field
+    ///   capable of making asynchronous HTTP requests (e.g., an instance of `reqwest::Client`).
+    /// - The function assumes the existence of `get_refresh_params`, `set_access_token`,
+    ///   and other utility methods within the struct to handle token management.
     pub async fn refresh(&mut self) -> Result<&mut Self, Error> {
         let token_url = format!("{}/services/oauth2/token", self.login_endpoint);
         let params = self.get_refresh_params();
@@ -225,7 +674,55 @@ impl Client {
         Ok(self)
     }
 
-    /// Login to Salesforce with username and password
+    /// Logs in using the provided username and password credentials,
+    /// retrieves an access token from the OAuth2 token endpoint,
+    /// and updates the internal client state.
+    ///
+    /// # Arguments
+    ///
+    /// - `username`: A string slice containing the user's username.
+    /// - `password`: A string slice containing the user's password.
+    ///
+    /// # Returns
+    ///
+    /// Returns:
+    /// - `Ok(&mut Self)` if the login and token retrieval are successful, allowing method chaining.
+    /// - `Err(Error)` if there are any configuration issues, HTTP request errors, or unsuccessful responses.
+    ///
+    /// # Errors
+    ///
+    /// The function can return the following errors:
+    /// - `ConfigError`: If `client_id` or `client_secret` is not configured.
+    /// - `HttpError`: If there is an issue with the HTTP request, such as network failure.
+    /// - `TokenError`: If the server returns an unsuccessful response, e.g., invalid credentials.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let mut client = Client::new();
+    /// client.set_client_id("example_client_id");
+    /// client.set_client_secret("example_client_secret");
+    ///
+    /// let result = client.login_with_credential("username", "password").await;
+    /// match result {
+    ///     Ok(client) => println!("Login successful!"),
+    ///     Err(e) => eprintln!("Login failed: {:?}", e),
+    /// }
+    /// ```
+    ///
+    /// # Behavior
+    ///
+    /// - Constructs a token request URL based on the configured `login_endpoint`.
+    /// - Validates the presence of `client_id` and `client_secret` configurations.
+    /// - Sends an HTTP POST request with the required parameters to fetch an access token.
+    /// - Upon a successful response:
+    ///     - Updates the internal client state with the access token, token type, issue timestamp, and instance URL.
+    /// - On error, the function returns a descriptive `Error` for troubleshooting.
+    ///
+    /// # Notes
+    ///
+    /// - Ensure that the `client_id` and `client_secret` are set before calling this method.
+    /// - The function uses the `reqwest` library for HTTP requests and assumes the `http_client` is properly initialized.
     pub async fn login_with_credential(
         &mut self,
         username: &str,
@@ -266,7 +763,65 @@ impl Client {
         Ok(self)
     }
 
-    pub async fn login_by_sfdx_auth_url(&mut self, sfdx_auth_url: &str) -> Result<&mut Self, Error> {
+    /// Asynchronously log in to Salesforce using an SFDX Auth URL.
+    ///
+    /// This method allows the user to authenticate with Salesforce by parsing an SFDX authentication URL,
+    /// extracting the necessary credentials, and exchanging the refresh token for an access token.
+    ///
+    /// # Parameters
+    /// - `sfdx_auth_url`: A `&str` containing the SFDX authentication URL. The format of the auth URL must
+    ///   match the pattern:
+    ///   `force://<client_id>:<client_secret>:<refresh_token>@<login_endpoint>`.
+    ///
+    /// # Returns
+    /// - On success, this function returns a mutable reference to the `Self` instance wrapped in a
+    ///   `Result::Ok`. The `Self` instance will have the `access_token` and `instance_url` fields updated
+    ///   with the authentication response.
+    /// - On failure, an `Error` is returned, which can indicate issues like errors during the token fetch
+    ///   process or invalid credentials.
+    ///
+    /// # Errors
+    /// - Returns `Error::NotLoggedIn` if the response from Salesforce does not include a valid `token_type`.
+    /// - Returns `Error::TokenError` if the Salesforce token service responds with an error payload.
+    /// - Returns other `Error` variants if the HTTP request fails or is invalid.
+    ///
+    /// # Example
+    /// ```rust
+    /// use rustsf::{Client};
+    ///
+    /// #[tokio::main]
+    /// async fn main() {
+    ///     let sfdx_auth_url = "force://your_client_id:your_secret_token:your_refresh_token@your.login.endpoint";
+    ///     let mut client = Client::new();
+    ///
+    ///     match client.login_with_sfdx_auth_url(sfdx_auth_url).await {
+    ///         Ok(_) => {
+    ///             println!("Successfully logged in!");
+    ///         },
+    ///         Err(e) => {
+    ///             eprintln!("Failed to log in: {:?}", e);
+    ///         }
+    ///     }
+    /// }
+    /// ```
+    ///
+    /// # Details
+    /// - The function utilizes a regular expression to extract credentials from the `sfdx_auth_url`.
+    /// - It uses an HTTP POST request to exchange the refresh token for an access token via Salesforce's
+    ///   OAuth2 token endpoint.
+    /// - The response, if successful, updates the following fields of the `Self` instance:
+    ///   - `access_token`: Contains the access token and associated metadata.
+    ///   - `instance_url`: Contains the base URL of the Salesforce instance.
+    ///
+    /// # Dependencies
+    /// - This function uses the `regex` crate for regular expression handling.
+    /// - The `reqwest` crate is used for making the HTTP POST request.
+    ///
+    /// # Notes
+    /// - Ensure that the `sfdx_auth_url` provided is valid and has the expected format.
+    /// - This function relies on async/await for non-blocking execution. It must be used within an
+    ///   async runtime.
+    pub async fn login_with_sfdx_auth_url(&mut self, sfdx_auth_url: &str) -> Result<&mut Self, Error> {
         let re = Regex::new(r"force://([a-zA-Z0-9._-]+):([a-zA-Z0-9._-]*):([a-zA-Z0-9._-]+={0,2})@([a-zA-Z0-9._-]+)").unwrap();
         let caps = re.captures(&sfdx_auth_url).unwrap();
 
@@ -304,7 +859,87 @@ impl Client {
         }
     }
 
-    pub async fn login_by_soap(
+    /// Asynchronously performs a login process using a SOAP API and updates the client instance
+    /// with the retrieved access token and instance URL.
+    ///
+    /// # Arguments
+    ///
+    /// - `username`: A reference to a string slice representing the username
+    ///   to authenticate with.
+    /// - `password`: A reference to a string slice representing the password
+    ///   associated with the username.
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result`:
+    /// - On success, it returns `Ok(&mut Self)`, where the instance is updated with
+    ///   the `access_token` and `instance_url` obtained from the SOAP response.
+    /// - On failure, it returns `Err(Error)`, where `Error` contains information about
+    ///   the login error, such as the error message and error code.
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error if:
+    /// - The HTTP request fails.
+    /// - The SOAP API responds with an unsuccessful status code.
+    /// - The expected XML tags (`sessionId`, `serverTimestamp`, `serverUrl`, etc.)
+    ///   are not present in the response.
+    ///
+    /// # SOAP API Details
+    ///
+    /// - The SOAP endpoint URL is constructed using the `self.login_endpoint`
+    ///   and `self.version`, formatted as `{login_endpoint}/services/Soap/u/{version}`.
+    /// - The SOAP envelope containing the login request is generated by the
+    ///   `create_login_envelope` function.
+    /// - Relevant details such as the session token (`sessionId`) and instance URL
+    ///   (`serverUrl`) are extracted from the SOAP response using the `extract_xml_tag`
+    ///   utility.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let mut client = Client::new();
+    /// let result = client.login_with_soap("username", "password").await;
+    /// match result {
+    ///     Ok(updated_client) => {
+    ///         println!("Login successful.");
+    ///         println!("Access Token: {:?}", updated_client.access_token);
+    ///         println!("Instance URL: {:?}", updated_client.instance_url);
+    ///     }
+    ///     Err(e) => {
+    ///         eprintln!("Login failed: {:?}", e);
+    ///     }
+    /// }
+    /// ```
+    ///
+    /// # Notes
+    ///
+    /// - Ensure that the input SOAP envelope and the response XML structure
+    ///   conform to the expected SOAP API specification.
+    /// - If the `access_token` cannot be extracted from the response,
+    ///   the `access_token` field will remain `None` in the updated client instance.
+    ///
+    /// # Dependencies
+    ///
+    /// - An HTTP client that supports asynchronous operations is required, e.g.,
+    ///   `reqwest`.
+    /// - XML parsing utilities (e.g., `extract_xml_tag`) must be able to handle
+    ///   the relevant tags properly in the SOAP response.
+    ///
+    /// # Associated Types
+    ///
+    /// - This function leverages an `AccessToken` struct, which contains
+    ///   fields like `value` (session token), `issued_at` (server timestamp),
+    ///   and `token_type` ("Bearer" by default).
+    ///
+    /// # See Also
+    ///
+    /// - `create_login_envelope` for generating the required SOAP envelope.
+    ///
+    /// - `extract_xml_tag` for parsing specific XML tags from the response.
+    ///
+    /// - `Error::LoginError` for understanding the structure of login errors.
+    pub async fn login_with_soap(
         &mut self,
         username: &str,
         password: &str,
@@ -351,6 +986,45 @@ impl Client {
         }
     }
 
+    /// Asynchronously performs an HTTP GET request to a specified Apex REST endpoint using a full URI.
+    ///
+    /// # Parameters
+    /// - `uri`: A string slice representing the relative path or endpoint of the resource to be accessed.
+    ///
+    /// # Returns
+    /// - `Result<Response, Error>`:
+    ///   - On success, returns a `Response` containing the result of the GET request.
+    ///   - On failure, returns an `Error` indicating the reason for failure:
+    ///     - `Error::NotLoggedIn`: If the `instance_url` field is not available (user is not logged in).
+    ///     - `Error::ConfigError`: If the generated URL for the request is invalid.
+    ///
+    /// # Description
+    /// This function constructs the full URL for the requested resource by combining the base
+    /// `instance_url` (from the current state) with the provided `uri` parameter. It validates
+    /// the resulting URL and extracts query parameters for the request. The function then delegates
+    /// the constructed path and parameters to the `rest_get` method, which executes the actual GET request.
+    ///
+    /// The following steps are performed:
+    /// 1. Combine the base `instance_url` and `uri` to generate the full resource URL.
+    /// 2. Parse the URL to verify its validity and extract query parameters.
+    /// 3. Convert query parameters into suitable format for internal processing.
+    /// 4. Extract the URL path and invoke `rest_get` with the path and query parameters.
+    ///
+    /// # Errors
+    /// - Returns `Error::NotLoggedIn` if no `instance_url` is available in the current context.
+    /// - Returns `Error::ConfigError` if URL parsing fails due to an invalid format.
+    ///
+    /// # Example
+    /// ```rust
+    /// let mut client = Client::new();
+    /// client.login("username", "password").await?;
+    /// let response = client.rest_get_fulluri("my/resource/endpoint").await?;
+    /// println!("Response: {:?}", response);
+    /// ```
+    ///
+    /// # Notes
+    /// The function assumes that the `self.rest_get` method is implemented to handle the GET request
+    /// based on the extracted path and parameters.
     pub async fn rest_get_fulluri(&mut self, uri: &str) -> Result<Response, Error> {
         let resource_url = format!(
             "{}/services/apexrest/{}",
@@ -373,6 +1047,49 @@ impl Client {
         self.rest_get(path, params).await
     }
 
+    /// Asynchronously performs an HTTP GET request to a specified REST API endpoint.
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - A `String` representing the relative path of the endpoint to be queried on the server.
+    /// * `params` - A `Vec` of key-value tuples (`&str`, `&str`) representing query parameters to be appended to the URL.
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Response, Error>` -
+    ///   - On success: Returns an `Ok(Response)` containing the HTTP response.
+    ///   - On failure: Returns an `Err(Error)` indicating the reason for failure.
+    ///
+    /// # Errors
+    ///
+    /// This function may return errors in the following scenarios:
+    /// * `Error::NotLoggedIn` - If the `instance_url` is not set, indicating the user is not logged in.
+    /// * Errors originating from HTTP client operations, such as issues while creating headers, sending the request, or ensuring token refresh.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let mut client = Client::new();
+    /// let path = String::from("/api/v1/data");
+    /// let params = vec![("key", "value"), ("filter", "recent")];
+    /// let response = client.rest_get(path, params).await;
+    ///
+    /// match response {
+    ///     Ok(res) => {
+    ///         println!("Response received: {:?}", res);
+    ///     }
+    ///     Err(e) => {
+    ///         eprintln!("Error occurred: {:?}", e);
+    ///     }
+    /// }
+    /// ```
+    ///
+    /// # Notes
+    ///
+    /// This function ensures that the client's authentication tokens are refreshed before sending the request.
+    /// It constructs the full URL by concatenating the `instance_url` and the provided `path`. Query parameters are appended to the URL as needed.
+    ///
+    /// This function assumes you have an internal configuration for `http_client` and a means to handle HTTP headers through `create_header`.
     pub async fn rest_get(
         &mut self,
         path: String,
@@ -395,6 +1112,61 @@ impl Client {
         Ok(res)
     }
 
+    /// Sends a POST request to the specified REST API endpoint with the provided parameters.
+    ///
+    /// # Type Parameters
+    /// * `T`: The type of the request parameters. Must implement the `Serialize` trait.
+    ///
+    /// # Parameters
+    /// * `path`: A `String` specifying the API endpoint relative to the base instance URL.
+    /// * `params`: An object of type `T` containing the data to be serialized as JSON and sent
+    ///   in the POST request body.
+    ///
+    /// # Returns
+    /// Returns a `Result<Response, Error>` that represents either:
+    /// * `Ok(Response)` - The successful HTTP response.
+    /// * `Err(Error)` - An error encountered during the process (e.g., not logged in,
+    ///   serialization issues, network errors, etc.).
+    ///
+    /// # Errors
+    /// This function can return the following errors:
+    /// * `Error::NotLoggedIn` - If the client is not logged in or the instance URL is missing.
+    /// * Other errors may be returned due to HTTP request failures or issues during request setup.
+    ///
+    /// # Behavior
+    /// 1. Ensures the client session is refreshed by calling `ensure_refresh()` asynchronously.
+    /// 2. Constructs the full URL by appending the given `path` to the instance URL.
+    /// 3. Sets the appropriate headers using `create_header`.
+    /// 4. Serializes the `params` into JSON.
+    /// 5. Sends an asynchronous POST request to the constructed URL.
+    /// 6. Returns the received HTTP response upon success.
+    ///
+    /// # Examples
+    /// ```rust
+    /// use serde::Serialize;
+    /// use rustsf::Client;
+    ///
+    /// #[derive(Serialize)]
+    /// struct Params {
+    ///     key: String,
+    ///     value: i32,
+    /// }
+    ///
+    /// async fn example() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication...
+    ///     let params = Params {
+    ///         key: "example".into(),
+    ///         value: 42,
+    ///     };
+    ///     let response = client
+    ///         .rest_post("/api/endpoint".to_string(), params)
+    ///         .await?;
+    ///
+    ///     println!("Response: {:?}", response);
+    ///     Ok(())
+    /// }
+    /// ```
     pub async fn rest_post<T: Serialize>(
         &mut self,
         path: String,
@@ -417,6 +1189,56 @@ impl Client {
         Ok(res)
     }
 
+    /// Sends a PATCH request to the specified REST API endpoint with the given parameters.
+    ///
+    /// # Type Parameters
+    /// - `T`: The type of the parameters to be serialized into the request body. It must implement the `Serialize` trait.
+    ///
+    /// # Arguments
+    /// - `path`: A `String` representing the relative path of the API endpoint to send the request to.
+    /// - `params`: An object of type `T` containing the parameters to be serialized into the JSON body of the request.
+    ///
+    /// # Returns
+    /// - `Ok(Response)`: On a successful request, returns the HTTP response of type `Response`.
+    /// - `Err(Error)`: Returns an error if:
+    ///     - The instance is not properly set up or the user is not logged in (`Error::NotLoggedIn`).
+    ///     - There is an issue with refreshing the instance or creating the request headers.
+    ///     - The HTTP request fails for some other reason (e.g., a network error).
+    ///
+    /// # Errors
+    /// This method may return an error in the following cases:
+    /// - The user is not logged in (`Error::NotLoggedIn`) and the `instance_url` is unavailable.
+    /// - If the `ensure_refresh` internal function fails (e.g., unable to refresh authentication tokens).
+    /// - If there is an error serializing the parameters or constructing the HTTP headers.
+    /// - If the HTTP request fails during transmission or response handling.
+    ///
+    /// # Examples
+    /// ```rust
+    /// use serde::Serialize;
+    /// use rustsf::Client;
+    ///
+    /// #[derive(Serialize)]
+    /// struct UpdateParams {
+    ///     field: String,
+    ///     value: String,
+    /// }
+    ///
+    /// async fn example() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication...
+    ///     let params = UpdateParams {
+    ///         field: "example_field".to_string(),
+    ///         value: "new_value".to_string(),
+    ///     };
+    ///
+    ///     let response = client
+    ///         .rest_patch("/api/endpoint".to_string(), params)
+    ///         .await?;
+    ///
+    ///     println!("Response: {:?}", response);
+    ///     Ok(())
+    /// }
+    /// ```
     pub async fn rest_patch<T: Serialize>(
         &mut self,
         path: String,
@@ -439,6 +1261,61 @@ impl Client {
         Ok(res)
     }
 
+    /// Sends an HTTP PUT request to the specified REST API endpoint with the given parameters in JSON format.
+    ///
+    /// This asynchronous function constructs the full URL by appending the provided `path` to the
+    /// instance URL, ensures the client is authenticated (by refreshing the session if necessary),
+    /// and makes the PUT request using the provided parameters. The function expects the parameters
+    /// to be serializable as JSON and attaches custom headers to the request.
+    ///
+    /// # Type Parameters
+    /// * `T`: A type that implements the [`Serialize`](https://docs.rs/serde/latest/serde/trait.Serialize.html) trait, representing
+    ///   the data to be serialized into JSON and included in the request body.
+    ///
+    /// # Parameters
+    /// * `path`: A [`String`](https://doc.rust-lang.org/std/string/struct.String.html) specifying the REST API endpoint's relative path.
+    /// * `params`: A serializable object of type `T` that represents the payload to be included in the PUT request.
+    ///
+    /// # Returns
+    /// * `Result<Response, Error>`: On success, this function returns a successful [`Response`](https://docs.rs/reqwest/latest/reqwest/struct.Response.html) from the PUT request.
+    ///   On failure, it returns an [`Error`](https://docs.rs/reqwest/latest/reqwest/enum.Error.html) or custom `Error` defined by the client.
+    ///
+    /// # Errors
+    /// * Returns `Error::NotLoggedIn` if the client is not logged in and the `instance_url` is not available.
+    /// * Propagates errors encountered while refreshing the session via `self.ensure_refresh()`.
+    /// * Propagates errors from invalid header creation, serializing the payload, sending the HTTP request, or other
+    ///   networking issues encountered by the HTTP client.
+    ///
+    /// # Examples
+    /// ```rust
+    /// use serde::Serialize;
+    /// use rustsf::Client;
+    ///
+    /// #[derive(Serialize)]
+    /// struct UpdateData {
+    ///     key: String,
+    ///     value: String,
+    /// }
+    ///
+    /// #[tokio::main]
+    /// async fn main() {
+    ///     let mut client = Client::new();
+    ///
+    ///     let data = UpdateData {
+    ///         key: "example_key".to_string(),
+    ///         value: "example_value".to_string(),
+    ///     };
+    ///
+    ///     match client.rest_put("/api/resource".to_string(), data).await {
+    ///         Ok(response) => {
+    ///             println!("Request succeeded with status: {}", response.status());
+    ///         }
+    ///         Err(e) => {
+    ///             eprintln!("Request failed: {}", e);
+    ///         }
+    ///     }
+    /// }
+    /// ```
     pub async fn rest_put<T: Serialize>(
         &mut self,
         path: String,
@@ -461,6 +1338,42 @@ impl Client {
         Ok(res)
     }
 
+    /// Sends an asynchronous HTTP DELETE request to a specified path.
+    ///
+    /// # Parameters
+    /// - `path` (`String`): The path to which the DELETE request will be sent. This path will be appended to the instance URL.
+    ///
+    /// # Returns
+    /// - `Result<Response, Error>`:
+    ///     - On success, returns an `Ok(Response)` representing the HTTP response from the server.
+    ///     - On failure, returns an `Err(Error)` detailing the error encountered.
+    ///
+    /// # Errors
+    /// - This function will return an error in the following scenarios:
+    ///   - If the client is not logged in (`Error::NotLoggedIn`).
+    ///   - If refreshing the authentication token fails.
+    ///   - If there is an issue creating the HTTP headers.
+    ///   - If the HTTP request fails during execution.
+    ///
+    /// # Async Behavior
+    /// - This function is asynchronous and should be awaited.
+    /// - Before sending the DELETE request, it ensures that the authentication state is up-to-date by calling `self.ensure_refresh()`.
+    ///
+    /// # Example
+    /// ```rust
+    /// let mut client = Client::new();
+    /// // Authentication...
+    /// let response = client.rest_delete("/resource/123".to_string()).await;
+    ///
+    /// match response {
+    ///     Ok(res) => {
+    ///         println!("DELETE request successful: {}", res.status());
+    ///     }
+    ///     Err(err) => {
+    ///         eprintln!("Error occurred: {}", err);
+    ///     }
+    /// }
+    /// ```
     pub async fn rest_delete(&mut self, path: String) -> Result<Response, Error> {
         self.ensure_refresh().await?;
 
@@ -478,6 +1391,49 @@ impl Client {
         Ok(res)
     }
 
+    /// Sends an asynchronous HTTP GET request to the specified URL with the provided query parameters.
+    ///
+    /// This function ensures that any necessary pre-request setup (such as refreshing tokens or credentials)
+    /// is performed before sending the request. It then constructs the request with appropriate headers and
+    /// query parameters, uses the underlying HTTP client to send the request, and returns the response or an error.
+    ///
+    /// # Arguments
+    ///
+    /// * `url` - A `String` representing the target URL for the GET request.
+    /// * `params` - A `Vec` of tuples where each tuple contains a key-value pair (`String`, `String`) representing
+    ///              query parameters to append to the URL.
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result` containing:
+    /// - `Response`: The HTTP response object if the request is successful.
+    /// - `Error`: An error if an issue occurs during the process of refreshing credentials,
+    ///   constructing the request, or sending it.
+    ///
+    /// # Errors
+    ///
+    /// This function can return an `Error` due to:
+    /// - Failure during the token/credential refresh process in `self.ensure_refresh()`.
+    /// - Issues with building headers in `self.create_header`.
+    /// - Errors originating from the underlying HTTP client's `send` function (e.g., connectivity issues).
+    ///
+    /// # Example
+    /// ```rust
+    /// let mut client = Client::new();
+    /// // Authentication...
+    /// let response = client.get(
+    ///     "https://api.example.com/items".into(),
+    ///     vec![("key".into(), "value".into())]
+    /// ).await;
+    /// match response {
+    ///     Ok(res) => {
+    ///         println!("Response: {:?}", res);
+    ///     },
+    ///     Err(err) => {
+    ///         eprintln!("Error: {:?}", err);
+    ///     }
+    /// }
+    /// ```
     pub async fn get(
         &mut self,
         url: String,
@@ -495,6 +1451,42 @@ impl Client {
         Ok(res)
     }
 
+    /// Sends a GET request to the specified URL with optional additional headers,
+    /// ensuring that necessary token or session refresh procedures are completed before the request.
+    ///
+    /// # Arguments
+    ///
+    /// * `url` - A string slice that holds the URL to which the GET request will be sent.
+    /// * `additional_headers` - A vector of key-value pairs (`String`, `String`) representing
+    ///   additional headers to include in the request. Note that the "Accept" header is removed
+    ///   from the headers before the request is sent.
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Response, Error>` - On success, returns a `Response` object representing the
+    ///   HTTP response. On failure, returns an `Error` indicating what went wrong.
+    ///
+    /// # Errors
+    ///
+    /// This function returns an error in the following scenarios:
+    ///
+    /// * If `self.ensure_refresh()` fails during the session or token refresh process.
+    /// * If `self.create_header()` fails to create the HTTP headers from `additional_headers`.
+    /// * If the HTTP client encounters an issue while sending the GET request.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let response = client
+    ///     .get_raw("https://example.com/api/resource", vec![("Authorization".to_string(), "Bearer token".to_string())])
+    ///     .await?;
+    /// // Process response here
+    /// ```
+    ///
+    /// # Notes
+    ///
+    /// This method removes the "Accept" header (if any) from the list of headers before
+    /// sending the request.
     pub async fn get_raw(
         &mut self,
         url: &str,
@@ -508,6 +1500,47 @@ impl Client {
         Ok(res)
     }
 
+    /// Asynchronously sends an HTTP POST request to the specified URL with the given parameters and headers.
+    ///
+    /// This function ensures the client is refreshed before making the request.
+    /// It constructs the POST request by combining the given URL, serialization of parameters, and custom headers,
+    /// and uses the `reqwest` HTTP client to send the request.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T`: A type that implements the `Serialize` trait, representing the body of the POST request.
+    ///
+    /// # Parameters
+    ///
+    /// * `url` - A `String` representing the URL endpoint for the POST request.
+    /// * `params` - A serializable type (`T`) used as the JSON body of the POST request.
+    /// * `headers` - A vector of tuples where each tuple contains a header name and its corresponding value (`Vec<(String, String)>`).
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result`:
+    /// - `Ok(Response)` on success, where `Response` is the HTTP response returned by the request.
+    /// - `Err(Error)` if an error occurs during the request, such as serialization issues, header creation errors, or HTTP client errors.
+    ///
+    /// # Errors
+    ///
+    /// This function may return an error in the following circumstances:
+    /// * If `self.ensure_refresh()` fails.
+    /// * If `self.create_header(headers)` fails to construct the headers.
+    /// * If the HTTP client encounters an issue while sending the request.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// let response = client.post(url, params, headers).await;
+    /// match response {
+    ///     Ok(res) => println!("Response: {:?}", res),
+    ///     Err(err) => eprintln!("Error: {:?}", err),
+    /// }
+    /// ```
+    ///
+    /// Note: Ensure that the given `url` is valid and accessible and that proper error handling is implemented
+    /// for production use.
     pub async fn post<T: Serialize>(
         &mut self,
         url: String,
@@ -526,6 +1559,40 @@ impl Client {
         Ok(res)
     }
 
+    /// Sends an asynchronous HTTP POST request with a raw binary body and custom headers.
+    ///
+    /// # Arguments
+    ///
+    /// * `url` - A `String` containing the URL to which the POST request will be sent.
+    /// * `body` - A `Vec<u8>` containing the raw binary data to be sent as the request body.
+    /// * `headers` - A `Vec<(String, String)>` containing custom HTTP headers to be included
+    ///   with the request. Each tuple represents a header key-value pair.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` that, upon success, contains a `Response` object representing the
+    /// HTTP response. If an error occurs, an `Error` is returned instead.
+    ///
+    /// # Errors
+    ///
+    /// This function can return an error in the following cases:
+    ///
+    /// * If refreshing credentials (`ensure_refresh`) fails.
+    /// * If creating headers with `create_header` fails.
+    /// * If sending the HTTP request via the HTTP client fails.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// match client.post_raw_buffer(url, body, headers).await {
+    ///     Ok(response) => {
+    ///         println!("Response received: {:?}", response);
+    ///     }
+    ///     Err(e) => {
+    ///         eprintln!("Error occurred: {:?}", e);
+    ///     }
+    /// }
+    /// ```
     pub async fn post_raw_buffer(
         &mut self,
         url: String,
@@ -544,6 +1611,42 @@ impl Client {
         Ok(res)
     }
 
+    /// Sends an HTTP PUT request to the specified URL with the provided content.
+    ///
+    /// This method ensures that necessary pre-request refresh actions are performed,
+    /// sets the proper headers (`Content-Type` as `text/csv` and `Accept` as `application/json`),
+    /// and sends the supplied data as the request body.
+    ///
+    /// # Arguments
+    ///
+    /// * `url` - A `String` containing the target URL for the PUT request.
+    /// * `buffer` - A `Vec<u8>` containing the binary data to be sent as the request body.
+    ///
+    /// # Returns
+    ///
+    /// This method returns a `Result`:
+    /// * `Ok(Response)` - The HTTP response returned by the server.
+    /// * `Err(Error)` - An error if the refresh action, header creation,
+    ///   or the HTTP request itself fails.
+    ///
+    /// # Errors
+    ///
+    /// This function can return an error in the following cases:
+    /// * If the `ensure_refresh` method fails to complete successfully.
+    /// * If header creation fails to generate a valid set of headers.
+    /// * If the `http_client.put` request encounters an issue during sending or receiving.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// let url = "https://example.com/resource".to_string();
+    /// let data = b"column1,column2\nvalue1,value2".to_vec();
+    ///
+    /// match client.put(url, data).await {
+    ///     Ok(response) => println!("PUT request succeeded with status: {}", response.status()),
+    ///     Err(err) => eprintln!("PUT request failed: {}", err),
+    /// }
+    /// ```
     pub async fn put(&mut self, url: String, buffer: Vec<u8>) -> Result<Response, Error> {
         self.ensure_refresh().await?;
 
@@ -560,6 +1663,48 @@ impl Client {
         Ok(res)
     }
 
+    /// Sends an asynchronous HTTP PATCH request to the specified URL with the provided parameters.
+    ///
+    /// # Type Parameters
+    /// - `T`: A type that implements the `Serialize` trait, representing the body of the request.
+    ///
+    /// # Parameters
+    /// - `url`: A `String` containing the target URL for the PATCH request.
+    /// - `params`: A value of type `T`, used as the serialized JSON body of the PATCH request.
+    ///
+    /// # Returns
+    /// - `Result<Response, Error>`:
+    ///   - `Ok(Response)`: If the request is successful, returns the response from the server.
+    ///   - `Err(Error)`: If an error occurs during the request (e.g., problems in refreshing state,
+    ///     creating headers, JSON serialization, or network issues), returns the corresponding error.
+    ///
+    /// # Errors
+    /// This function returns an error if:
+    /// - `ensure_refresh` fails to refresh the client state.
+    /// - An error occurs while creating the headers.
+    /// - An error occurs in serializing the `params`.
+    /// - The HTTP client fails to send the request or receives an error response.
+    ///
+    /// # Example
+    /// ```rust
+    /// #[derive(Serialize)]
+    /// struct Params {
+    ///     key: String,
+    ///     value: String,
+    /// }
+    ///
+    /// let mut client = Client::new();
+    /// let url = String::from("https://example.com/resource");
+    /// let params = Params {
+    ///     key: String::from("example_key"),
+    ///     value: String::from("example_value"),
+    /// };
+    ///
+    /// match client.patch(url, params).await {
+    ///     Ok(response) => println!("Request succeeded: {:?}", response),
+    ///     Err(err) => eprintln!("Request failed: {}", err),
+    /// }
+    /// ```
     pub async fn patch<T: Serialize>(&mut self, url: String, params: T) -> Result<Response, Error> {
         self.ensure_refresh().await?;
 
@@ -573,6 +1718,40 @@ impl Client {
         Ok(res)
     }
 
+    ///
+    /// Sends an HTTP DELETE request to the specified URL and returns the response.
+    ///
+    /// This function performs the following operations:
+    /// 1. Ensures that any necessary refresh operations are completed by calling `ensure_refresh`.
+    /// 2. Constructs a DELETE request to the given URL using the internal HTTP client.
+    /// 3. Adds the necessary headers to the request (created via `create_header`).
+    /// 4. Sends the request asynchronously and waits for the response.
+    ///
+    /// # Parameters
+    /// - `url`: A `String` representing the URL to which the DELETE request will be sent.
+    ///
+    /// # Returns
+    /// - `Ok(Response)`: An HTTP response if the request is successful.
+    /// - `Err(Error)`: An error if any part of the process fails, such as constructing headers,
+    ///   sending the request, or encountering issues during the refresh process.
+    ///
+    /// # Errors
+    /// This function will return an `Error` in the following cases:
+    /// - If `ensure_refresh` fails.
+    /// - If there is an issue with creating the headers.
+    /// - If sending the DELETE request fails (e.g., network issues or server errors).
+    ///
+    /// # Examples
+    /// ```
+    /// let mut client = Client::new();
+    /// let url = "https://api.example.com/resource".to_string();
+    /// let response = client.delete(url).await?;
+    /// println!("Response status: {}", response.status());
+    /// ```
+    ///
+    /// # Note
+    /// Ensure that the client is properly initialized and authenticated before calling this method.
+    ///
     pub async fn delete(&mut self, url: String) -> Result<Response, Error> {
         self.ensure_refresh().await?;
 
@@ -585,6 +1764,37 @@ impl Client {
         Ok(res)
     }
 
+    /// Generates a `HeaderMap` containing default headers, authorization, and additional custom headers.
+    ///
+    /// # Arguments
+    ///
+    /// * `additional_headers` - A list of key-value pairs representing additional headers
+    ///   to be added to the request. Each key is the header name and each value is the corresponding header value.
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(HeaderMap)` - Returns the constructed `HeaderMap` with all headers included.
+    /// * `Err(Error)` - Returns an error in the following scenarios:
+    ///   - If the access token is not found (`Error::NotLoggedIn`).
+    ///   - If a provided header name is invalid (`Error::ConfigError`).
+    ///   - If a provided header value cannot be parsed.
+    ///
+    /// # Behavior
+    ///
+    /// - Authenticates the request by including an `Authorization` header with a Bearer token.
+    ///   The token is retrieved from the `access_token` field of the struct, and an error is
+    ///   returned if it is not available.
+    /// - Sets a default `Accept: application/json` header.
+    /// - Iterates through the `additional_headers` list and adds the headers
+    ///   to the `HeaderMap`. If a header name already exists, the existing value is replaced.
+    /// - All header names are validated for correctness, and invalid header names or values will result in an error.
+    ///
+    /// # Errors
+    ///
+    /// - `Error::NotLoggedIn` occurs when there is no access token available.
+    /// - `Error::ConfigError` occurs if the custom header name is invalid or unparseable.
+    /// - Errors are propagated if the header value conversion fails.
+    ///
     fn create_header(&self, additional_headers: Vec<(String, String)>) -> Result<HeaderMap, Error> {
         let mut headers = HeaderMap::new();
         let auth_value = format!(
@@ -1052,7 +2262,7 @@ mod tests {
         client.set_login_endpoint(&server.url());
 
         let result = client
-            .login_by_soap("user", "pass")
+            .login_with_soap("user", "pass")
             .await;
 
         assert!(result.is_ok());
@@ -1087,7 +2297,7 @@ mod tests {
         client.set_login_endpoint(&server.url());
 
         let result = client
-            .login_by_soap("user", "pass")
+            .login_with_soap("user", "pass")
             .await;
 
         assert!(result.is_err());

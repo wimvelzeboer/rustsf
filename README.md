@@ -4,16 +4,24 @@
 ## RustSF
 
 Rust Salesforce API Client.
-Forked from [rustforce](https://github.com/sile/rustforce) and from [tance77](https://github.com/tance77/rustforce/tree/modular-client-refactor), for the rustforce repo seemed to be abandoned.
 
-This crate tries to support all Salesforce APIs.
+This crate intends to support all Salesforce APIs.
 
 - Rest API
 - Bulk API v1
 - Bulk API v2
 - Streaming API
-- Tooling API  (todo)
-- Metadata API  (todo)
+
+These APIs are not yet implemented, but high on the list. If you are interested in contributing, or want to speed up the development, please go to Discussions and leave a message. 
+- Tooling API
+- Metadata API
+- CPQ API
+- Heroku Platform API
+- Streaming API
+
+
+Forked from [rustforce](https://github.com/sile/rustforce) and from [tance77](https://github.com/tance77/rustforce/tree/modular-client-refactor), 
+for the rustforce repo seemed to be abandoned. The [rustforce](https://github.com/sile/rustforce) repo also lacked some important features and had some design flows around API versioning.
 
 
 ## Usage

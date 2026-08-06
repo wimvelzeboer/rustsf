@@ -8,7 +8,7 @@ pub struct Urls {
     pub approval_layouts: String,
     pub ui_detail_template: String,
     pub ui_edit_template: String,
-    pub default_values: String,
+    // pub default_values: String,
     pub listviews: String,
     pub describe: String,
     pub ui_new_record: String,

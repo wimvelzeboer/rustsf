@@ -3,11 +3,11 @@
 //! This crate provides a client with several authentication types for the Salesforce APIs.
 //!
 
-use crate::access_token::AccessToken;
+use crate::client::responses::access_token::AccessToken;
 use crate::errors::Error;
-use crate::responses::error_response::ErrorResponse;
-use crate::responses::token_response::TokenResponse;
-use crate::xml::{extract_xml_tag, create_login_envelope};
+use super::responses::login_error_response::LoginErrorResponse;
+use crate::client::responses::token_response::TokenResponse;
+use crate::client::xml::{extract_xml_tag, create_login_envelope};
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue, AUTHORIZATION};
 use reqwest::{Response, Url};
 use regex::Regex;
@@ -15,6 +15,61 @@ use serde::Serialize;
 use std::collections::HashMap;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+
+/// Represents a client used for interacting with a remote API.
+/// This struct encapsulates all the necessary data required to authenticate
+/// and send HTTP requests to the API.
+///
+/// # Fields
+///
+/// * `http_client` - The underlying HTTP client (`reqwest::Client`) used to execute requests.
+/// * `client_id` - An optional client ID used for authentication.
+/// * `client_secret` - An optional client secret used for authentication.
+/// * `login_endpoint` - The URL of the login endpoint used for authenticating requests.
+/// * `instance_url` - An optional URL of the API instance to which the client is connected.
+/// * `access_token` - An optional access token representing the user session for authenticated requests.
+/// * `refresh_token` - An optional refresh token used to obtain a new access token when it expires.
+/// * `version` - The version of the API being used.
+/// * `secret_required` - A boolean value indicating whether the client secret is mandatory for authentication.
+///
+/// # Derive Attributes
+///
+/// * `Clone` - Enables creating a deep copy of the `Client`.
+/// * `Debug` - Enables formatting a debugging representation of the `Client`.
+///
+/// # Usage
+///
+/// This struct is designed to facilitate authenticated communication with an API.
+/// Use it to configure connection settings, store authentication tokens,
+/// and manage HTTP request creation.
+///
+/// Example usage may include setting up the client with credentials, defining the
+/// API endpoint, and invoking authenticated API calls with the underlying HTTP client.
+///
+/// # Example
+/// ```rust
+/// use rustsf::{Client, Error};
+///
+/// #[tokio::main]
+/// async fn main() -> Result<(), Error> {
+///     let mut client = Client::new();
+///
+///     // Configure authentication credentials, e.g.:
+///     client.set_client_id("client_Id");
+///     client.set_client_secret("client_secret");
+///     match client.login_with_credential("username", "password").await {
+///         Ok(_) => println!("Login successful!"),
+///         Err(e) => println!("Login failed: {}", e),
+///     }
+///     // ... other logic ...
+///     Ok(())
+/// }
+/// ```
+///
+/// # Note
+///
+/// Ensure that sensitive fields like `client_secret` and `access_token` are handled securely
+/// to avoid unintended exposure of confidential data.
 #[derive(Clone, Debug)]
 pub struct Client {
     pub(crate) http_client: reqwest::Client,
@@ -53,7 +108,14 @@ impl Client {
     ///
     /// # Examples
     /// ```
-    /// let client = Client::new();
+    /// use rustsf::{Client, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///     Ok(())
+    /// }
     /// ```
     pub fn new() -> Client {
         let http_client = reqwest::Client::new();
@@ -80,8 +142,16 @@ impl Client {
     ///    - `None` if the client ID is not set.
     ///
     /// # Example
-    /// ```
-    /// let client_id = client.client_id();
+    /// ```rust
+    /// use rustsf::{Client, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // ... set client ID and other fields ...
+    ///     let client_id = client.client_id();
+    ///     Ok(())
+    /// }
     /// ```
     ///
     /// This method allows for safely accessing the client ID without taking ownership of the value.
@@ -99,7 +169,15 @@ impl Client {
     ///
     /// # Example
     /// ```rust
-    /// let client_id = client.client_secret();
+    /// use rustsf::{Client, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///     let client_id = client.client_secret();
+    ///     Ok(())
+    /// }
     /// ```
     pub fn client_secret(&self) -> Option<&str> {
         self.client_secret.as_deref()
@@ -108,9 +186,17 @@ impl Client {
     /// Returns the login endpoint URL as a string slice.
     ///
     /// # Example
-    /// ```
-    /// let endpoint = client.login_endpoint();
-    /// assert_eq!(endpoint, "https://login.salesforce.com");
+    /// ```rust
+    /// use rustsf::{Client, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///     let endpoint = client.login_endpoint();
+    ///     assert_eq!(endpoint, "https://login.salesforce.com");
+    ///     Ok(())
+    /// }
     /// ```
     ///
     /// # Returns
@@ -132,7 +218,15 @@ impl Client {
     /// # Examples
     ///
     /// ```
-    /// let endpoint = client.instance_url();
+    /// use rustsf::{Client, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///     let endpoint = client.instance_url();
+    ///     Ok(())
+    /// }
     /// ```
     pub fn instance_url(&self) -> Option<&str> {
         self.instance_url.as_deref()
@@ -152,7 +246,15 @@ impl Client {
     /// # Examples
     ///
     /// ```rust
-    /// let token = client.access_token();
+    /// use rustsf::{Client, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///     let token = client.access_token();
+    ///     Ok(())
+    /// }
     /// ```
     pub fn access_token(&self) -> Option<&AccessToken> {
         self.access_token.as_ref()
@@ -169,8 +271,16 @@ impl Client {
     ///   or `None` if the `access_token` is not present.
     ///
     /// # Example
-    /// ```
-    /// let token_value = client.access_token_value();
+    /// ```rust
+    /// use rustsf::{Client, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///     let token_value = client.access_token_value();
+    ///     Ok(())
+    /// }
     /// ```
     pub fn access_token_value(&self) -> Option<&str> {
         self.access_token.as_ref().map(|t| t.value.as_str())
@@ -183,7 +293,15 @@ impl Client {
     ///
     /// # Examples
     /// ```
-    /// assert_eq!(client.version(), "v60.0");
+    /// use rustsf::{Client, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///     assert_eq!(client.version(), "v60.0");
+    ///     Ok(())
+    /// }
     /// ```
     pub fn version(&self) -> &str {
         &self.version
@@ -201,7 +319,15 @@ impl Client {
     ///
     /// # Example
     /// ```rust
-    /// let token = client.refresh_token();
+    /// use rustsf::{Client, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///     let token = client.refresh_token();
+    ///     Ok(())
+    /// }
     /// ```
     pub fn refresh_token(&self) -> Option<&str> {
         self.refresh_token.as_deref()
@@ -222,8 +348,18 @@ impl Client {
     /// # Example
     ///
     /// ```rust
-    /// let base_path = client.base_path()?;
-    /// assert_eq!(base_path, "https://myorg.my.salesforce.com/services/data/v56.0");
+    /// use rustsf::{Client, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///     match client.base_path() {
+    ///         Ok(base_path) => println!("Base path: {}", base_path),
+    ///         Err(e) => println!("Error: {}", e),
+    ///     }
+    ///     Ok(())
+    /// }
     /// ```
     ///
     /// # Note
@@ -253,7 +389,15 @@ impl Client {
     /// # Example
     ///
     /// ```rust
-    /// client.set_login_endpoint("https://test.salesforce.com/login");
+    /// use rustsf::{Client, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     client.set_login_endpoint("https://test.salesforce.com/login");
+    ///     // rest of authentication logic...
+    ///     Ok(())
+    /// }
     /// ```
     pub fn set_login_endpoint(&mut self, endpoint: &str) -> &mut Self {
         self.login_endpoint = endpoint.to_string();
@@ -274,7 +418,15 @@ impl Client {
     ///
     /// # Example
     /// ```rust
-    /// client.set_version("v65.0);
+    /// use rustsf::{Client, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///     client.set_version("v65.0");
+    ///     Ok(())
+    /// }
     /// ```
     pub fn set_version(&mut self, version: &str) -> &mut Self {
         self.version = version.to_string();
@@ -299,7 +451,15 @@ impl Client {
     /// # Example
     ///
     /// ```rust
-    /// client.set_instance_url("https://develop.sandbox.mu.salesforce.com");
+    /// use rustsf::{Client, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     client.set_instance_url("https://develop.sandbox.mu.salesforce.com");
+    ///     // Authentication logic...
+    ///     Ok(())
+    /// }
     /// ```
     pub fn set_instance_url(&mut self, instance_url: &str) -> &mut Self {
         self.instance_url = Some(instance_url.to_string());
@@ -324,7 +484,14 @@ impl Client {
     /// # Example
     ///
     /// ```rust
-    /// client.set_refresh_token("new_refresh_token");
+    /// use rustsf::{Client, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     client.set_refresh_token("new_refresh_token");
+    ///     Ok(())
+    /// }
     /// ```
     pub fn set_refresh_token(&mut self, refresh_token: &str) -> &mut Self {
         self.refresh_token = Some(refresh_token.to_string());
@@ -343,7 +510,15 @@ impl Client {
     ///
     /// # Example
     /// ```rust
-    /// client.set_secret_required(true);
+    /// use rustsf::{Client, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///     client.set_secret_required(true);
+    ///     Ok(())
+    /// }
     /// ```
     pub fn set_secret_required(&mut self, secret_required: bool) -> &mut Self {
         self.secret_required = secret_required;
@@ -368,8 +543,15 @@ impl Client {
     /// # Example
     ///
     /// ```rust
-    /// let mut client = Client::new();
-    ///  client.set_client_id(&client_id);
+    /// use rustsf::{Client, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     client.set_client_id("client_id");
+    ///     Ok(())
+    /// }
+    ///     // Rest of authentication logic...
     /// ```
     pub fn set_client_id(&mut self, client_id: &str) -> &mut Self {
         self.client_id = Some(client_id.to_string());
@@ -393,8 +575,14 @@ impl Client {
     /// # Example
     ///
     /// ```rust
-    /// let mut client = Client::new();
-    ///  client.set_client_secret(&client_secret);
+    /// use rustsf::{Client, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     client.set_client_secret("client_secret");
+    ///     Ok(())
+    /// }
     /// ```
     pub fn set_client_secret(&mut self, client_secret: &str) -> &mut Self {
         self.client_secret = Some(client_secret.to_string());
@@ -419,8 +607,14 @@ impl Client {
     /// # Example
     ///
     /// ```rust
-    /// let mut client = Client::new();
-    ///  client.set_access_token("abc123".to_string(), "2023-01-01T00:00:00Z".to_string(), "Bearer".to_string());
+    /// use rustsf::{Client, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     client.set_access_token("abc123".to_string(), "2023-01-01T00:00:00Z".to_string(), "Bearer".to_string());
+    ///     Ok(())
+    /// }
     /// ```
     ///
     /// This sets the access token, token type, and issuance time for the client.
@@ -465,12 +659,14 @@ impl Client {
     /// # Example
     ///
     /// ```rust
-    /// let mut client = Client::new();
-    /// let identity_url = "https://example.com/identity".to_string();
+    /// use rustsf::{Client, Error};
     ///
-    /// match client.get_identity(identity_url).await {
-    ///     Ok(identity) => println!("Identity: {}", identity),
-    ///     Err(e) => eprintln!("Failed to fetch identity: {:?}", e),
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///     let identity_url = client.get_identity("identity_url".to_string()).await;
+    ///     Ok(())
     /// }
     /// ```
     ///
@@ -517,6 +713,8 @@ impl Client {
     ///
     /// # Examples
     /// ```rust
+    /// use rustsf::{Client, Error};
+    ///
     /// async fn example() -> Result<(), Error> {
     ///     let mut client = Client::new();
     ///     client.ensure_refresh().await?;
@@ -574,7 +772,7 @@ impl Client {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```rust, ignore
     /// let params = client.get_refresh_params();
     /// for (key, value) in params {
     ///     println!("{}: {}", key, value);
@@ -631,13 +829,21 @@ impl Client {
     ///
     /// # Example
     /// ```rust
-    /// match client.refresh().await {
-    ///     Ok(updated_client) => {
-    ///         println!("Token refreshed successfully!");
-    ///     },
-    ///     Err(e) => {
-    ///         eprintln!("Failed to refresh token: {:?}", e);
+    /// use rustsf::{Client, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///     match client.refresh().await {
+    ///         Ok(updated_client) => {
+    ///          println!("Token refreshed successfully!");
+    ///         },
+    ///         Err(e) => {
+    ///             eprintln!("Failed to refresh token: {:?}", e);
+    ///         }
     ///     }
+    ///     Ok(())
     /// }
     /// ```
     ///
@@ -699,14 +905,20 @@ impl Client {
     /// # Example
     ///
     /// ```rust
-    /// let mut client = Client::new();
-    /// client.set_client_id("example_client_id");
-    /// client.set_client_secret("example_client_secret");
+    /// use rustsf::{Client, Error};
     ///
-    /// let result = client.login_with_credential("username", "password").await;
-    /// match result {
-    ///     Ok(client) => println!("Login successful!"),
-    ///     Err(e) => eprintln!("Login failed: {:?}", e),
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     client.set_client_id("example_client_id");
+    ///     client.set_client_secret("example_client_secret");
+    ///
+    ///     let result = client.login_with_credential("username", "password").await;
+    ///     match result {
+    ///         Ok(client) => println!("Login successful!"),
+    ///         Err(e) => eprintln!("Login failed: {:?}", e),
+    ///     }
+    ///     Ok(())
     /// }
     /// ```
     ///
@@ -787,10 +999,10 @@ impl Client {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client};
+    /// use rustsf::{Client, Error};
     ///
     /// #[tokio::main]
-    /// async fn main() {
+    /// async fn main() -> Result<(), Error> {
     ///     let sfdx_auth_url = "force://your_client_id:your_secret_token:your_refresh_token@your.login.endpoint";
     ///     let mut client = Client::new();
     ///
@@ -802,6 +1014,7 @@ impl Client {
     ///             eprintln!("Failed to log in: {:?}", e);
     ///         }
     ///     }
+    ///     Ok(())
     /// }
     /// ```
     ///
@@ -897,18 +1110,24 @@ impl Client {
     ///
     /// # Example
     ///
-    /// ```rust
-    /// let mut client = Client::new();
-    /// let result = client.login_with_soap("username", "password").await;
-    /// match result {
-    ///     Ok(updated_client) => {
-    ///         println!("Login successful.");
-    ///         println!("Access Token: {:?}", updated_client.access_token);
-    ///         println!("Instance URL: {:?}", updated_client.instance_url);
+    /// ```rust,ignore
+    /// use rustsf::{Client, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     let result = client.login_with_soap("username", "password").await;
+    ///     match result {
+    ///         Ok(updated_client) => {
+    ///             println!("Login successful.");
+    ///             println!("Access Token: {:?}", updated_client.access_token);
+    ///             println!("Instance URL: {:?}", updated_client.instance_url);
+    ///         }
+    ///         Err(e) => {
+    ///             eprintln!("Login failed: {:?}", e);
+    ///         }
     ///     }
-    ///     Err(e) => {
-    ///         eprintln!("Login failed: {:?}", e);
-    ///     }
+    ///     Ok(())
     /// }
     /// ```
     ///
@@ -939,6 +1158,10 @@ impl Client {
     /// - `extract_xml_tag` for parsing specific XML tags from the response.
     ///
     /// - `Error::LoginError` for understanding the structure of login errors.
+    ///
+    /// # Deprecated
+    /// The use of login by SOAP is deprecated by Salesforce and should be avoided
+    #[deprecated(since = "0.0.1", note = "The use of login by SOAP is deprecated by Salesforce and should be avoided")]
     pub async fn login_with_soap(
         &mut self,
         username: &str,
@@ -978,10 +1201,9 @@ impl Client {
             let error_code =
                 extract_xml_tag("faultcode", body_response.as_str()).unwrap_or_default();
 
-            Err(Error::LoginError(ErrorResponse {
+            Err(Error::LoginError(LoginErrorResponse {
                 message: error_message,
                 error_code,
-                fields: None,
             }))
         }
     }
@@ -1016,10 +1238,18 @@ impl Client {
     ///
     /// # Example
     /// ```rust
-    /// let mut client = Client::new();
-    /// client.login("username", "password").await?;
-    /// let response = client.rest_get_fulluri("my/resource/endpoint").await?;
-    /// println!("Response: {:?}", response);
+    /// use rustsf::{Client, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///     match client.rest_get_fulluri("my/resource/endpoint").await {
+    ///         Ok(response) =>  println!("Response: {:?}", response),
+    ///         Err(e) => println!("Error: {:?}", e),
+    ///     }
+    ///     Ok(())
+    /// }
     /// ```
     ///
     /// # Notes
@@ -1069,18 +1299,25 @@ impl Client {
     /// # Example
     ///
     /// ```rust
-    /// let mut client = Client::new();
-    /// let path = String::from("/api/v1/data");
-    /// let params = vec![("key", "value"), ("filter", "recent")];
-    /// let response = client.rest_get(path, params).await;
+    /// use rustsf::{Client, Error};
     ///
-    /// match response {
-    ///     Ok(res) => {
-    ///         println!("Response received: {:?}", res);
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///     let path = String::from("/api/v1/data");
+    ///     let params = vec![("key", "value"), ("filter", "recent")];
+    ///     let response = client.rest_get(path, params).await;
+    ///
+    ///     match response {
+    ///         Ok(res) => {
+    ///             println!("Response received: {:?}", res);
+    ///         }
+    ///         Err(e) => {
+    ///             eprintln!("Error occurred: {:?}", e);
+    ///         }
     ///     }
-    ///     Err(e) => {
-    ///         eprintln!("Error occurred: {:?}", e);
-    ///     }
+    ///     Ok(())
     /// }
     /// ```
     ///
@@ -1144,7 +1381,7 @@ impl Client {
     /// # Examples
     /// ```rust
     /// use serde::Serialize;
-    /// use rustsf::Client;
+    /// use rustsf::{Client, Error};
     ///
     /// #[derive(Serialize)]
     /// struct Params {
@@ -1215,7 +1452,7 @@ impl Client {
     /// # Examples
     /// ```rust
     /// use serde::Serialize;
-    /// use rustsf::Client;
+    /// use rustsf::{Client, Error};
     ///
     /// #[derive(Serialize)]
     /// struct UpdateParams {
@@ -1289,7 +1526,7 @@ impl Client {
     /// # Examples
     /// ```rust
     /// use serde::Serialize;
-    /// use rustsf::Client;
+    /// use rustsf::{Client, Error};
     ///
     /// #[derive(Serialize)]
     /// struct UpdateData {
@@ -1298,7 +1535,7 @@ impl Client {
     /// }
     ///
     /// #[tokio::main]
-    /// async fn main() {
+    /// async fn main() -> Result<(), Error>  {
     ///     let mut client = Client::new();
     ///
     ///     let data = UpdateData {
@@ -1314,6 +1551,7 @@ impl Client {
     ///             eprintln!("Request failed: {}", e);
     ///         }
     ///     }
+    ///     Ok(())
     /// }
     /// ```
     pub async fn rest_put<T: Serialize>(
@@ -1361,17 +1599,23 @@ impl Client {
     ///
     /// # Example
     /// ```rust
-    /// let mut client = Client::new();
-    /// // Authentication...
-    /// let response = client.rest_delete("/resource/123".to_string()).await;
+    /// use rustsf::{Client, Error};
     ///
-    /// match response {
-    ///     Ok(res) => {
-    ///         println!("DELETE request successful: {}", res.status());
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///     let response = client.rest_delete("/resource/123".to_string()).await;
+    ///
+    ///     match response {
+    ///         Ok(res) => {
+    ///             println!("DELETE request successful: {}", res.status());
+    ///         }
+    ///         Err(err) => {
+    ///             eprintln!("Error occurred: {}", err);
+    ///         }
     ///     }
-    ///     Err(err) => {
-    ///         eprintln!("Error occurred: {}", err);
-    ///     }
+    ///     Ok(())
     /// }
     /// ```
     pub async fn rest_delete(&mut self, path: String) -> Result<Response, Error> {
@@ -1419,19 +1663,25 @@ impl Client {
     ///
     /// # Example
     /// ```rust
-    /// let mut client = Client::new();
-    /// // Authentication...
-    /// let response = client.get(
-    ///     "https://api.example.com/items".into(),
-    ///     vec![("key".into(), "value".into())]
-    /// ).await;
-    /// match response {
-    ///     Ok(res) => {
-    ///         println!("Response: {:?}", res);
-    ///     },
-    ///     Err(err) => {
-    ///         eprintln!("Error: {:?}", err);
+    /// use rustsf::{Client, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///     let response = client.get(
+    ///         "https://api.example.com/items".into(),
+    ///         vec![("key".into(), "value".into())]
+    ///     ).await;
+    ///     match response {
+    ///         Ok(res) => {
+    ///             println!("Response: {:?}", res);
+    ///         },
+    ///         Err(err) => {
+    ///             eprintln!("Error: {:?}", err);
+    ///         }
     ///     }
+    ///     Ok(())
     /// }
     /// ```
     pub async fn get(
@@ -1477,10 +1727,20 @@ impl Client {
     /// # Example
     ///
     /// ```rust
-    /// let response = client
-    ///     .get_raw("https://example.com/api/resource", vec![("Authorization".to_string(), "Bearer token".to_string())])
-    ///     .await?;
-    /// // Process response here
+    /// use rustsf::{Client, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///     let  url = "https://example.com/api/resource";
+    ///     let  headers = vec![("Authorization".to_string(), "Bearer token".to_string())];
+    ///     match client.get_raw(url, headers).await {
+    ///         Ok(response) => println!("Response status: {}", response.status()),
+    ///         Err(err) => println!("Error: {}", err),
+    ///     }
+    ///     Ok(())
+    /// }
     /// ```
     ///
     /// # Notes
@@ -1532,10 +1792,31 @@ impl Client {
     /// # Examples
     ///
     /// ```rust
-    /// let response = client.post(url, params, headers).await;
-    /// match response {
-    ///     Ok(res) => println!("Response: {:?}", res),
-    ///     Err(err) => eprintln!("Error: {:?}", err),
+    /// use rustsf::{Client, BulkApiV2, Error};
+    /// use serde::{Deserialize, Serialize};
+    ///
+    /// #[derive(Deserialize, Serialize)]
+    /// #[serde(rename_all = "PascalCase")]
+    /// struct Account {
+    ///     id: String,
+    ///     name: String,
+    /// }
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///
+    ///     let headers = vec![("Authorization".to_string(), "Bearer token".to_string())];
+    ///     let url = "https://www.salesforce.com/api/v60.0".to_string();
+    ///     let acc = Account { id : "001xx000003DGbX".to_string(), name : "Test".to_string()};
+    ///
+    ///     let response = client.post(url, acc, headers).await;
+    ///     match response {
+    ///         Ok(res) => println!("Response: {:?}", res),
+    ///         Err(err) => eprintln!("Error: {:?}", err),
+    ///     }
+    ///     Ok(())
     /// }
     /// ```
     ///
@@ -1558,39 +1839,51 @@ impl Client {
             .await?;
         Ok(res)
     }
-
-    /// Sends an asynchronous HTTP POST request with a raw binary body and custom headers.
+    /// Asynchronously sends an HTTP POST request to the specified URL with the given parameters and headers.
     ///
-    /// # Arguments
+    /// This function ensures the client is refreshed before making the request.
+    /// It constructs the POST request by combining the given URL, serialization of parameters, and custom headers,
+    /// and uses the `reqwest` HTTP client to send the request.
     ///
-    /// * `url` - A `String` containing the URL to which the POST request will be sent.
-    /// * `body` - A `Vec<u8>` containing the raw binary data to be sent as the request body.
-    /// * `headers` - A `Vec<(String, String)>` containing custom HTTP headers to be included
-    ///   with the request. Each tuple represents a header key-value pair.
+    /// # Type Parameters
+    ///
+    /// * `T`: A type that implements the `Serialize` trait, representing the body of the POST request.
+    ///
+    /// # Parameters
+    ///
+    /// * `url` - A `String` representing the URL endpoint for the POST request.
+    /// * `params` - A serializable type (`T`) used as the JSON body of the POST request.
+    /// * `headers` - A vector of tuples where each tuple contains a header name and its corresponding value (`Vec<(String, String)>`).
     ///
     /// # Returns
     ///
-    /// A `Result` that, upon success, contains a `Response` object representing the
-    /// HTTP response. If an error occurs, an `Error` is returned instead.
+    /// Returns a `Result`:
+    /// - `Ok(Response)` on success, where `Response` is the HTTP response returned by the request.
+    /// - `Err(Error)` if an error occurs during the request, such as serialization issues, header creation errors, or HTTP client errors.
     ///
     /// # Errors
     ///
-    /// This function can return an error in the following cases:
-    ///
-    /// * If refreshing credentials (`ensure_refresh`) fails.
-    /// * If creating headers with `create_header` fails.
-    /// * If sending the HTTP request via the HTTP client fails.
+    /// This function may return an error in the following circumstances:
+    /// * If `self.ensure_refresh()` fails.
+    /// * If `self.create_header(headers)` fails to construct the headers.
+    /// * If the HTTP client encounters an issue while sending the request.
     ///
     /// # Examples
     ///
     /// ```rust
-    /// match client.post_raw_buffer(url, body, headers).await {
-    ///     Ok(response) => {
-    ///         println!("Response received: {:?}", response);
+    /// use rustsf::{Client, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///     let headers = vec![("Authorization".to_string(), "Bearer token".to_string())];
+    ///     let url = "https://example.com/api/accounts".to_string();
+    ///     match client.post_raw_buffer(url, vec![], headers).await {
+    ///         Ok(res) => println!("Response: {:?}", res),
+    ///         Err(err) => println!("Error: {:?}", err),
     ///     }
-    ///     Err(e) => {
-    ///         eprintln!("Error occurred: {:?}", e);
-    ///     }
+    ///     Ok(())
     /// }
     /// ```
     pub async fn post_raw_buffer(
@@ -1639,12 +1932,20 @@ impl Client {
     /// # Examples
     ///
     /// ```rust
-    /// let url = "https://example.com/resource".to_string();
-    /// let data = b"column1,column2\nvalue1,value2".to_vec();
+    /// use rustsf::{Client, Error};
     ///
-    /// match client.put(url, data).await {
-    ///     Ok(response) => println!("PUT request succeeded with status: {}", response.status()),
-    ///     Err(err) => eprintln!("PUT request failed: {}", err),
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///     let url = "https://example.com/resource".to_string();
+    ///     let data = b"column1,column2\nvalue1,value2".to_vec();
+    ///
+    ///     match client.put(url, data).await {
+    ///         Ok(response) => println!("PUT request succeeded with status: {}", response.status()),
+    ///         Err(err) => eprintln!("PUT request failed: {}", err),
+    ///     }
+    ///     Ok(())
     /// }
     /// ```
     pub async fn put(&mut self, url: String, buffer: Vec<u8>) -> Result<Response, Error> {
@@ -1687,22 +1988,30 @@ impl Client {
     ///
     /// # Example
     /// ```rust
+    /// use rustsf::{Client, Error};
+    /// use serde::Serialize;
+    ///
     /// #[derive(Serialize)]
-    /// struct Params {
-    ///     key: String,
-    ///     value: String,
+    /// struct Account {
+    ///     id: String,
+    ///     name: String,
     /// }
     ///
-    /// let mut client = Client::new();
-    /// let url = String::from("https://example.com/resource");
-    /// let params = Params {
-    ///     key: String::from("example_key"),
-    ///     value: String::from("example_value"),
-    /// };
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///     let url = String::from("https://example.com/resource");
+    ///     let acc = Account {
+    ///         id: String::from("001D000000IqhSLIAZ"),
+    ///         name: String::from("Sample Account"),
+    ///     };
     ///
-    /// match client.patch(url, params).await {
-    ///     Ok(response) => println!("Request succeeded: {:?}", response),
-    ///     Err(err) => eprintln!("Request failed: {}", err),
+    ///     match client.patch::<Account>(url, acc).await {
+    ///         Ok(response) => println!("Request succeeded: {:?}", response),
+    ///         Err(err) => eprintln!("Request failed: {}", err),
+    ///     }
+    ///     Ok(())
     /// }
     /// ```
     pub async fn patch<T: Serialize>(&mut self, url: String, params: T) -> Result<Response, Error> {
@@ -1743,10 +2052,20 @@ impl Client {
     ///
     /// # Examples
     /// ```
-    /// let mut client = Client::new();
-    /// let url = "https://api.example.com/resource".to_string();
-    /// let response = client.delete(url).await?;
-    /// println!("Response status: {}", response.status());
+    /// use rustsf::{Client, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///
+    ///     let url = "https://api.example.com/resource".to_string();
+    ///     match client.delete(url).await {
+    ///         Ok(response) => println!("DELETE request succeeded with status: {}", response.status()),
+    ///         Err(err) => eprintln!("DELETE request failed: {}", err),
+    ///     }
+    ///     Ok(())
+    /// }
     /// ```
     ///
     /// # Note
@@ -2261,6 +2580,7 @@ mod tests {
         let mut client = Client::new();
         client.set_login_endpoint(&server.url());
 
+        #[allow(deprecated)]
         let result = client
             .login_with_soap("user", "pass")
             .await;
@@ -2296,6 +2616,7 @@ mod tests {
         let mut client = Client::new();
         client.set_login_endpoint(&server.url());
 
+        #[allow(deprecated)]
         let result = client
             .login_with_soap("user", "pass")
             .await;

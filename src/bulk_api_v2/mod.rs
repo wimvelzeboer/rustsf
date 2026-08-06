@@ -1,9 +1,125 @@
+//! Salesforce Bulk API v2 for high-volume data operations.
+//!
+//! This module provides functionality to interact with Salesforce's Bulk API v2, which is
+//! designed for loading, updating, upserting, or deleting large numbers of records asynchronously.
+//! The Bulk API v2 is optimized for processing large sets of data and provides better performance
+//! characteristics compared to the standard REST API for bulk operations.
+//!
+//! # Features
+//!
+//! - Create and manage bulk ingest jobs
+//! - Upload CSV data for bulk processing
+//! - Monitor job status and retrieve results
+//! - Abort running jobs
+//! - Retrieve successful, failed, and unprocessed records
+//!
+//! # Usage
+//!
+//! The typical workflow for using the Bulk API v2 is:
+//!
+//! 1. Create a job using [`BulkApiV2::create_job`]
+//! 2. Upload data using [`BulkApiV2::upload_job_data`]
+//! 3. Close the job by setting its state to "UploadComplete" using [`BulkApiV2::set_upload_state`]
+//! 4. Monitor job progress using [`BulkApiV2::check_job_status`]
+//! 5. Retrieve results using [`BulkApiV2::get_job_records`]
+//!
+//! # Example
+//!
+//! ```rust,no_run
+//! use rustsf::{Client, BulkApiV2, Error};
+//! use serde_json::json;
+//! use std::collections::HashMap;
+//!
+//! #[tokio::main]
+//! async fn main() -> Result<(), Error> {
+//!     // Initialize client and authenticate
+//!     let mut client = Client::new();
+//!     // ... authentication logic ...
+//!
+//!     let mut bulk_api = BulkApiV2::new(client);
+//!
+//!     // Create a job
+//!     let job_params = json!({
+//!         "object": "Account",
+//!         "operation": "insert"
+//!     });
+//!     let job_response = bulk_api.create_job(job_params).await?;
+//!     let job_id = "750xx"; // Extract from response
+//!
+//!     // Upload CSV data
+//!     let csv_data = b"Name,Industry\nAcme Corp,Technology\nGlobex Inc,Manufacturing".to_vec();
+//!     bulk_api.upload_job_data(job_id, csv_data).await?;
+//!
+//!     // Close the job
+//!     let mut close_params = HashMap::new();
+//!     close_params.insert("state", "UploadComplete");
+//!     bulk_api.set_upload_state(job_id, close_params).await?;
+//!
+//!     // Check status
+//!     let status = bulk_api.check_job_status(job_id).await?;
+//!
+//!     // Retrieve successful results
+//!     let results = bulk_api.get_job_records(job_id, "successfulResults").await?;
+//!
+//!     Ok(())
+//! }
+//! ```
+//!
+//! # Job States
+//!
+//! Bulk API v2 jobs progress through several states:
+//! - `Open`: Job is created and ready to accept data
+//! - `UploadComplete`: Data upload is finished and job is queued for processing
+//! - `InProgress`: Job is being processed
+//! - `JobComplete`: Job has finished processing
+//! - `Failed`: Job has failed
+//! - `Aborted`: Job has been aborted
+//!
+//! # Result Types
+//!
+//! When retrieving job records, you can specify one of three result types:
+//! - `successfulResults`: Records that were successfully processed
+//! - `failedResults`: Records that failed processing with error details
+//! - `unprocessedrecords`: Records that were not processed
+//!
+//! # References
+//!
+//! For more information about Salesforce Bulk API v2, see:
+//! - [Bulk API v2 Developer Guide](https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_intro.htm)
+//! - [Bulk API v2 Limits](https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_concepts_limits.htm)
+
 use crate::client::client::Client;
 use crate::errors::Error;
 use reqwest::Response;
 use serde::Serialize;
 use std::collections::HashMap;
 
+/// Represents the Bulk API v2 interface for interacting with a Salesforce Bulk API.
+///
+/// This struct provides the functionality required to make requests to the Bulk API v2 endpoints
+/// using an underlying HTTP client.
+///
+/// ### Example
+/// ```
+/// use rustsf::{Client, BulkApiV2, Error};
+///
+/// #[tokio::main]
+/// async fn main() -> Result<(), Error> {
+///     let mut client = Client::new();
+///     // Authentication logic...
+///     let bulk_api_v2 = BulkApiV2::new(client);
+///     Ok(())
+/// }
+/// ```
+///
+/// ### Fields
+/// - `client`: A private field wrapping the `Client` instance, which is used to perform HTTP requests
+///   to the Salesforce Bulk API v2 endpoints.
+///
+/// ### Defaults
+/// This struct implements the `Default` trait, enabling the creation of a `BulkApiV2` instance with
+/// default field values as necessary. You can override these default values after instantiation
+/// if needed.
 #[derive(Default)]
 pub struct BulkApiV2 {
     pub(crate) client: Client,
@@ -23,8 +139,16 @@ impl BulkApiV2 {
     /// # Example
     ///
     /// ```rust
-    /// let client = Client::new();
-    /// let bulk_api = BulkApiV2::new(client);
+    /// use rustsf::{Client, BulkApiV2, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///
+    ///     let mut bulk_api = BulkApiV2::new(client);
+    ///     Ok(())
+    /// }
     /// ```
     pub fn new(client: Client) -> Self {
         BulkApiV2 { client }
@@ -51,17 +175,23 @@ impl BulkApiV2 {
     /// # Example
     /// ```rust
     /// use serde_json::json;
-    /// use rustsf::BulkApiV2;
+    /// use rustsf::{Client, BulkApiV2, Error};
     ///
-    /// let params = json!({
-    ///     "job_name": "example_job",
-    ///     "priority": "high",
-    /// });
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///     let params = json!({
+    ///         "job_name": "example_job",
+    ///         "priority": "high",
+    ///     });
     ///
-    /// let response = BulkApiV2::new(client).create_job(params).await;
-    /// match response {
-    ///     Ok(res) => println!("Job created successfully: {:?}", res),
-    ///     Err(err) => eprintln!("Failed to create job: {:?}", err),
+    ///     let response = BulkApiV2::new(client).create_job(params).await;
+    ///     match response {
+    ///         Ok(res) => println!("Job created successfully: {:?}", res),
+    ///         Err(err) => eprintln!("Failed to create job: {:?}", err),
+    ///     }
+    ///     Ok(())
     /// }
     /// ```
     ///
@@ -95,12 +225,21 @@ impl BulkApiV2 {
     ///
     /// # Example
     /// ```rust
-    /// let mut api = BulkApiV2::new(client);
-    /// let job_id = "12345";
-    /// let csv_data = vec![b'h', b'e', b'a', b'd', b'e', b'r', b'\n', b'd', b'a', b't', b'a'];
-    /// match api.upload_job_data(job_id, csv_data).await {
-    ///     Ok(message) => println!("Success: {}", message),
-    ///     Err(e) => eprintln!("Error: {:?}", e),
+    /// use rustsf::{Client, BulkApiV2, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///
+    ///     let mut bulk_api = BulkApiV2::new(client);
+    ///     let job_id = "12345";
+    ///     let csv_data = vec![b'h', b'e', b'a', b'd', b'e', b'r', b'\n', b'd', b'a', b't', b'a'];
+    ///     match bulk_api.upload_job_data(job_id, csv_data).await {
+    ///         Ok(message) => println!("Success: {}", message),
+    ///         Err(e) => eprintln!("Error: {:?}", e),
+    ///     }
+    ///     Ok(())
     /// }
     /// ```
     ///
@@ -143,14 +282,24 @@ impl BulkApiV2 {
     /// # Examples
     ///
     /// ```rust
-    /// let mut api = BulkApiV2::new(Client);
-    /// match api.get_all_jobs().await {
-    ///     Ok(response) => {
-    ///         println!("Jobs retrieved successfully: {:?}", response);
-    ///     },
-    ///     Err(e) => {
-    ///         eprintln!("Failed to retrieve jobs: {:?}", e);
-    ///     },
+    /// use rustsf::{Client, BulkApiV2, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///
+    ///     let mut bulk_api = BulkApiV2::new(client);
+    ///
+    ///     match bulk_api.get_all_jobs().await {
+    ///         Ok(response) => {
+    ///             println!("Jobs retrieved successfully: {:?}", response);
+    ///         },
+    ///         Err(e) => {
+    ///             eprintln!("Failed to retrieve jobs: {:?}", e);
+    ///         },
+    ///     }
+    ///     Ok(())
     /// }
     /// ```
     ///
@@ -181,11 +330,20 @@ impl BulkApiV2 {
     ///
     /// # Examples
     /// ```
-    /// let mut api = BulkApiV2::new(Client);
-    /// let job_info = api.get_job_info("job1234").await;
-    /// match job_info {
-    ///     Ok(response) => println!("Job info retrieved: {:?}", response),
-    ///     Err(e) => eprintln!("Failed to retrieve job info: {:?}", e),
+    /// use rustsf::{Client, BulkApiV2, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///
+    ///     let mut bulk_api = BulkApiV2::new(client);
+    ///     let job_info = bulk_api.get_job_info("job1234").await;
+    ///     match job_info {
+    ///         Ok(response) => println!("Job info retrieved: {:?}", response),
+    ///         Err(e) => eprintln!("Failed to retrieve job info: {:?}", e),
+    ///     }
+    ///     Ok(())
     /// }
     /// ```
     ///
@@ -230,20 +388,29 @@ impl BulkApiV2 {
     /// # Examples
     ///
     /// ```rust
-    ///let mut api = BulkApiV2::new(Client);
-    /// let job_id = "exampleJobId";
-    /// let result_set = "successfulResults";
-    ///
-    /// let response = api.get_job_records(job_id, result_set).await;
-    /// match response {
-    ///     Ok(res) => {
-    ///         // Handle successful response
-    ///         println!("Job records: {:?}", res);
+    /// use rustsf::{Client, BulkApiV2, Error};
+    /// 
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    /// 
+    ///     let mut api = BulkApiV2::new(client);
+    ///     let job_id = "exampleJobId";
+    ///     let result_set = "successfulResults";
+    ///     
+    ///     let response = api.get_job_records(job_id, result_set).await;
+    ///     match response {
+    ///         Ok(res) => {
+    ///             // Handle successful response
+    ///             println!("Job records: {:?}", res);
+    ///         }
+    ///         Err(err) => {
+    ///             // Handle error
+    ///             eprintln!("Error fetching job records: {:?}", err);
+    ///         }
     ///     }
-    ///     Err(err) => {
-    ///         // Handle error
-    ///         eprintln!("Error fetching job records: {:?}", err);
-    ///     }
+    ///     Ok(())
     /// }
     /// ```
     ///
@@ -285,11 +452,20 @@ impl BulkApiV2 {
     ///
     /// # Examples
     /// ```rust
-    /// let mut api = BulkApiV2::new(Client);
-    /// let result = api.abort_job("job12345").await;
-    /// match result {
-    ///     Ok(response) => println!("Job aborted successfully: {:?}", response),
-    ///     Err(e) => eprintln!("Failed to abort job: {:?}", e),
+    /// use rustsf::{Client, BulkApiV2, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    /// 
+    ///     let mut api = BulkApiV2::new(client);
+    ///     let result = api.abort_job("job12345").await;
+    ///     match result {
+    ///         Ok(response) => println!("Job aborted successfully: {:?}", response),
+    ///         Err(e) => eprintln!("Failed to abort job: {:?}", e),
+    ///     }
+    ///     Ok(())
     /// }
     /// ```
     ///
@@ -329,14 +505,26 @@ impl BulkApiV2 {
     ///
     /// # Example
     /// ```
-    /// let mut api = BulkApiV2::new(Client);
-    /// let job_id = "12345";
-    /// let params = json!({
-    ///     "status": "completed",
-    ///     "timestamp": "2023-01-01T12:00:00Z"
-    /// });
-    /// let response = api.set_upload_state(job_id, params).await?;
-    /// println!("Response: {:?}", response);
+    /// use rustsf::{Client, BulkApiV2, Error};
+    /// use serde_json::json;
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    /// 
+    ///     let mut api = BulkApiV2::new(client);
+    ///     let job_id = "12345";
+    ///     let params = json!({
+    ///         "status": "completed",
+    ///         "timestamp": "2023-01-01T12:00:00Z"
+    ///     });
+    ///     match api.set_upload_state(job_id, params).await {
+    ///         Ok(response) => println!("Upload state set successfully: {:?}", response),
+    ///         Err(e) => eprintln!("Failed to set upload state: {:?}", e),
+    ///     }
+    ///     Ok(())
+    /// }
     /// ```
     ///
     /// # See
@@ -371,18 +559,27 @@ impl BulkApiV2 {
     /// # Example
     ///
     /// ```rust
-    /// let mut api = BulkApiV2::new(Client);
-    /// let job_id = "12345";
-    /// match api.check_job_status(job_id).await {
-    ///     Ok(response) => {
-    ///         // Handle successful response
-    ///         println!("Job status: {:?}", response);
+    /// use rustsf::{Client, BulkApiV2, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    /// 
+    ///     let mut api = BulkApiV2::new(client);
+    ///     let job_id = "12345";
+    ///     match api.check_job_status(job_id).await {
+    ///         Ok(response) => {
+    ///             // Handle successful response
+    ///             println!("Job status: {:?}", response);
+    ///         }
+    ///         Err(error) => {
+    ///             // Handle error
+    ///             eprintln!("Error checking job status: {:?}", error);
+    ///         }
     ///     }
-    ///     Err(error) => {
-    ///         // Handle error
-    ///         eprintln!("Error checking job status: {:?}", error);
-    ///     }
-    /// }
+    ///     Ok(())
+    /// } 
     /// ```
     ///
     /// # See
@@ -394,234 +591,4 @@ impl BulkApiV2 {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use mockito::Server;
-    use serde_json::json;
-
-    fn create_test_bulk_api_v2(server_url: &str) -> BulkApiV2 {
-        let mut client = Client::new();
-        client.set_instance_url(server_url);
-        client.set_access_token(
-            "test_token".to_string(),
-            "9999999999000".to_string(),
-            "Bearer".to_string(),
-        );
-        client.set_version("v60.0");
-        BulkApiV2::new(client)
-    }
-
-    #[test]
-    fn test_new() {
-        let client = Client::new();
-        let api = BulkApiV2::new(client);
-        assert!(api.client.instance_url.is_none());
-    }
-
-    #[test]
-    fn test_base_path() {
-        let mut client = Client::new();
-        client.set_instance_url("https://na1.salesforce.com");
-        client.set_version("v60.0");
-        let api = BulkApiV2::new(client);
-        assert_eq!(
-            api.client.base_path().unwrap(),
-            "https://na1.salesforce.com/services/data/v60.0"
-        );
-    }
-
-    #[test]
-    fn test_base_path_not_logged_in() {
-        let client = Client::new();
-        let api = BulkApiV2::new(client);
-        let result = api.client.base_path();
-        assert!(result.is_err());
-        match result.unwrap_err() {
-            Error::NotLoggedIn => {}
-            e => panic!("Expected NotLoggedIn, got {:?}", e),
-        }
-    }
-
-    #[tokio::test]
-    async fn test_create_job() {
-        let mut server = Server::new_async().await;
-        let mock = server
-            .mock("POST", "/services/data/v60.0/jobs/ingest")
-            .with_status(200)
-            .with_header("content-type", "application/json")
-            .with_body(
-                json!({
-                    "id": "750xx",
-                    "operation": "insert",
-                    "object": "Account",
-                    "createdById": "005xx",
-                    "createdDate": "2024-01-01",
-                    "systemModstamp": "2024-01-01",
-                    "state": "Open",
-                    "concurrencyMode": "Parallel",
-                    "contentType": "CSV",
-                    "apiVersion": 60.0,
-                    "contentUrl": "services/data/v60.0/jobs/ingest/750xx/batches",
-                    "lineEnding": "LF"
-                })
-                .to_string(),
-            )
-            .create_async()
-            .await;
-
-        let mut api = create_test_bulk_api_v2(&server.url());
-        let mut params = HashMap::new();
-        params.insert("operation", "insert");
-        params.insert("object", "Account");
-        let res = api.create_job(params).await;
-        assert!(res.is_ok());
-        mock.assert_async().await;
-    }
-
-    #[tokio::test]
-    async fn test_upload_job_data_success() {
-        let mut server = Server::new_async().await;
-        let mock = server
-            .mock("PUT", "/services/data/v60.0/jobs/ingest/750xx/batches")
-            .with_status(201)
-            .create_async()
-            .await;
-
-        let mut api = create_test_bulk_api_v2(&server.url());
-        let csv = b"Name\nTest Account".to_vec();
-        let res = api.upload_job_data("750xx", csv).await;
-        assert!(res.is_ok());
-        assert_eq!(res.unwrap(), "Created");
-        mock.assert_async().await;
-    }
-
-    #[tokio::test]
-    async fn test_upload_job_data_failure() {
-        let mut server = Server::new_async().await;
-        let mock = server
-            .mock("PUT", "/services/data/v60.0/jobs/ingest/750xx/batches")
-            .with_status(400)
-            .with_header("content-type", "application/json")
-            .with_body(
-                json!({
-                    "message": "Invalid CSV",
-                    "errorCode": "INVALID_CONTENT"
-                })
-                .to_string(),
-            )
-            .create_async()
-            .await;
-
-        let mut api = create_test_bulk_api_v2(&server.url());
-        let csv = b"bad data".to_vec();
-        let res = api.upload_job_data("750xx", csv).await;
-        assert!(res.is_err());
-        mock.assert_async().await;
-    }
-
-    #[tokio::test]
-    async fn test_get_all_jobs() {
-        let mut server = Server::new_async().await;
-        let mock = server
-            .mock("GET", "/services/data/v60.0/jobs/ingest/")
-            .with_status(200)
-            .with_header("content-type", "application/json")
-            .with_body(json!({"records": [], "done": true}).to_string())
-            .create_async()
-            .await;
-
-        let mut api = create_test_bulk_api_v2(&server.url());
-        let res = api.get_all_jobs().await;
-        assert!(res.is_ok());
-        mock.assert_async().await;
-    }
-
-    #[tokio::test]
-    async fn test_get_job_info() {
-        let mut server = Server::new_async().await;
-        let mock = server
-            .mock("GET", "/services/data/v60.0/jobs/ingest/750xx")
-            .with_status(200)
-            .with_header("content-type", "application/json")
-            .with_body(json!({"id": "750xx", "state": "Open"}).to_string())
-            .create_async()
-            .await;
-
-        let mut api = create_test_bulk_api_v2(&server.url());
-        let res = api.get_job_info("750xx").await;
-        assert!(res.is_ok());
-        mock.assert_async().await;
-    }
-
-    #[tokio::test]
-    async fn test_get_job_records() {
-        let mut server = Server::new_async().await;
-        let mock = server
-            .mock(
-                "GET",
-                "/services/data/v60.0/jobs/ingest/750xx/successfulResults",
-            )
-            .with_status(200)
-            .with_body("sf__Id,Name\n001xx,Test")
-            .create_async()
-            .await;
-
-        let mut api = create_test_bulk_api_v2(&server.url());
-        let res = api.get_job_records("750xx", "successfulResults").await;
-        assert!(res.is_ok());
-        mock.assert_async().await;
-    }
-
-    #[tokio::test]
-    async fn test_abort_job() {
-        let mut server = Server::new_async().await;
-        let mock = server
-            .mock("PATCH", "/services/data/v60.0/jobs/ingest/750xx")
-            .with_status(200)
-            .with_header("content-type", "application/json")
-            .with_body(json!({"state": "Aborted"}).to_string())
-            .create_async()
-            .await;
-
-        let mut api = create_test_bulk_api_v2(&server.url());
-        let res = api.abort_job("750xx").await;
-        assert!(res.is_ok());
-        mock.assert_async().await;
-    }
-
-    #[tokio::test]
-    async fn test_set_upload_state() {
-        let mut server = Server::new_async().await;
-        let mock = server
-            .mock("PATCH", "/services/data/v60.0/jobs/ingest/750xx")
-            .with_status(200)
-            .with_header("content-type", "application/json")
-            .with_body(json!({"state": "UploadComplete"}).to_string())
-            .create_async()
-            .await;
-
-        let mut api = create_test_bulk_api_v2(&server.url());
-        let mut params = HashMap::new();
-        params.insert("state", "UploadComplete");
-        let res = api.set_upload_state("750xx", params).await;
-        assert!(res.is_ok());
-        mock.assert_async().await;
-    }
-
-    #[tokio::test]
-    async fn test_check_job_status() {
-        let mut server = Server::new_async().await;
-        let mock = server
-            .mock("GET", "/services/data/v60.0/jobs/ingest/750xx/")
-            .with_status(200)
-            .with_header("content-type", "application/json")
-            .with_body(json!({"id": "750xx", "state": "JobComplete"}).to_string())
-            .create_async()
-            .await;
-
-        let mut api = create_test_bulk_api_v2(&server.url());
-        let res = api.check_job_status("750xx").await;
-        assert!(res.is_ok());
-        mock.assert_async().await;
-    }
-}
+mod test;

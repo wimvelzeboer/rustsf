@@ -1,4 +1,4 @@
-//! Salesforce REST API Client
+//! Salesforce REST API
 //!
 //! This crate provides a Rust client for interacting with the Salesforce REST API. It allows you to
 //! perform CRUD operations on Salesforce objects, query data, and more.
@@ -12,17 +12,33 @@
 
 use crate::client::client::Client;
 use crate::errors::Error;
-use crate::responses::error_response::ErrorResponse;
+use responses::error_response::ErrorResponse;
 use reqwest::Response;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use serde::de::DeserializeOwned;
-use crate::responses::create_response::CreateResponse;
-use crate::responses::describe_global_response::DescribeGlobalResponse;
-use crate::responses::describe_response::DescribeResponse;
-use crate::responses::query_response::QueryResponse;
-use crate::responses::search_response::SearchResponse;
-use crate::responses::version_response::VersionResponse;
+use responses::create_response::CreateResponse;
+use responses::describe_global_response::DescribeGlobalResponse;
+use responses::describe_response::DescribeResponse;
+use responses::query_response::QueryResponse;
+use responses::search_response::SearchResponse;
+use responses::version_response::VersionResponse;
 
+pub mod responses;
+
+/// A `RestApi` struct that represents the core component for interacting with a RESTful API.
+///
+/// This struct contains a `client` field, which is an instance of the `Client` type
+/// used to make HTTP requests to the API. The `RestApi` struct is derived with the
+/// `Default` trait, allowing it to be instantiated with default values.
+///
+/// # Fields
+/// - `client` (`Client`):
+///   A structure responsible for handling HTTP interactions with the API.
+///   This field has module-level visibility (`pub(crate)`), restricting its accessibility
+///   to the current crate.
+///
+/// Note: To use the `RestApi` struct effectively, ensure all required components
+/// of the `Client` type are configured appropriately.
 #[derive(Default)]
 pub struct RestApi {
     pub(crate) client: Client,
@@ -59,8 +75,18 @@ impl RestApi {
     /// # Examples
     ///
     /// ```
-    /// let client = Client::new();
-    /// let api = RestApi::new(client);
+    /// use rustsf::{Client, RestApi, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let client = Client::new();
+    ///     // Authentication logic...
+    ///
+    ///     let mut api = RestApi::new(client);
+    ///     // you call the api here..
+    ///
+    ///     Ok(())
+    /// }
     /// ```
     pub fn new(client: Client) -> Self {
         RestApi { client }
@@ -86,10 +112,29 @@ impl RestApi {
     ///
     /// # Example
     /// ```rust
-    /// // Assuming `client` is an instance of a type that provides the `query` method.
-    /// let query_str = "SELECT * FROM users WHERE active = 1";
-    /// let response: QueryResponse<User> = client.query(query_str).await?;
-    /// println!("Query result: {:?}", response);
+    /// use rustsf::{Client, RestApi, Error};
+    /// use serde::{Deserialize, Serialize};
+    ///
+    /// #[derive(Debug, Deserialize, Serialize)]
+    /// #[serde(rename_all = "PascalCase")]
+    /// struct Account {
+    ///     id: String,
+    ///     name: String,
+    /// }
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let client = Client::new();
+    ///     // Authentication logic...
+    ///
+    ///     let mut api = RestApi::new(client);
+    ///     let query_str = "SELECT Id, Name FROM Account WHERE Id = '001D000000IqhSLIAZ'";
+    ///     match api.query::<Account>(query_str).await {
+    ///         Ok(response) => println!("Query response: {:?}", response),
+    ///         Err(error) => println!("Error executing query: {:?}", error),
+    ///     }
+    ///     Ok(())
+    /// }
     /// ```
     pub async fn query<T: DeserializeOwned>(&mut self, query: &str) -> Result<QueryResponse<T>, Error> {
         let query_url = format!("{}/query/", self.client.base_path()?);
@@ -118,16 +163,28 @@ impl RestApi {
     ///
     /// # Example
     /// ```rust
-    /// let mut client = Client::new();
-    /// client.set_client_id(&client_id);
-    /// client.set_client_secret(&client_secret);
-    /// client.login_with_credential(&username, &password).await?
-    /// let mut api = RestApi::new(client);
-    /// let query = "SELECT * FROM users";
-    /// let result: Result<QueryResponse<User>, Error> = api.query_all(query).await;
-    /// match result {
-    ///     Ok(response) => println!("Query successful: {:?}", response),
-    ///     Err(e) => eprintln!("Query failed: {:?}", e),
+    /// use rustsf::{Client, RestApi, Error};
+    /// use serde::{Deserialize, Serialize};
+    ///
+    /// #[derive(Debug, Deserialize, Serialize)]
+    /// #[serde(rename_all = "PascalCase")]
+    /// struct Account {
+    ///     id: String,
+    ///     name: String,
+    /// }
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let client = Client::new();
+    ///     // Authentication logic...
+    ///
+    ///     let mut api = RestApi::new(client);
+    ///     let query = "SELECT * FROM Account";
+    ///     match api.query_all::<Account>(query).await {
+    ///         Ok(response) => println!("Query response: {:?}", response),
+    ///         Err(error) => println!("Error executing query: {:?}", error),
+    ///     }
+    ///     Ok(())
     /// }
     /// ```
     pub async fn query_all<T: DeserializeOwned>(&mut self, query: &str) -> Result<QueryResponse<T>, Error> {
@@ -166,17 +223,28 @@ impl RestApi {
     ///
     /// # Examples
     /// ```rust
-    /// let mut client = Client::new();
-    /// client.set_client_id(&client_id);
-    /// client.set_client_secret(&client_secret);
-    /// client.login_with_credential(&username, &password).await?
+    /// use rustsf::{Client, RestApi, Error};
+    /// use serde::{Deserialize, Serialize};
     ///
-    /// let mut api = RestApi::new(client);
-    /// let next_url = "/services/data/v50.0/query/01gB0000003mzKJQAY-2000";
-    /// let result: Result<QueryResponse<MyRecordType>, Error> = api.query_more(&next_url).await;
-    /// match result {
-    ///     Ok(response) => println!("Retrieved {} records", response.records.len()),
-    ///     Err(e) => eprintln!("Error: {:?}", e),
+    /// #[derive(Debug, Deserialize, Serialize)]
+    /// #[serde(rename_all = "PascalCase")]
+    /// struct Account {
+    ///     id: String,
+    ///     name: String,
+    /// }
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///
+    ///     let mut api = RestApi::new(client);
+    ///     let next_url = "/services/data/v60.0/query/01gB0000003mzKJQAY-2000";
+    ///     match api.query_more::<Account>(&next_url).await {
+    ///         Ok(response) => println!("Query response: {:?}", response),
+    ///         Err(error) => println!("Error executing query: {:?}", error),
+    ///     }
+    ///     Ok(())
     /// }
     /// ```
     ///
@@ -217,17 +285,22 @@ impl RestApi {
     ///
     /// # Examples
     /// ```rust
-    /// let mut client = Client::new();
-    /// client.set_client_id(&client_id);
-    /// client.set_client_secret(&client_secret);
-    /// client.login_with_credential(&username, &password).await?
+    /// use rustsf::{Client, RestApi, Error};
+    /// use serde::{Deserialize, Serialize};
     ///
-    /// let mut api = RestApi::new(client);
-    /// let query = "FIND {test} RETURNING Account(Name)";
-    /// let result = api.search_sosl(query).await;
-    /// match result {
-    ///     Ok(response) => println!("Search results: {:?}", response),
-    ///     Err(error) => eprintln!("Error executing SOSL query: {:?}", error),
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let client = Client::new();
+    ///     // Authentication logic...
+    ///
+    ///     let mut api = RestApi::new(client);
+    ///     let query = "FIND {test} RETURNING Account(Name)";
+    ///     let result = api.search_sosl(query).await;
+    ///     match result {
+    ///         Ok(response) => println!("Search results: {:?}", response),
+    ///         Err(error) => println!("Error executing SOSL query: {:?}", error),
+    ///     }
+    ///     Ok(())
     /// }
     /// ```
     ///
@@ -262,20 +335,25 @@ impl RestApi {
     /// # Example
     ///
     /// ```rust
-    /// let mut client = Client::new();
-    /// client.set_client_id(&client_id);
-    /// client.set_client_secret(&client_secret);
-    /// client.login_with_credential(&username, &password).await?
+    /// use rustsf::{Client, RestApi, Error};
+    /// use serde::{Deserialize, Serialize};
     ///
-    /// let mut api = RestApi::new(client);
-    /// let result = api.versions().await;
-    /// match result {
-    ///     Ok(versions) => {
-    ///         for version in versions {
-    ///             println!("Version: {}", version.label);
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///
+    ///     let mut api = RestApi::new(client);
+    ///     let result = api.versions().await;
+    ///     match result {
+    ///         Ok(versions) => {
+    ///             for version in versions {
+    ///                 println!("Version: {}", version.label);
+    ///             }
     ///         }
+    ///         Err(error) => eprintln!("Error retrieving versions: {:?}", error),
     ///     }
-    ///     Err(error) => eprintln!("Error retrieving versions: {:?}", error),
+    ///     Ok(())
     /// }
     /// ```
     ///
@@ -320,13 +398,29 @@ impl RestApi {
     ///
     /// # Example
     /// ```rust
-    /// let mut client = Client::new();
-    /// client.set_client_id(&client_id);
-    /// client.set_client_secret(&client_secret);
-    /// client.login_with_credential(&username, &password).await?
-    /// let mut api = RestApi::new(client);
+    /// use rustsf::{Client, RestApi, Error};
+    /// use serde::{Deserialize, Serialize};
     ///
-    /// let record = api.find_by_id::<Account>("Account", "001D000000IqhSLIAZ").await?;
+    /// #[derive(Deserialize, Serialize)]
+    /// #[serde(rename_all = "PascalCase")]
+    /// struct Account {
+    ///     id: String,
+    ///     name: String,
+    /// }
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let client = Client::new();
+    ///     // Authentication logic...
+    ///
+    ///     let mut api = RestApi::new(client);
+    ///
+    ///     match api.find_by_id::<Account>("Account", "001D000000IqhSLIAZ").await {
+    ///         Ok(record) => println!("Account Name: {}", record.name),
+    ///         Err(error) => println!("Error retrieving account: {:?}", error),
+    ///     };
+    ///     Ok(())
+    /// }
     /// ```
     ///
     /// # Dependencies
@@ -365,26 +459,28 @@ impl RestApi {
     ///
     /// # Example
     /// ```rust
-    /// use serde::Serialize;
+    /// use rustsf::{Client, RestApi, Error};
+    /// use serde::{Deserialize, Serialize};
     ///
-    /// #[derive(Serialize)]
+    /// #[derive(Deserialize, Serialize)]
+    /// #[serde(rename_all = "PascalCase")]
     /// struct Account {
-    ///     Name: String,
+    ///     name: String,
     /// }
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// async fn main() -> Result<(), Error> {
     ///     let mut client = Client::new();
-    ///     client.set_client_id(&client_id);
-    ///     client.set_client_secret(&client_secret);
-    ///     client.login_with_credential(&username, &password).await?
-    ///     let mut api = RestApi::new(client);
+    ///     // Authentication logic...
     ///
+    ///     let mut api = RestApi::new(client);
     ///     let account = Account {
-    ///         Name: "Example Account".to_string(),
+    ///         name: "Example Account".to_string(),
     ///     };
-    ///     let response = api.create("Account", account).await?;
-    ///     println!("Record ID: {}", response.id);
+    ///     match api.create("Account", account).await {
+    ///         Ok(response) => println!("Record ID: {}", response.id),
+    ///         Err(error) => println!("Error creating account: {:?}", error),
+    ///     }
     ///     Ok(())
     /// }
     /// ```
@@ -428,24 +524,31 @@ impl RestApi {
     ///
     /// # Example
     /// ```
-    /// use serde::Serialize;
+    /// use rustsf::{Client, RestApi, Error};
+    /// use serde::{Deserialize, Serialize};
     ///
-    /// #[derive(Serialize)]
-    /// struct UpdateParams {
-    ///     Name: String,
+    /// #[derive(Deserialize, Serialize)]
+    /// #[serde(rename_all = "PascalCase")]
+    /// struct Account {
+    ///     id: String,
+    ///     name: String,
     /// }
     ///
-    /// async fn example() -> Result<(), Error> {
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
     ///     let mut client = Client::new();
-    ///     client.set_client_id(&client_id);
-    ///     client.set_client_secret(&client_secret);
-    ///     client.login_with_credential(&username, &password).await?
-    ///     let mut api = RestApi::new(client);
+    ///     // Authentication logic...
     ///
-    ///     let params = UpdateParams {
-    ///         Name: String::from("Updated Account Name"),
+    ///     let mut api = RestApi::new(client);
+    ///     let account = Account {
+    ///         id: "001D000000IqhSLIAZ".to_string(),
+    ///         name: "Updated Account Name".to_string(),
     ///     };
-    ///     api.update("Account", "001D000000IqhSLIAZ", params).await
+    ///     match api.update("Account", "001D000000IqhSLIAZ", account).await {
+    ///         Ok(()) => println!("Account updated successfully."),
+    ///         Err(error) => println!("Error updating account: {:?}", error),
+    ///     };
+    ///     Ok(())
     /// }
     /// ```
     ///
@@ -492,15 +595,22 @@ impl RestApi {
     ///
     /// # Example
     /// ```rust
+    /// use rustsf::{Client, RestApi, Error};
+    /// use serde::{Deserialize, Serialize};
     /// use serde_json::json;
-    /// use your_crate::YourClient;
+    ///
+    /// #[derive(Deserialize, Serialize)]
+    /// #[serde(rename_all = "PascalCase")]
+    /// struct Account {
+    ///     id: String,
+    ///     name: String,
+    /// }
     ///
     /// #[tokio::main]
-    /// async fn main() {
-    ///     let mut client = Client::new();
-    ///     client.set_client_id(&client_id);
-    ///     client.set_client_secret(&client_secret);
-    ///     client.login_with_credential(&username, &password).await?
+    /// async fn main() -> Result<(), Error> {
+    ///     let client = Client::new();
+    ///     // Authentication logic...
+    ///
     ///     let mut api = RestApi::new(client);
     ///
     ///     let params = json!({
@@ -519,6 +629,7 @@ impl RestApi {
     ///         Ok(response) => println!("Upsert successful: {:?}", response),
     ///         Err(error) => eprintln!("Upsert failed: {:?}", error),
     ///     }
+    ///     Ok(())
     /// }
     /// ```
     pub async fn upsert<T: Serialize>(
@@ -563,17 +674,22 @@ impl RestApi {
     /// # Examples
     ///
     /// ```rust
-    /// let mut client = Client::new();
-    /// client.set_client_id(&client_id);
-    /// client.set_client_secret(&client_secret);
-    /// client.login_with_credential(&username, &password).await?
-    /// let mut api = RestApi::new(client);
+    /// use rustsf::{Client, RestApi, Error};
     ///
-    /// let result = api.destroy("Account", "001D000000IqhSLIAZ").await;
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
     ///
-    /// match result {
-    ///     Ok(()) => println!("Record deleted successfully."),
-    ///     Err(e) => eprintln!("Failed to delete record: {:?}", e),
+    ///     let mut api = RestApi::new(client);
+    ///
+    ///     let result = api.destroy("Account", "001D000000IqhSLIAZ").await;
+    ///
+    ///     match result {
+    ///         Ok(()) => println!("Record deleted successfully."),
+    ///         Err(e) => eprintln!("Failed to delete record: {:?}", e),
+    ///     }
+    ///     Ok(())
     /// }
     /// ```
     ///
@@ -613,19 +729,25 @@ impl RestApi {
     /// # Example
     ///
     /// ```rust
-    /// let mut client = Client::new();
-    /// client.set_client_id(&client_id);
-    /// client.set_client_secret(&client_secret);
-    /// client.login_with_credential(&username, &password).await?
-    /// let mut api = RestApi::new(client);
+    /// use rustsf::{Client, RestApi, Error};
     ///
-    /// match api.describe_global().await {
-    ///     Ok(response) => {
-    ///         println!("Successfully retrieved global objects: {:?}", response);
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     use rustsf::RestApi;
+    ///     let client = Client::new();
+    ///     // Authentication logic...
+    ///
+    ///     let mut api = RestApi::new(client);
+    ///
+    ///     match api.describe_global().await {
+    ///         Ok(response) => {
+    ///             println!("Successfully retrieved global objects: {:?}", response);
+    ///         }
+    ///         Err(e) => {
+    ///             eprintln!("Error retrieving global objects: {:?}", e);
+    ///         }
     ///     }
-    ///     Err(e) => {
-    ///         eprintln!("Error retrieving global objects: {:?}", e);
-    ///     }
+    ///     Ok(())
     /// }
     /// ```
     pub async fn describe_global(&mut self) -> Result<DescribeGlobalResponse, Error> {
@@ -663,15 +785,22 @@ impl RestApi {
     /// # Examples
     ///
     /// ```rust
-    /// let mut client = Client::new();
-    /// client.set_client_id(&client_id);
-    /// client.set_client_secret(&client_secret);
-    /// client.login_with_credential(&username, &password).await?
-    /// let mut api = RestApi::new(client);
+    /// use rustsf::{Client, RestApi, Error};
     ///
-    /// let object_name = "Account";
-    /// let describe_response = api.describe(object_name).await?;
-    /// println!("{:?}", describe_response);
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///
+    ///     let mut api = RestApi::new(client);
+    ///    
+    ///     let object_name = "Account";
+    ///     match api.describe(object_name).await {
+    ///         Ok(response) => println!("Successfully retrieved object description: {:?}", response),
+    ///         Err(e) => println!("Error retrieving object description: {:?}", e),
+    ///     }
+    ///     Ok(())
+    /// }
     /// ```
     pub async fn describe(&mut self, object_name: &str) -> Result<DescribeResponse, Error> {
         let resource_url = format!("{}/sobjects/{}/describe", self.client.base_path()?, object_name);
@@ -681,361 +810,4 @@ impl RestApi {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use mockito::Server;
-    use serde_json::json;
-
-    fn create_test_rest_api(server_url: &str) -> RestApi {
-        let mut client = Client::new();
-        client.set_instance_url(server_url);
-        client.set_access_token(
-            "test_token".to_string(),
-            "9999999999000".to_string(),
-            "Bearer".to_string(),
-        );
-        client.set_version("v60.0");
-        RestApi::new(client)
-    }
-
-    #[test]
-    fn test_new() {
-        let client = Client::new();
-        let api = RestApi::new(client);
-        assert!(api.client.instance_url.is_none());
-    }
-
-    #[test]
-    fn test_base_path() {
-        let mut client = Client::new();
-        client.set_instance_url("https://na1.salesforce.com");
-        client.set_version("v60.0");
-        let api = RestApi::new(client);
-        assert_eq!(
-            api.client.base_path().unwrap(),
-            "https://na1.salesforce.com/services/data/v60.0"
-        );
-    }
-
-    #[test]
-    fn test_base_path_not_logged_in() {
-        let client = Client::new();
-        let api = RestApi::new(client);
-        let result = api.client.base_path();
-        assert!(result.is_err());
-        match result.unwrap_err() {
-            Error::NotLoggedIn => {}
-            e => panic!("Expected NotLoggedIn, got {:?}", e),
-        }
-    }
-
-    #[derive(Deserialize, Serialize)]
-    #[serde(rename_all = "PascalCase")]
-    struct Account {
-        id: String,
-        name: String,
-    }
-
-    #[tokio::test]
-    async fn test_query() {
-        let mut server = Server::new_async().await;
-        let mock = server
-            .mock("GET", "/services/data/v60.0/query/")
-            .match_query(mockito::Matcher::UrlEncoded(
-                "q".into(),
-                "SELECT Id FROM Account".into(),
-            ))
-            .with_status(200)
-            .with_header("content-type", "application/json")
-            .with_body(
-                json!({
-                    "totalSize": 1,
-                    "done": true,
-                    "records": []
-                })
-                .to_string(),
-            )
-            .create_async()
-            .await;
-
-        let mut api = create_test_rest_api(&server.url());
-        let res : QueryResponse<Account> = api.query("SELECT Id FROM Account").await.unwrap();
-        assert_eq!(res.total_size, 1);
-        assert_eq!(res.done, true);
-        assert!(res.records.is_empty());
-        mock.assert_async().await;
-    }
-
-    #[tokio::test]
-    async fn test_query_all() {
-        let mut server = Server::new_async().await;
-        let mock = server
-            .mock("GET", "/services/data/v60.0/queryAll/")
-            .match_query(mockito::Matcher::UrlEncoded(
-                "q".into(),
-                "SELECT Id FROM Account".into(),
-            ))
-            .with_status(200)
-            .with_header("content-type", "application/json")
-            .with_body(
-                json!({
-                    "totalSize": 0,
-                    "done": true,
-                    "records": []
-                })
-                .to_string(),
-            )
-            .create_async()
-            .await;
-
-        let mut api = create_test_rest_api(&server.url());
-        let res = api.query_all::<Account>("SELECT Id FROM Account").await.unwrap();
-        assert_eq!(res.done, true);
-        mock.assert_async().await;
-    }
-
-    #[tokio::test]
-    async fn test_query_more() {
-        let mut server = Server::new_async().await;
-        let mock = server
-            .mock("GET", "/services/data/v60.0/query/01gxx-2000")
-            .with_status(200)
-            .with_header("content-type", "application/json")
-            .with_body(
-                json!({
-                    "totalSize": 5000,
-                    "done": true,
-                    "records": []
-                })
-                .to_string(),
-            )
-            .create_async()
-            .await;
-
-        let mut api = create_test_rest_api(&server.url());
-        let res = api
-            .query_more::<Account>("services/data/v60.0/query/01gxx-2000")
-            .await
-            .unwrap();
-        assert_eq!(res.total_size, 5000);
-        mock.assert_async().await;
-    }
-
-    #[tokio::test]
-    async fn test_search_sosl() {
-        let mut server = Server::new_async().await;
-        let mock = server
-            .mock("GET", "/services/data/v60.0/search/")
-            .match_query(mockito::Matcher::UrlEncoded(
-                "q".into(),
-                "FIND {test}".into(),
-            ))
-            .with_status(200)
-            .with_header("content-type", "application/json")
-            .with_body(json!({"searchRecords": []}).to_string())
-            .create_async()
-            .await;
-
-        let mut api = create_test_rest_api(&server.url());
-        let res = api.search_sosl("FIND {test}").await.unwrap();
-        assert!(res.search_records.is_empty());
-        mock.assert_async().await;
-    }
-
-    #[tokio::test]
-    async fn test_versions() {
-        let mut server = Server::new_async().await;
-        let mock = server
-            .mock("GET", "/services/data/")
-            .with_status(200)
-            .with_header("content-type", "application/json")
-            .with_body(
-                json!([{
-                    "label": "Spring '24",
-                    "url": "/services/data/v60.0",
-                    "version": "60.0"
-                }])
-                .to_string(),
-            )
-            .create_async()
-            .await;
-
-        let mut api = create_test_rest_api(&server.url());
-        let res = api.versions().await.unwrap();
-        assert_eq!(res.len(), 1);
-        assert_eq!(res.iter().nth(0).unwrap().version, "60.0");
-        mock.assert_async().await;
-    }
-
-    #[tokio::test]
-    async fn test_versions_not_logged_in() {
-        let client = Client::new();
-        let mut api = RestApi::new(client);
-        let res = api.versions().await;
-        assert!(res.is_err());
-        match res.unwrap_err() {
-            Error::NotLoggedIn => {}
-            e => panic!("Expected NotLoggedIn, got {:?}", e),
-        }
-    }
-
-    #[tokio::test]
-    async fn test_find_by_id() {
-        let mut server = Server::new_async().await;
-        let mock = server
-            .mock("GET", "/services/data/v60.0/sobjects/Account/001xx000003DGbX")
-            .with_status(200)
-            .with_header("content-type", "application/json")
-            .with_body(json!({"Id": "001xx000003DGbX", "Name": "Acme"}).to_string())
-            .create_async()
-            .await;
-
-        let mut api = create_test_rest_api(&server.url());
-        let res = api.find_by_id::<Account>("Account", "001xx000003DGbX").await.unwrap();
-        assert_eq!(res.id, "001xx000003DGbX");
-        assert_eq!(res.name, "Acme");
-        mock.assert_async().await;
-    }
-
-    #[tokio::test]
-    async fn test_create() {
-        let mut server = Server::new_async().await;
-        let mock = server
-            .mock("POST", "/services/data/v60.0/sobjects/Account")
-            .with_status(201)
-            .with_header("content-type", "application/json")
-            .with_body(json!({"id": "001xx000003DGbX", "success": true}).to_string())
-            .create_async()
-            .await;
-
-        let mut api = create_test_rest_api(&server.url());
-        let mut params = std::collections::HashMap::new();
-        params.insert("Name", "Test Account");
-        let res = api.create("Account", params).await.unwrap();
-        assert_eq!(res.id, "001xx000003DGbX");
-        assert_eq!(res.success, true);
-        mock.assert_async().await;
-    }
-
-    #[tokio::test]
-    async fn test_update() {
-        let mut server = Server::new_async().await;
-        let mock = server
-            .mock("PATCH", "/services/data/v60.0/sobjects/Account/001xx")
-            .with_status(204)
-            .create_async()
-            .await;
-
-        let mut api = create_test_rest_api(&server.url());
-        let mut params = std::collections::HashMap::new();
-        params.insert("Name", "Updated");
-        let res = api.update("Account", "001xx", params).await;
-        assert!(res.is_ok());
-        mock.assert_async().await;
-    }
-
-    #[tokio::test]
-    async fn test_upsert() {
-        let mut server = Server::new_async().await;
-        let mock = server
-            .mock(
-                "PATCH",
-                "/services/data/v60.0/sobjects/Account/ExternalId__c/ext123",
-            )
-            .with_status(201)
-            .with_header("content-type", "application/json")
-            .with_body(json!({"id": "001xx", "success": true}).to_string())
-            .create_async()
-            .await;
-
-        let mut api = create_test_rest_api(&server.url());
-        let mut params = std::collections::HashMap::new();
-        params.insert("Name", "Upserted");
-        let res = api
-            .upsert("Account", "ExternalId__c", "ext123", params)
-            .await;
-        assert!(res.is_ok());
-        mock.assert_async().await;
-    }
-
-    #[tokio::test]
-    async fn test_destroy() {
-        let mut server = Server::new_async().await;
-        let mock = server
-            .mock("DELETE", "/services/data/v60.0/sobjects/Account/001xx")
-            .with_status(204)
-            .create_async()
-            .await;
-
-        let mut api = create_test_rest_api(&server.url());
-        let res = api.destroy("Account", "001xx").await;
-        assert!(res.is_ok());
-        mock.assert_async().await;
-    }
-
-    #[tokio::test]
-    async fn test_describe_global() {
-        let mut server = Server::new_async().await;
-        let mock = server
-            .mock("GET", "/services/data/v60.0/sobjects")
-            .with_status(200)
-            .with_header("content-type", "application/json")
-            .with_body(
-                json!({
-                    "encoding": "UTF-8",
-                    "maxBatchSize": 200,
-                    "sobjects": []
-                })
-                .to_string(),
-            )
-            .create_async()
-            .await;
-
-        let mut api = create_test_rest_api(&server.url());
-        let res = api.describe_global().await.unwrap();
-        assert_eq!(res.encoding, "UTF-8");
-        assert_eq!(res.max_batch_size, 200);
-        mock.assert_async().await;
-    }
-
-    #[tokio::test]
-    async fn test_describe() {
-        let mut server = Server::new_async().await;
-        let mock = server
-            .mock("GET", "/services/data/v60.0/sobjects/Account/describe")
-            .with_status(200)
-            .with_header("content-type", "application/json")
-            .with_body(
-                json!({
-                    "name": "Account",
-                    "childRelationships": [],
-                    "label": "Account",
-                    "labelPlural": "Accounts",
-                    "createable": true,
-                    "urls": {
-                        "compactLayouts" : "value",
-                        "rowTemplate" : "value",
-                        "approvalLayouts" : "value",
-                        "uiDetailTemplate" : "value",
-                        "uiEditTemplate" : "value",
-                        "defaultValues" : "value",
-                        "listviews" : "value",
-                        "describe" : "value",
-                        "uiNewRecord" : "value",
-                        "quickActions" : "value",
-                        "layouts" : "value",
-                        "sobject" : "value",
-                    },
-                })
-                .to_string(),
-            )
-            .create_async()
-            .await;
-
-        let mut api = create_test_rest_api(&server.url());
-        let res = api.describe("Account").await.unwrap();
-        assert_eq!(res.name, "Account");
-        assert_eq!(res.createable, true);
-        mock.assert_async().await;
-    }
-}
+mod test;

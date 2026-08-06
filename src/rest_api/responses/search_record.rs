@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::responses::sobject_attribute::SObjectAttribute;
+use crate::rest_api::responses::sobject_attribute::SObjectAttribute;
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]

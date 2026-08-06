@@ -1,8 +1,84 @@
-use std::fmt;
-use crate::responses::error_response::ErrorResponse;
-use crate::responses::token_error_response::TokenErrorResponse;
-use reqwest::header::InvalidHeaderValue;
+//! Error types for the rustsf crate.
+//!
+//! This module defines the `Error` enum which represents all possible errors
+//! that can occur when interacting with the Salesforce API, including:
+//! - Authentication errors (login, token)
+//! - HTTP communication errors
+//! - Response parsing errors
+//! - Configuration errors
+//! - API-specific error responses
 
+use std::fmt;
+use crate::rest_api::responses::error_response::ErrorResponse;
+use crate::client::responses::token_error_response::TokenErrorResponse;
+use reqwest::header::InvalidHeaderValue;
+use crate::client::responses::login_error_response::LoginErrorResponse;
+
+
+/// An enumeration representing various errors that can occur in the application.
+///
+/// This `Error` enum is marked as `#[non_exhaustive]`, which means new variants
+/// may be added in future releases. When matching against variants of this enum,
+/// an extra `_` wildcard arm must be added to account for any future additions.
+///
+/// # Variants
+///
+/// - `NotLoggedIn`
+///     - Returned when an operation is attempted without being logged in.
+///
+/// - `ConfigError(String)`
+///     - Represents an error related to configuration, carrying a descriptive
+///       message with the underlying cause of the error.
+///
+/// - `TokenError(TokenErrorResponse)`
+///     - Indicates an error related to token handling. Contains a `TokenErrorResponse`
+///       that provides additional details about the failure.
+///
+/// - `HttpError(reqwest::Error)`
+///     - Represents an HTTP-related error, wrapping the underlying `reqwest::Error`
+///       that provides details of the HTTP issue.
+///
+/// - `HeaderError(InvalidHeaderValue)`
+///     - Signifies an error related to HTTP headers. Wraps an `InvalidHeaderValue`
+///       to indicate issues with a header value.
+///
+/// - `DeserializeError(serde_json::Error)`
+///     - Occurs when deserialization of data fails, wrapping a `serde_json::Error`
+///       with more details about the failure during parsing.
+///
+/// - `ErrorResponses(Vec<ErrorResponse>)`
+///     - Contains a collection of error responses, represented as `Vec<ErrorResponse>`,
+///       encountered during an operation.
+///
+/// - `DescribeError(ErrorResponse)`
+///     - Represents an error that occurs during a describe operation. Wraps a single
+///       `ErrorResponse` detailing the problem.
+///
+/// - `LoginError(LoginErrorResponse)`
+///     - Returned when a login operation fails, containing a `LoginErrorResponse`
+///       for further details on the failure.
+///
+/// # Notes
+///
+/// When working with this enum, consider handling all variants appropriately or using
+/// the `_` wildcard to guard against future changes due to the `#[non_exhaustive]`
+/// attribute.
+///
+/// # Example
+///
+/// ```rust
+/// use rustsf::Error;
+///
+/// fn handle_error(err: Error) {
+///     match err {
+///         Error::NotLoggedIn => println!("User is not logged in!"),
+///         Error::ConfigError(message) => println!("Configuration error: {}", message),
+///         Error::TokenError(_) => println!("Token error occurred."),
+///         Error::HttpError(e) => println!("HTTP error: {}", e),
+///         _ => println!("An unknown error occurred."),
+///     }
+/// }
+/// ```
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum Error {
@@ -14,7 +90,7 @@ pub enum Error {
     DeserializeError(serde_json::Error),
     ErrorResponses(Vec<ErrorResponse>),
     DescribeError(ErrorResponse),
-    LoginError(ErrorResponse),
+    LoginError(LoginErrorResponse),
 }
 
 impl std::error::Error for Error {
@@ -137,10 +213,9 @@ mod tests {
 
     #[test]
     fn test_display_login_error() {
-        let resp = ErrorResponse {
+        let resp = LoginErrorResponse {
             message: "Login failed".to_string(),
             error_code: "LOGIN_FAILED".to_string(),
-            fields: None,
         };
         let err = Error::LoginError(resp);
         let display = format!("{}", err);

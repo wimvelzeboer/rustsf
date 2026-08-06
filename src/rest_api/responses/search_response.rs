@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::responses::search_record::SearchRecord;
+use super::search_record::SearchRecord;
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]

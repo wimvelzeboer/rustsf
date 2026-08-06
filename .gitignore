@@ -2,3 +2,7 @@
 **/*.rs.bk
 /examples/main.rs
 env.sh.idea/
+/.idea/.gitignore
+/.idea/modules.xml
+/.idea/rustsf.iml
+/.idea/vcs.xml

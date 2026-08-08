@@ -22,13 +22,13 @@ fn test_new() {
 }
 
 #[test]
-fn test_base_path() {
+fn test_base_version_path() {
     let mut client = Client::new();
     client.set_instance_url("https://na1.salesforce.com");
     client.set_version("v60.0");
     let api = BulkApiV2::new(client);
     assert_eq!(
-        api.client.base_path().unwrap(),
+        api.client.base_version_path().unwrap(),
         "https://na1.salesforce.com/services/data/v60.0"
     );
 }
@@ -37,7 +37,7 @@ fn test_base_path() {
 fn test_base_path_not_logged_in() {
     let client = Client::new();
     let api = BulkApiV2::new(client);
-    let result = api.client.base_path();
+    let result = api.client.base_version_path();
     assert!(result.is_err());
     match result.unwrap_err() {
         Error::NotLoggedIn => {}

@@ -33,7 +33,7 @@ async fn test_base_path() {
     client.set_version("v60.0");
     let api = RestApi::new(client);
     assert_eq!(
-        api.client.base_path().unwrap(),
+        api.client.base_version_path().unwrap(),
         "https://na1.salesforce.com/services/data/v60.0"
     );
 }
@@ -42,7 +42,7 @@ async fn test_base_path() {
 async fn test_base_path_not_logged_in() {
     let client = Client::new();
     let api = RestApi::new(client);
-    let result = api.client.base_path();
+    let result = api.client.base_version_path();
     assert!(result.is_err());
     match result.unwrap_err() {
         Error::NotLoggedIn => {}

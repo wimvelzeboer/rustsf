@@ -1,5 +1,4 @@
 use std::fmt::Debug;
-use serde::de::DeserializeOwned;
 use serde::Serialize;
 use crate::Error;
 use crate::rest_api::{handle_json_response, RestApi};

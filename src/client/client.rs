@@ -3,18 +3,19 @@
 //! This crate provides a client with several authentication types for the Salesforce APIs.
 //!
 
-use crate::client::responses::access_token::AccessToken;
-use crate::errors::Error;
 use super::responses::login_error_response::LoginErrorResponse;
+use crate::client::responses::access_token::AccessToken;
 use crate::client::responses::token_response::TokenResponse;
-use crate::client::xml::{extract_xml_tag, create_login_envelope};
-use reqwest::header::{HeaderMap, HeaderName, HeaderValue, AUTHORIZATION};
-use reqwest::{Response, Url};
+use crate::client::xml::{create_login_envelope, extract_xml_tag};
+use crate::errors::Error;
+use log::debug;
 use regex::Regex;
+use reqwest::header::{AUTHORIZATION, HeaderMap, HeaderName, HeaderValue};
+use reqwest::{Response, Url};
 use serde::Serialize;
 use std::collections::HashMap;
+use std::fmt::Debug;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-
 
 /// Represents a client used for interacting with a remote API.
 /// This struct encapsulates all the necessary data required to authenticate
@@ -232,6 +233,11 @@ impl Client {
         self.instance_url.as_deref()
     }
 
+    pub fn validated_base_url(&self) -> Result<String, Error> {
+        let instance_url = self.instance_url.as_ref().ok_or(Error::NotLoggedIn)?;
+        Ok(format!("{}/services/data/", instance_url))
+    }
+
     /// Retrieves a reference to the `AccessToken` if it exists.
     ///
     /// # Returns
@@ -354,7 +360,7 @@ impl Client {
     /// async fn main() -> Result<(), Error> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
-    ///     match client.base_path() {
+    ///     match client.base_version_path() {
     ///         Ok(base_path) => println!("Base path: {}", base_path),
     ///         Err(e) => println!("Error: {}", e),
     ///     }
@@ -365,9 +371,14 @@ impl Client {
     /// # Note
     ///
     /// This method assumes that `version` is a valid string and does not perform validation on it.
-    pub fn base_path(&self) -> Result<String, Error> {
+    pub fn base_version_path(&self) -> Result<String, Error> {
         let instance_url = self.instance_url.as_ref().ok_or(Error::NotLoggedIn)?;
         Ok(format!("{}/services/data/{}", instance_url, self.version))
+    }
+
+    pub fn base_path(&self) -> Result<String, Error> {
+        let instance_url = self.instance_url.as_ref().ok_or(Error::NotLoggedIn)?;
+        Ok(format!("{}/services/data/", instance_url))
     }
 
     // --- Setters ---
@@ -679,7 +690,7 @@ impl Client {
     ///   - `text().await` retrieves the response body as a `String`.
     ///   - `json().await` deserializes the response body into an error description.
     pub async fn get_identity(&mut self, identity_url: String) -> Result<String, Error> {
-        let res = self.get(identity_url, vec![]).await?;
+        let res = self.get(identity_url, vec![], vec![]).await?;
         if res.status().is_success() {
             Ok(res.text().await?)
         } else {
@@ -1034,7 +1045,10 @@ impl Client {
     /// - Ensure that the `sfdx_auth_url` provided is valid and has the expected format.
     /// - This function relies on async/await for non-blocking execution. It must be used within an
     ///   async runtime.
-    pub async fn login_with_sfdx_auth_url(&mut self, sfdx_auth_url: &str) -> Result<&mut Self, Error> {
+    pub async fn login_with_sfdx_auth_url(
+        &mut self,
+        sfdx_auth_url: &str,
+    ) -> Result<&mut Self, Error> {
         let re = Regex::new(r"force://([a-zA-Z0-9._-]+):([a-zA-Z0-9._-]*):([a-zA-Z0-9._-]+={0,2})@([a-zA-Z0-9._-]+)").unwrap();
         let caps = re.captures(&sfdx_auth_url).unwrap();
 
@@ -1161,7 +1175,10 @@ impl Client {
     ///
     /// # Deprecated
     /// The use of login by SOAP is deprecated by Salesforce and should be avoided
-    #[deprecated(since = "0.0.1", note = "The use of login by SOAP is deprecated by Salesforce and should be avoided")]
+    #[deprecated(
+        since = "0.0.1",
+        note = "The use of login by SOAP is deprecated by Salesforce and should be avoided"
+    )]
     pub async fn login_with_soap(
         &mut self,
         username: &str,
@@ -1181,9 +1198,8 @@ impl Client {
             let body_response = res.text().await?;
             self.access_token = match extract_xml_tag("sessionId", body_response.as_str()) {
                 Some(t) => {
-                    let issued_at =
-                        extract_xml_tag("serverTimestamp", body_response.as_str())
-                            .unwrap_or_default();
+                    let issued_at = extract_xml_tag("serverTimestamp", body_response.as_str())
+                        .unwrap_or_default();
                     Some(AccessToken {
                         value: t,
                         issued_at,
@@ -1671,7 +1687,8 @@ impl Client {
     ///     // Authentication logic...
     ///     let response = client.get(
     ///         "https://api.example.com/items".into(),
-    ///         vec![("key".into(), "value".into())]
+    ///         vec![("key".into(), "value".into())],
+    ///         vec![]
     ///     ).await;
     ///     match response {
     ///         Ok(res) => {
@@ -1688,13 +1705,16 @@ impl Client {
         &mut self,
         url: String,
         params: Vec<(String, String)>,
+        headers: Vec<(String, String)>,
     ) -> Result<Response, Error> {
         self.ensure_refresh().await?;
+
+        debug!("GET: {} params: {:?} headers: {:?}", url, params, headers);
 
         let res = self
             .http_client
             .get(url.as_str())
-            .headers(self.create_header(vec![])?)
+            .headers(self.create_header(headers)?)
             .query(&params)
             .send()
             .await?;
@@ -1754,6 +1774,8 @@ impl Client {
     ) -> Result<Response, Error> {
         self.ensure_refresh().await?;
 
+        debug!("GET: {} headers: {:?}", url, additional_headers);
+
         let mut headers = self.create_header(additional_headers)?;
         headers.remove("Accept");
         let res = self.http_client.get(url).headers(headers).send().await?;
@@ -1795,7 +1817,7 @@ impl Client {
     /// use rustsf::{Client, BulkApiV2, Error};
     /// use serde::{Deserialize, Serialize};
     ///
-    /// #[derive(Deserialize, Serialize)]
+    /// #[derive(Deserialize, Serialize, Debug)]
     /// #[serde(rename_all = "PascalCase")]
     /// struct Account {
     ///     id: String,
@@ -1822,13 +1844,15 @@ impl Client {
     ///
     /// Note: Ensure that the given `url` is valid and accessible and that proper error handling is implemented
     /// for production use.
-    pub async fn post<T: Serialize>(
+    pub async fn post<T: Serialize + Debug>(
         &mut self,
         url: String,
         params: T,
         headers: Vec<(String, String)>,
     ) -> Result<Response, Error> {
         self.ensure_refresh().await?;
+
+        debug!("POST: {} params: {:?} headers: {:?}", url, params, headers);
 
         let res = self
             .http_client
@@ -1894,6 +1918,8 @@ impl Client {
     ) -> Result<Response, Error> {
         self.ensure_refresh().await?;
 
+        debug!("POST: {} body: {:?} headers: {:?}", url, body, headers);
+
         let res = self
             .http_client
             .post(url)
@@ -1950,6 +1976,8 @@ impl Client {
     /// ```
     pub async fn put(&mut self, url: String, buffer: Vec<u8>) -> Result<Response, Error> {
         self.ensure_refresh().await?;
+
+        debug!("PUT: {} body: {:?}", url, buffer);
 
         let mut headers = self.create_header(vec![])?;
         headers.insert("Content-Type", HeaderValue::from_static("text/csv"));
@@ -2014,8 +2042,14 @@ impl Client {
     ///     Ok(())
     /// }
     /// ```
-    pub async fn patch<T: Serialize>(&mut self, url: String, params: T) -> Result<Response, Error> {
+    pub async fn patch<T: Serialize + Debug>(
+        &mut self,
+        url: String,
+        params: T,
+    ) -> Result<Response, Error> {
         self.ensure_refresh().await?;
+
+        debug!("PATCH: {} params: {:?}", url, params);
 
         let res = self
             .http_client
@@ -2073,6 +2107,8 @@ impl Client {
     ///
     pub async fn delete(&mut self, url: String) -> Result<Response, Error> {
         self.ensure_refresh().await?;
+
+        debug!("DELETE: {}", url);
 
         let res = self
             .http_client
@@ -2360,10 +2396,7 @@ mod tests {
         client.set_access_token("mytoken".to_string(), "".to_string(), "Bearer".to_string());
 
         let headers = client.create_header(vec![]).unwrap();
-        assert_eq!(
-            headers.get("Authorization").unwrap(),
-            "Bearer mytoken"
-        );
+        assert_eq!(headers.get("Authorization").unwrap(), "Bearer mytoken");
         assert_eq!(headers.get("Accept").unwrap(), "application/json");
     }
 
@@ -2426,7 +2459,7 @@ mod tests {
                     "signature": "sig",
                     "token_type": "Bearer",
                 })
-                .to_string(),
+                    .to_string(),
             )
             .create_async()
             .await;
@@ -2436,9 +2469,7 @@ mod tests {
         client.set_client_secret("csecret");
         client.set_login_endpoint(&server.url());
 
-        let result = client
-            .login_with_credential("user", "pass")
-            .await;
+        let result = client.login_with_credential("user", "pass").await;
 
         assert!(result.is_ok());
         assert_eq!(client.access_token_value(), Some("PowerLevel9000"));
@@ -2458,7 +2489,7 @@ mod tests {
                     "error": "invalid_grant",
                     "error_description": "authentication failure"
                 })
-                .to_string(),
+                    .to_string(),
             )
             .create_async()
             .await;
@@ -2468,9 +2499,7 @@ mod tests {
         client.set_client_secret("csecret");
         client.set_login_endpoint(&server.url());
 
-        let result = client
-            .login_with_credential("user", "pass")
-            .await;
+        let result = client.login_with_credential("user", "pass").await;
 
         assert!(result.is_err());
         match result.unwrap_err() {
@@ -2509,7 +2538,7 @@ mod tests {
                     "signature": "sig",
                     "token_type": "Bearer",
                 })
-                .to_string(),
+                    .to_string(),
             )
             .create_async()
             .await;
@@ -2538,7 +2567,7 @@ mod tests {
                     "error": "invalid_grant",
                     "error_description": "expired refresh token"
                 })
-                .to_string(),
+                    .to_string(),
             )
             .create_async()
             .await;
@@ -2581,9 +2610,7 @@ mod tests {
         client.set_login_endpoint(&server.url());
 
         #[allow(deprecated)]
-        let result = client
-            .login_with_soap("user", "pass")
-            .await;
+        let result = client.login_with_soap("user", "pass").await;
 
         assert!(result.is_ok());
         let token = client.access_token.unwrap();
@@ -2617,9 +2644,7 @@ mod tests {
         client.set_login_endpoint(&server.url());
 
         #[allow(deprecated)]
-        let result = client
-            .login_with_soap("user", "pass")
-            .await;
+        let result = client.login_with_soap("user", "pass").await;
 
         assert!(result.is_err());
         match result.unwrap_err() {
@@ -2646,7 +2671,9 @@ mod tests {
             .await;
 
         let mut client = create_test_client(&server.url());
-        let res = client.get(format!("{}/test", server.url()), vec![]).await;
+        let res = client
+            .get(format!("{}/test", server.url()), vec![], vec![])
+            .await;
         assert!(res.is_ok());
         assert_eq!(res.unwrap().status(), 200);
         mock.assert_async().await;
@@ -2685,9 +2712,7 @@ mod tests {
         let mut client = create_test_client(&server.url());
         let mut params = std::collections::HashMap::new();
         params.insert("Name", "Updated");
-        let res = client
-            .patch(format!("{}/test", server.url()), params)
-            .await;
+        let res = client.patch(format!("{}/test", server.url()), params).await;
         assert!(res.is_ok());
         assert_eq!(res.unwrap().status(), 204);
         mock.assert_async().await;
@@ -2760,10 +2785,7 @@ mod tests {
 
         let mut client = create_test_client(&server.url());
         let res = client
-            .get_raw(
-                &format!("{}/test", server.url()),
-                vec![],
-            )
+            .get_raw(&format!("{}/test", server.url()), vec![])
             .await;
         assert!(res.is_ok());
         mock.assert_async().await;
@@ -2886,7 +2908,7 @@ mod tests {
                     "message": "Session expired",
                     "errorCode": "INVALID_SESSION_ID"
                 })
-                .to_string(),
+                    .to_string(),
             )
             .create_async()
             .await;
@@ -2913,9 +2935,7 @@ mod tests {
             .await;
 
         let mut client = create_test_client(&server.url());
-        let res = client
-            .rest_get_fulluri("MyEndpoint?param=value")
-            .await;
+        let res = client.rest_get_fulluri("MyEndpoint?param=value").await;
         assert!(res.is_ok());
         mock.assert_async().await;
     }
@@ -2938,7 +2958,7 @@ mod tests {
                     "signature": "sig",
                     "token_type": "Bearer",
                 })
-                .to_string(),
+                    .to_string(),
             )
             .create_async()
             .await;

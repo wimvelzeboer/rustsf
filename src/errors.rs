@@ -8,12 +8,12 @@
 //! - Configuration errors
 //! - API-specific error responses
 
-use std::fmt;
-use crate::rest_api::responses::error_response::ErrorResponse;
-use crate::client::responses::token_error_response::TokenErrorResponse;
-use reqwest::header::InvalidHeaderValue;
 use crate::client::responses::login_error_response::LoginErrorResponse;
-
+use crate::client::responses::token_error_response::TokenErrorResponse;
+use crate::rest_api::responses::error_response::ErrorResponse;
+use reqwest::header::InvalidHeaderValue;
+use std::fmt;
+use crate::client::responses::response_error::ResponseError;
 
 /// An enumeration representing various errors that can occur in the application.
 ///
@@ -91,6 +91,7 @@ pub enum Error {
     ErrorResponses(Vec<ErrorResponse>),
     DescribeError(ErrorResponse),
     LoginError(LoginErrorResponse),
+    ResponseError(ResponseError),
 }
 
 impl std::error::Error for Error {
@@ -116,6 +117,7 @@ impl fmt::Display for Error {
             Error::ErrorResponses(resp) => write!(f, "Error response from Salesforce {:?}", resp),
             Error::DescribeError(resp) => write!(f, "Error completing describe {:?}", resp),
             Error::LoginError(resp) => write!(f, "Error logging in {:?}", resp),
+            Error::ResponseError(resp) => write!(f, "Error in Salesforce response {:?}", resp),
         }
     }
 }
@@ -163,7 +165,7 @@ mod tests {
         let token_err: TokenErrorResponse = serde_json::from_str(
             r#"{"error":"invalid_grant","error_description":"bad credentials"}"#,
         )
-        .unwrap();
+            .unwrap();
         let err = Error::TokenError(token_err);
         let display = format!("{}", err);
         assert!(display.contains("Invalid token"));

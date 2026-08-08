@@ -3,11 +3,11 @@
 
 ## RustSF
 
-Rust Salesforce API Client.
+Rust Salesforce API SDK
 
-This crate intends to support all Salesforce APIs.
+This crate to supports the Salesforce APIs:
 
-- Rest API
+- Rest API, <br/>version 67.0 (latest, Summer 2028), enabled via the feature `rest-api`
 - Bulk API v1
 - Bulk API v2
 - Streaming API
@@ -26,8 +26,13 @@ for the rustforce repo seemed to be abandoned. The [rustforce](https://github.co
 
 ## Usage
 
+```toml
+[dependencies]
+rustsf = { version = "0.0.2", features = ["rest-api"] }
+```
+
 ```rust
-use rustforce::{Client, RestApi, Error, QueryResponse};
+use rustsf::{Client, RestApi, Error, QueryResponse};
 use serde::Deserialize;
 use std::env;
 
@@ -89,7 +94,7 @@ client.set_access_token(token, issued_at, token_type);
 
 ```rust
 let mut client = Client::new();
-client.login_by_sfdx_auth_url("secret key").await?;
+client.login_by_sfdx_auth_url("sfdx auth url").await?;
 ```
 
 #### Refresh Token
@@ -103,38 +108,38 @@ client.refresh().await?;
 
 All REST API methods are accessed through `RestApi`:
 
+[Example:](./examples/rest_api/new.rs)
 ```rust
 let mut api = RestApi::new(client);
 ```
+
 
 #### Query Records
 
 ```rust
 let res: QueryResponse<Account> = api.query("SELECT Id, Name FROM Account").await?;
 ```
-
-#### Query All Records
-
-```rust
-let res: QueryResponse<Account> = api.query_all("SELECT Id, Name FROM Account").await?;
-```
+Examples: [Query](./examples/rest_api/query.rs), [Query All](./examples/rest_api/query_all.rs), [Query More](./examples/rest_api/query_more.rs) 
 
 #### Find By Id
-
+Finds a single record by its Salesforce ID. [Example:](./examples/rest_api/find_by_id.rs)
 ```rust
-let account: Account = api.find_by_id("Account", "{sf_id}").await?;
+let account = api.find_by_id::<Account>("Account", "{sf_id}").await?;
 ```
 
-#### Create Record
+
+#### CRUD Record operations
 
 ```rust
-use rustforce::CreateResponse;
+let account = Account { name: "Test Account"};
 
-let mut params = HashMap::new();
-params.insert("Name", "hello rust");
-let res: CreateResponse = api.create("Account", params).await?;
-println!("{:?}", res);
+let res = api.create_sobject("Account", account).await?;
+let res = api.create("Account", vec![account]).await?;
 ```
+
+Examples:
+- [Create a single record](./examples/rest_api/create.rs) or [Create a single record](./examples/rest_api/create_alt.rs)
+- [Create](./examples/rest_api/create.rs)
 
 #### Update Record
 
@@ -158,7 +163,7 @@ api.destroy("Account", "{sobject_id}").await?;
 #### Describe Global
 
 ```rust
-use rustforce::DescribeGlobalResponse;
+use rustsf::rest_api::responses::DescribeGlobalResponse;
 
 let res: DescribeGlobalResponse = api.describe_global().await?;
 ```

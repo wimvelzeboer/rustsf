@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 /// Represents a child relationship in a data model, typically used for deserialization of external data.
 ///
@@ -18,7 +18,7 @@ use serde::Deserialize;
 ///
 /// * `restricted_delete` - A boolean value indicating whether deletions of the child records in the relationship
 ///                          are restricted.
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ChildRelationship {
 

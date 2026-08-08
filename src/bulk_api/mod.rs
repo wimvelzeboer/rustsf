@@ -61,6 +61,7 @@ use crate::errors::Error;
 use reqwest::Response;
 use serde::Serialize;
 use std::collections::HashMap;
+use std::fmt::Debug;
 
 #[derive(Default)]
 pub struct BulkApi {
@@ -187,7 +188,7 @@ impl BulkApi {
     ///
     /// # See
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_jobs_create.htm>
-    pub async fn create_job<T: Serialize>(&mut self, params: T) -> Result<Response, Error> {
+    pub async fn create_job<T: Serialize + Debug>(&mut self, params: T) -> Result<Response, Error> {
         let resource_url = format!("{}/job", self.base_path()?);
         let headers = self.get_auth_headers()?;
         self.client.post(resource_url, params, headers).await

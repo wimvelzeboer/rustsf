@@ -5,6 +5,7 @@ use super::*;
 use serde::{Deserialize, Serialize};
 
 use serde_json::json;
+use crate::rest_api::responses::query_response::QueryResponse;
 
 fn create_test_rest_api(server_url: &str) -> RestApi {
     let mut client = Client::new();
@@ -181,7 +182,7 @@ async fn test_versions() {
         .await;
 
     let mut api = create_test_rest_api(&server.url());
-    let res = api.versions().await.unwrap();
+    let res = api.api_versions().await.unwrap();
     assert_eq!(res.len(), 1);
     assert_eq!(res.iter().nth(0).unwrap().version, "60.0");
     mock.assert_async().await;
@@ -191,7 +192,7 @@ async fn test_versions() {
 async fn test_versions_not_logged_in() {
     let client = Client::new();
     let mut api = RestApi::new(client);
-    let res = api.versions().await;
+    let res = api.api_versions().await;
     assert!(res.is_err());
     match res.unwrap_err() {
         Error::NotLoggedIn => {}
@@ -211,7 +212,7 @@ async fn test_find_by_id() {
         .await;
 
     let mut api = create_test_rest_api(&server.url());
-    let res = api.find_by_id::<Account>("Account", "001xx000003DGbX").await.unwrap();
+    let res = api.sobject_by_id::<Account>("Account", "001xx000003DGbX").await.unwrap();
     assert_eq!(res.id, "001xx000003DGbX");
     assert_eq!(res.name, "Acme");
     mock.assert_async().await;
@@ -231,7 +232,7 @@ async fn test_create() {
     let mut api = create_test_rest_api(&server.url());
     let mut params = std::collections::HashMap::new();
     params.insert("Name", "Test Account");
-    let res = api.create("Account", params).await.unwrap();
+    let res = api.create_sobject("Account", params).await.unwrap();
     assert_eq!(res.id, "001xx000003DGbX");
     assert_eq!(res.success, true);
     mock.assert_async().await;
@@ -353,7 +354,7 @@ async fn test_describe() {
         .await;
 
     let mut api = create_test_rest_api(&server.url());
-    let res = api.describe("Account").await.unwrap();
+    let res = api.describe_sobject("Account").await.unwrap();
     assert_eq!(res.name, "Account");
     assert_eq!(res.createable, true);
     mock.assert_async().await;

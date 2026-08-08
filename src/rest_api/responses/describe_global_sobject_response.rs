@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use serde::Deserialize;
 
 /// Represents the response structure for describing a global SObject in Salesforce.

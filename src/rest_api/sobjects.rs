@@ -42,14 +42,10 @@ impl RestApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, RestApi, Error};
-    /// use serde::{Deserialize, Serialize};
+    /// use rustsf::{Client, RestApi, Error, DefSObject};
     ///
-    /// #[derive(Deserialize, Serialize)]
-    /// #[serde(rename_all = "PascalCase")]
-    /// struct Account {
-    ///     name: String,
-    /// }
+    /// #[DefSObject(sobject_type = "Account", fields="system,type,name")]
+    /// struct Account { }
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Error> {
@@ -57,9 +53,9 @@ impl RestApi {
     ///     // Authentication logic...
     ///
     ///     let mut api = RestApi::new(client);
-    ///     let account = Account {
-    ///         name: "Example Account".to_string(),
-    ///     };
+    ///     let mut account = Account::new();
+    ///     account.name = Some("Example Account".to_string());
+    ///
     ///     match api.create_sobject("Account", account).await {
     ///         Ok(response) => println!("Record ID: {}", response.id),
     ///         Err(error) => println!("Error creating account: {:?}", error),
@@ -442,15 +438,10 @@ impl RestApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, RestApi, Error};
-    /// use serde::{Deserialize, Serialize};
+    /// use rustsf::{Client, RestApi, Error, DefSObject};
     ///
-    /// #[derive(Deserialize, Serialize)]
-    /// #[serde(rename_all = "PascalCase")]
-    /// struct Account {
-    ///     id: String,
-    ///     name: String,
-    /// }
+    /// #[DefSObject(sobject_type = "Account", fields="system,type,name")]
+    /// struct Account { }
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Error> {
@@ -460,7 +451,7 @@ impl RestApi {
     ///     let mut api = RestApi::new(client);
     ///
     ///     match api.sobject_by_id::<Account>("Account", "001D000000IqhSLIAZ").await {
-    ///         Ok(record) => println!("Account Name: {}", record.name),
+    ///         Ok(record) => println!("Account Name: {:?}", record.name),
     ///         Err(error) => println!("Error retrieving account: {:?}", error),
     ///     };
     ///     Ok(())
@@ -679,15 +670,11 @@ impl RestApi {
     ///
     /// # Example
     /// ```
-    /// use rustsf::{Client, RestApi, Error};
+    /// use rustsf::{Client, RestApi, Error, DefSObject};
     /// use serde::{Deserialize, Serialize};
     ///
-    /// #[derive(Deserialize, Serialize)]
-    /// #[serde(rename_all = "PascalCase")]
-    /// struct Account {
-    ///     id: String,
-    ///     name: String,
-    /// }
+    /// #[DefSObject(sobject_type = "Account", fields="system,type,name")]
+    /// struct Account { }
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Error> {
@@ -695,10 +682,10 @@ impl RestApi {
     ///     // Authentication logic...
     ///
     ///     let mut api = RestApi::new(client);
-    ///     let account = Account {
-    ///         id: "001D000000IqhSLIAZ".to_string(),
-    ///         name: "Updated Account Name".to_string(),
-    ///     };
+    ///     let mut account = Account::new();
+    ///     account.id = Some("001D000000IqhSLIAZ".to_string());
+    ///     account.name = Some("Updated Account Name".to_string());
+    ///
     ///     match api.update("Account", "001D000000IqhSLIAZ", account).await {
     ///         Ok(()) => println!("Account updated successfully."),
     ///         Err(error) => println!("Error updating account: {:?}", error),
@@ -756,15 +743,7 @@ impl RestApi {
     /// # Example
     /// ```rust
     /// use rustsf::{Client, RestApi, Error};
-    /// use serde::{Deserialize, Serialize};
     /// use serde_json::json;
-    ///
-    /// #[derive(Deserialize, Serialize)]
-    /// #[serde(rename_all = "PascalCase")]
-    /// struct Account {
-    ///     id: String,
-    ///     name: String,
-    /// }
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Error> {

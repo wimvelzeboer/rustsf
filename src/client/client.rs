@@ -1814,24 +1814,23 @@ impl Client {
     /// # Examples
     ///
     /// ```rust
-    /// use rustsf::{Client, BulkApiV2, Error};
+    /// use rustsf::{Client, BulkApiV2, Error, DefSObject};
     /// use serde::{Deserialize, Serialize};
     ///
-    /// #[derive(Deserialize, Serialize, Debug)]
-    /// #[serde(rename_all = "PascalCase")]
-    /// struct Account {
-    ///     id: String,
-    ///     name: String,
-    /// }
+    /// #[DefSObject(sobject_type = "Account", fields="system,type,name")]
+    /// struct Account {}
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Error> {
-    ///     let mut client = Client::new();
+    ///     use rustsf::primary_types::SObject;
+    /// let mut client = Client::new();
     ///     // Authentication logic...
     ///
     ///     let headers = vec![("Authorization".to_string(), "Bearer token".to_string())];
     ///     let url = "https://www.salesforce.com/api/v60.0".to_string();
-    ///     let acc = Account { id : "001xx000003DGbX".to_string(), name : "Test".to_string()};
+    ///     let mut acc = Account::new();
+    ///     acc.set_id("001xx000003DGbX".to_string());
+    ///     acc.name = Some("Test".to_string());
     ///
     ///     let response = client.post(url, acc, headers).await;
     ///     match response {
@@ -2016,24 +2015,20 @@ impl Client {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, Error};
+    /// use rustsf::{Client, Error, DefSObject};
     /// use serde::Serialize;
     ///
-    /// #[derive(Serialize)]
-    /// struct Account {
-    ///     id: String,
-    ///     name: String,
-    /// }
+    /// #[DefSObject(sobject_type = "Account", fields="name")]
+    /// struct Account { }
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Error> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///     let url = String::from("https://example.com/resource");
-    ///     let acc = Account {
-    ///         id: String::from("001D000000IqhSLIAZ"),
-    ///         name: String::from("Sample Account"),
-    ///     };
+    ///     let mut acc = Account::new();
+    ///     acc.id = Some(String::from("001D000000IqhSLIAZ"));
+    ///     acc.name = Some(String::from("Sample Account"));
     ///
     ///     match client.patch::<Account>(url, acc).await {
     ///         Ok(response) => println!("Request succeeded: {:?}", response),

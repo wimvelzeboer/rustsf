@@ -31,15 +31,10 @@ impl RestApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, RestApi, Error};
-    /// use serde::{Deserialize, Serialize};
+    /// use rustsf::{Client, RestApi, Error, DefSObject};
     ///
-    /// #[derive(Debug, Deserialize, Serialize)]
-    /// #[serde(rename_all = "PascalCase")]
-    /// struct Account {
-    ///     id: String,
-    ///     name: String,
-    /// }
+    /// #[DefSObject(sobject_type = "Account", fields="system,audit,type,name")]
+    /// struct Account { }
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Error> {
@@ -90,15 +85,10 @@ impl RestApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, RestApi, Error};
-    /// use serde::{Deserialize, Serialize};
+    /// use rustsf::{Client, RestApi, Error, DefSObject};
     ///
-    /// #[derive(Debug, Deserialize, Serialize)]
-    /// #[serde(rename_all = "PascalCase")]
-    /// struct Account {
-    ///     id: String,
-    ///     name: String,
-    /// }
+    /// #[DefSObject(sobject_type = "Account", fields="system,type,audit,name")]
+    /// struct Account { }
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Error> {
@@ -153,15 +143,10 @@ impl RestApi {
     ///
     /// # Examples
     /// ```rust
-    /// use rustsf::{Client, RestApi, Error};
-    /// use serde::{Deserialize, Serialize};
+    /// use rustsf::{Client, RestApi, Error, DefSObject};
     ///
-    /// #[derive(Debug, Deserialize, Serialize)]
-    /// #[serde(rename_all = "PascalCase")]
-    /// struct Account {
-    ///     id: String,
-    ///     name: String,
-    /// }
+    /// #[DefSObject(sobject_type = "Account", fields="system,type,audit,name")]
+    /// struct Account { }
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Error> {
@@ -229,15 +214,10 @@ impl RestApi {
     ///
     /// # Examples
     /// ```rust
-    /// use rustsf::{Client, RestApi, Error};
-    /// use serde::{Deserialize, Serialize};
+    /// use rustsf::{Client, RestApi, Error, DefSObject};
     ///
-    /// #[derive(Debug, Deserialize, Serialize)]
-    /// #[serde(rename_all = "PascalCase")]
-    /// struct Account {
-    ///     id: String,
-    ///     name: String,
-    /// }
+    /// #[DefSObject(sobject_type = "Account", fields="system,type,name")]
+    /// struct Account { }
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Error> {

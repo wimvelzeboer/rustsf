@@ -34,22 +34,18 @@ impl RestApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, RestApi, Error};
+    /// use rustsf::{Client, RestApi, Error, DefSObject};
     /// use rustsf::rest_api::responses::sobject_attribute::SObjectAttribute;
-    /// use serde::{Deserialize, Serialize};
     ///
-    /// #[derive(Deserialize, Serialize)]
-    /// #[serde(rename_all = "PascalCase")]
-    /// struct Account {
-    ///     attributes: SObjectAttribute,
-    ///     name: String,
-    /// }
+    /// #[DefSObject(sobject_type = "Account", fields="name")]
+    /// struct Account {}
     ///
     /// impl Account {
-    ///     pub fn new( name: String) -> Self {
+    ///     pub fn new_named( name: String) -> Self {
     ///         Self {
     ///             attributes: SObjectAttribute::new("Account"),
-    ///             name,
+    ///             name: Some(name),
+    ///             ..Default::default()
     ///         }
     ///     }
     /// }
@@ -62,14 +58,14 @@ impl RestApi {
     ///     let mut api = RestApi::new(client);
     ///
     ///     let accounts = vec![
-    ///         Account::new("Acme Inc".to_string()),
-    ///         Account::new("Acme Co".to_string()),
+    ///         Account::new_named("Acme Inc".to_string()),
+    ///         Account::new_named("Acme Co".to_string()),
     ///     ];
     ///
-    ///     let mut api = RestApi::new(client);
-    ///
-    ///     let res = api.create(accounts, true).await?;
-    ///     println!("{:?}", res);0
+    ///     match api.create(accounts, true).await {
+    ///         Ok(res) => println!("{:?}", res),
+    ///         Err(e) => println!("Failed {:?}", e),
+    ///     }
     ///     Ok(())
     /// }
     /// ```

@@ -212,7 +212,7 @@ async fn test_find_by_id() {
         .await;
 
     let mut api = create_test_rest_api(&server.url());
-    let res = api.sobject_by_id::<Account>("Account", "001xx000003DGbX").await.unwrap();
+    let res = api.fetch_by_id::<Account>("Account", "001xx000003DGbX").await.unwrap();
     assert_eq!(res.id, "001xx000003DGbX");
     assert_eq!(res.name, "Acme");
     mock.assert_async().await;
@@ -250,7 +250,7 @@ async fn test_update() {
     let mut api = create_test_rest_api(&server.url());
     let mut params = std::collections::HashMap::new();
     params.insert("Name", "Updated");
-    let res = api.update("Account", "001xx", params).await;
+    let res = api.update_sobject("Account", "001xx", params).await;
     assert!(res.is_ok());
     mock.assert_async().await;
 }
@@ -273,7 +273,7 @@ async fn test_upsert() {
     let mut params = std::collections::HashMap::new();
     params.insert("Name", "Upserted");
     let res = api
-        .upsert("Account", "ExternalId__c", "ext123", params)
+        .upsert_sobject("Account", "ExternalId__c", "ext123", params)
         .await;
     assert!(res.is_ok());
     mock.assert_async().await;
@@ -289,7 +289,7 @@ async fn test_destroy() {
         .await;
 
     let mut api = create_test_rest_api(&server.url());
-    let res = api.destroy("Account", "001xx").await;
+    let res = api.delete_sobject("Account", "001xx").await;
     assert!(res.is_ok());
     mock.assert_async().await;
 }

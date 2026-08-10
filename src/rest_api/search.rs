@@ -1,5 +1,12 @@
-//! Module containing all the Search SOSL query methods,
-//! by calling the Salesforce endpoint `/services/data/vXX.X/search/`.
+//! # Search SOSL API
+//!
+//! Module containing all the Search SOSL query methods
+//!
+//!  ## Supported Endpoints
+//! - **/services/data/vXX.X/search/**
+//!
+//! ## Methods
+//! - [**search_sosl**](crate::rest_api::RestApi#method.search_sosl), executes a SOSL query
 //!
 //! # See
 //! <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_search.htm>

@@ -1,3 +1,15 @@
+//! # User Password API
+//!
+//! Module containing all the User Password API operations.
+//!
+//! ## Supported Endpoints
+//! - **/services/data/vXX.X/sobjects/User/password**
+//!
+//! ## Methods
+//! - [user_password_expired](crate::rest_api::RestApi#method.user_password_expired), Checks if a password has expired.
+//! - [user_password_reset](crate::rest_api::RestApi#method.user_password_reset), Resets a password.
+//! - [user_password_set](crate::rest_api::RestApi#method.user_password_reset), Sets the password for a user.
+//!
 use std::collections::HashMap;
 use crate::client::responses::response_error::ResponseError;
 use crate::Error;
@@ -25,7 +37,7 @@ impl RestApi {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///     let mut api = RestApi::new(client);
-    ///     match api.user_password_expired("user_id").await? {
+    ///     match api.user_password_expired("user_id").await {
     ///         Ok(is_expired) => println!("The new password expired?: {}", is_expired),
     ///         Err(e) => println!("Failed to reset password: {}", e),
     ///     }
@@ -76,7 +88,7 @@ impl RestApi {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///     let mut api = RestApi::new(client);
-    ///     match api.user_password_reset("user_id").await? {
+    ///     match api.user_password_reset("user_id").await {
     ///         Ok(new_password) => println!("The new password is: {}", new_password),
     ///         Err(e) => println!("Failed to reset password: {}", e),
     ///     }
@@ -124,9 +136,9 @@ impl RestApi {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///     let mut api = RestApi::new(client);
-    ///     match api.user_password_set("user_id", "password").await? {
+    ///     match api.user_password_set("user_id", "password").await {
     ///         Ok(new_password) => println!("The new password is: {}", new_password),
-    ///         Err(e) => println!("Failed to reset password: {}", e),
+    ///         Err(e) => println!("Failed to reset password: {:?}", e),
     ///     }
     ///     Ok(())
     /// }

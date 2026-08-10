@@ -1,4 +1,16 @@
+//! # Services API
+//!
 //! Module for getting information about the Salesforce organization
+//!
+//! ## Supported Endpoints
+//! - **/services/data/vXX.X/limits**
+//! - **/services/data/vXX.X/resources**
+//! - **/services/data/vXX.X/versions**
+//!
+//! ## Methods
+//! - [**api_versions**](crate::rest_api::RestApi#method.api_versions), lists available REST API Versions
+//! - [**list_limits**](crate::rest_api::RestApi#method.list_limits), lists the limits of the Salesforce environment
+//! - [**list_resources**](crate::rest_api::RestApi#method.list_resources), list available REST Resources
 //!
 //! # See
 //! <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/using_resources_getting_info_about_my_org.htm>
@@ -64,7 +76,8 @@ impl RestApi {
     /// 4. Processes the response using the `handle_json_response` function to deserialize and return the parsed output.
     ///
     /// # See
-    /// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/dome_versions.htm>
+    /// - [VersionResponse]
+    /// - <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/dome_versions.htm>
     pub async fn api_versions(&mut self) -> Result<Vec<VersionResponse>, Error> {
         let url = self.client.base_path()?;
         let response = self.client.get(url, vec![], vec![]).await?;
@@ -119,11 +132,21 @@ impl RestApi {
     /// # Example
     ///
     /// ```rust
-    /// let mut client = ApiClient::new();
-    /// let resources: Hashmap<String, String> = client.list_resources().await;
-    /// match resources {
-    ///     Ok(data) => println!("Resources: {:?}", data),
-    ///     Err(e) => eprintln!("Failed to list resources: {}", e),
+    /// use rustsf::{Client, RestApi, Error};
+    ///use std::collections::HashMap;
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///
+    ///     let mut api = RestApi::new(client);
+    ///     let resources: HashMap<String, String> = api.list_resources().await?;
+    ///     match resources {
+    ///         Ok(data) => println!("Resources: {:?}", data),
+    ///         Err(e) => eprintln!("Failed to list resources: {}", e),
+    ///     }
+    ///     Ok(())
     /// }
     /// ```
     ///

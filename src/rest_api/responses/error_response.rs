@@ -8,31 +8,6 @@ use serde::{Deserialize, Serialize};
 /// * `error_code` - A `String` representing a specific code associated with the type of error that occurred.
 /// * `fields` - An optional vector of `String` values specifying the fields related to the error, if applicable.
 ///
-/// # Derived Traits
-///
-/// This struct derives the following traits:
-/// * `Default` - Provides a default implementation for the struct.
-/// * `Serialize` - Enables serialization of the struct into formats such as JSON.
-/// * `Deserialize` - Allows deserialization of the struct from formats such as JSON.
-/// * `Debug` - Provides formatting for debugging purposes.
-/// * `Clone` - Allows cloning of the struct to create a duplicate instance.
-///
-/// # Serde Attributes
-///
-/// * `rename_all = "camelCase"` - Ensures that the serialized and deserialized field names use camelCase formatting, conforming to common JSON naming conventions.
-///
-/// # Example
-/// ```
-/// use your_crate::ErrorResponse;
-///
-/// let error = ErrorResponse {
-///     message: "Invalid input".to_string(),
-///     error_code: "INVALID_INPUT".to_string(),
-///     fields: Some(vec!["username".to_string(), "password".to_string()]),
-/// };
-///
-/// println!("{:?}", error);
-/// ```
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ErrorResponse {

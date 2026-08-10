@@ -1,5 +1,16 @@
-//! Module containing all the SOQL query methods,
-//! by calling the Salesforce endpoints `/services/data/vXX.X/query` and `/services/data/vXX.X/queryAll`.
+//! # Query API
+//!
+//! Module containing methods for retrieving upto 2,000 records from Salesforce
+//!
+//! ## Supported Endpoints
+//! - **/services/data/vXX.X/query**
+//! - [**/services/data/vXX.X/queryAll**](crate::rest_api::query),
+//!
+    //! ## Methods
+//! - [**query**](crate::rest_api::RestApi#method.query), queries up to 2,000 records at a time.
+//! - [**query_more**](crate::rest_api::RestApi#method.query_more), queries another batch of records
+//! - [**query_all**](crate::rest_api::RestApi#method.query_all), queries up to 2,000 records at a time, includes soft deleted records.
+//! - [**query_all_more**](crate::rest_api::RestApi#method.query_all_more), queries another batch of records, including soft deleted records.
 //!
 //! # See
 //! <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_query.htm>

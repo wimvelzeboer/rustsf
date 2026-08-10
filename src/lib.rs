@@ -1,3 +1,15 @@
+//! # Salesforce SDK for Rust
+//!
+//! The Salesforce SDK for Rust is a comprehensive library that provides a high-level interface to
+//! the Salesforce APIs. It allows developers to interact with Salesforce data and metadata in a
+//! structured and idiomatic way, making it easier to manage and manipulate data.
+//!
+//! ## Features
+//!
+//! - [**Rest API**](crate::rest_api), version 67.0, Summer 2026
+//! - **Bulk API**: Provides access to the Salesforce Bulk API for uploading and downloading data in bulk.
+//! - **Bulk API v2**: Provides access to the Salesforce Bulk API v2 for uploading and downloading data in bulk.
+//!
 pub mod client;
 pub mod errors;
 pub mod rest_api;

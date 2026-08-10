@@ -1,3 +1,21 @@
+//! # Composite SObjects API
+//!
+//! The Composite SObjects API allows you to create multiple records in Salesforce
+//! using a single HTTP request. This can be useful for bulk operations, such as
+//! creating multiple accounts or contacts, up to 200 records, in a single API call.
+//!
+//! ## Supported Endpoints
+//! - [**/services/data/vXX.X/composite/sobjects**](crate::rest_api::composite),
+//!
+//! ## Methods
+//!
+//! - [**create**](crate::rest_api::RestApi#method.create), creates a batch of records in Salesforce using the Composite SObjects API.
+//! - [**sobject_by_ids**](crate::rest_api::RestApi#method.sobject_by_ids), retrieves multiple records from a Salesforce object by their IDs.
+//!
+//! # See
+//! <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_composite_sobjects_collections.htm>
+//!
+//!
 use std::fmt::Debug;
 use serde::Serialize;
 use crate::Error;

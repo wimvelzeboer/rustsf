@@ -3,12 +3,14 @@
 //! This crate provides a Rust client for interacting with the Salesforce REST API. It allows you to
 //! perform CRUD operations on Salesforce objects, query data, and more.
 //!
-//! ## Features
-//! - **Asynchronous** - All functions are asynchronous and return a `Future` that can be awaited.
-//! - **Error Handling** - All functions return `Result`s, allowing you to handle errors gracefully.
-//! - **Type-Safe** - All API endpoints are typed, ensuring that you are sending the correct data and
-//!   receiving the expected response.
+//! ## Supported Endpoint
 //!
+//! - [**/services/data/vXX.X/sobjects**](crate::rest_api::sobjects), CRUD operations on a single Salesforce object
+//! - [**/services/data/vXX.X/composite/sobjects**](crate::rest_api::composite), CRUD operations for up to 200 Salesforce objects
+//! - [**/services/data/vXX.X/search**](crate::rest_api::search), SOSL search operations on Salesforce objects
+//! - [**/services/data/vXX.X/services**](crate::rest_api::services), system information and metadata
+//! - [**/services/data/vXX.X/query**](crate::rest_api::query), retrieving up to 2,000 records
+//! - [**/services/data/vXX.X/userPassword**](crate::rest_api::user_password), user password authentication
 
 use crate::client::client::Client;
 use crate::errors::Error;

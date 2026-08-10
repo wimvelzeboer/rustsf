@@ -1,7 +1,24 @@
-//! Module containing all the sObject Basic Information
+//! # SObjects API
 //!
-//! Retrieves basic metadata for a specified SObjects, or creates a new record for the specified object,
-//! using the `/services/data/vXX.X/sobjects/*` endpoint.
+//! Module containing all the sObject Basic Information and CRUD operations on a single Salesforce object
+//!
+//! ## Supported Endpoints
+//! - **/services/data/vXX.X/sobjects/**
+//!
+//! ## Methods
+//! - [create_sobject](crate::rest_api::RestApi#method.create_sobject), Creates a new SObject record.
+//! - [update_sobject](crate::rest_api::RestApi#method.update_sobject), Updates a single SObject record.
+//! - [upsert_sobject](crate::rest_api::RestApi#method.upserts_sobject), Creates or updates a single SObject record.
+//! - [delete_sobject](crate::rest_api::RestApi#method.delete_sobject), Deletes a specific SObject record by its ID.
+//! - [describe](crate::rest_api::RestApi#method.describe), Basic information for a specified SObjectType.
+//! - [describe_sobject](crate::rest_api::RestApi#method.describe_sobject), Detailed information about a specific SObject.
+//! - [describe_global](crate::rest_api::RestApi#method.describe_global), Retrieves a list of all global SObjects.
+//! - [describe_global_modified](crate::rest_api::RestApi#method.describe_global_modified), Retrieves a list of all global SObjects modified since a given date.
+//! - [describe_global_unmodified](crate::rest_api::RestApi#method.describe_global_unmodified), Retrieves a list of all global SObjects not modified since a given date.
+
+//! - [fetch_by_id](crate::rest_api::RestApi#method.fetch_by_id), Retrieves a specific SObject record by its ID.
+//! - [sobject_get_deleted](crate::rest_api::RestApi#method.sobject_get_deleted), Retrieves a list of deleted SObjects.
+//! - [sobject_get_updated](crate::rest_api::RestApi#method.sobject_get_updated), Retrieves a list of updated SObjects.
 //!
 //! # See
 //! <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_sobject_basic_info.htm>
@@ -104,8 +121,18 @@ impl RestApi {
     ///
     /// # Examples
     /// ```rust
-    /// let describe_result = client.describe("Account").await?;
-    /// println!("Describe result: {:?}", describe_result);
+    /// use rustsf::{Client, RestApi, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///
+    ///     let mut api = RestApi::new(client);
+    ///     let describe_result = api.describe("Account").await?;
+    ///     println!("Describe result: {:?}", describe_result);
+    ///     Ok(())
+    /// }
     /// ```
     ///
     /// # Note
@@ -268,7 +295,7 @@ impl RestApi {
     ///
     ///     let mut api = RestApi::new(client);
     ///     let since = "Wed, 21 Oct 2015 07:28:00 GMT".to_string();
-    ///     match client.describe_global_modified(since).await {
+    ///     match api.describe_global_modified(since).await {
     ///         Ok(response) => println!("Retrieved modified sObjects: {:?}", response),
     ///         Err(err) => println!("Failed to retrieve modified sObjects: {:?}", err),
     ///     }
@@ -329,7 +356,7 @@ impl RestApi {
     ///
     ///     let mut api = RestApi::new(client);
     ///     let since = "Wed, 21 Oct 2015 07:28:00 GMT".to_string();
-    ///     match client.describe_global_modified(since).await {
+    ///     match api.describe_global_modified(since).await {
     ///         Ok(response) => println!("Retrieved modified sObjects: {:?}", response),
     ///         Err(err) => println!("Failed to retrieve modified sObjects: {:?}", err),
     ///     }
@@ -388,7 +415,7 @@ impl RestApi {
     ///
     ///     let mut api = RestApi::new(client);
     ///
-    ///     let result = api.destroy("Account", "001D000000IqhSLIAZ").await;
+    ///     let result = api.delete_sobject("Account", "001D000000IqhSLIAZ").await;
     ///
     ///     match result {
     ///         Ok(()) => println!("Record deleted successfully."),
@@ -406,7 +433,7 @@ impl RestApi {
     ///
     /// Ensure that the authenticated Salesforce client (`self.client`) has the necessary permissions
     /// to perform delete operations in the Salesforce org.
-    pub async fn destroy(&mut self, sobject_name: &str, id: &str) -> Result<(), Error> {
+    pub async fn delete_sobject(&mut self, sobject_name: &str, id: &str) -> Result<(), Error> {
         let resource_url = format!(
             "{}/sobjects/{}/{}",
             self.client.base_version_path()?,
@@ -450,7 +477,7 @@ impl RestApi {
     ///
     ///     let mut api = RestApi::new(client);
     ///
-    ///     match api.sobject_by_id::<Account>("Account", "001D000000IqhSLIAZ").await {
+    ///     match api.fetch_by_id::<Account>("Account", "001D000000IqhSLIAZ").await {
     ///         Ok(record) => println!("Account Name: {:?}", record.name),
     ///         Err(error) => println!("Error retrieving account: {:?}", error),
     ///     };
@@ -462,7 +489,7 @@ impl RestApi {
     /// This function depends on the client's `base_path()` method to obtain the base URL and the
     /// `get` method to perform the HTTP GET request. The response is then handled by the
     /// `handle_json_response` utility.
-    pub async fn sobject_by_id<T: DeserializeOwned>(
+    pub async fn fetch_by_id<T: DeserializeOwned>(
         &mut self,
         sobject_name: &str,
         id: &str,
@@ -527,7 +554,7 @@ impl RestApi {
     ///     let mut api = RestApi::new(client);
     ///     let start_date = "2023-01-01";
     ///     let end_date = "2023-01-31";
-    ///     let result = client.get_deleted("Account", start_date, end_date).await;
+    ///     let result = api.sobject_get_deleted("Account", start_date, end_date).await;
     ///
     ///     match result {
     ///         Ok(response) => {
@@ -612,7 +639,7 @@ impl RestApi {
     ///     let mut api = RestApi::new(client);
     ///     let start_date = "2023-01-01";
     ///     let end_date = "2023-01-31";
-    ///     let result = client.get_deleted("Account", start_date, end_date).await;
+    ///     let result = api.sobject_get_deleted("Account", start_date, end_date).await;
     ///
     ///     match result {
     ///         Ok(response) => {
@@ -686,7 +713,7 @@ impl RestApi {
     ///     account.id = Some("001D000000IqhSLIAZ".to_string());
     ///     account.name = Some("Updated Account Name".to_string());
     ///
-    ///     match api.update("Account", "001D000000IqhSLIAZ", account).await {
+    ///     match api.update_sobject("Account", "001D000000IqhSLIAZ", account).await {
     ///         Ok(()) => println!("Account updated successfully."),
     ///         Err(error) => println!("Error updating account: {:?}", error),
     ///     };
@@ -698,7 +725,7 @@ impl RestApi {
     /// - This function makes an asynchronous HTTP `PATCH` request to the Salesforce API.
     /// - It processes the response to ensure that no content (204 No Content) implies a successful update.
     ///
-    pub async fn update<T: Serialize + Debug>(
+    pub async fn update_sobject<T: Serialize + Debug>(
         &mut self,
         object_name: &str,
         id: &str,
@@ -757,7 +784,7 @@ impl RestApi {
     ///         "CustomField__c": "Value123"
     ///     });
     ///
-    ///     let result = api.upsert(
+    ///     let result = api.upsert_sobject(
     ///         "Account",
     ///         "CustomField__c",
     ///         "Value123",
@@ -771,7 +798,7 @@ impl RestApi {
     ///     Ok(())
     /// }
     /// ```
-    pub async fn upsert<T: Serialize + Debug>(
+    pub async fn upsert_sobject<T: Serialize + Debug>(
         &mut self,
         sobject_name: &str,
         key_name: &str,

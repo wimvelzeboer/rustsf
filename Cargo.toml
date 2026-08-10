@@ -18,7 +18,7 @@ rust-version = "1.93.0"
 rest-api = []
 
 [dependencies]
-rustsf_marcos = "0.0.1"
+rustsf_marcos = "0.0.2"
 reqwest = { version = "0.13.4", features = ["form", "json", "query"] }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"

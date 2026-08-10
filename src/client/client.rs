@@ -82,6 +82,8 @@ pub struct Client {
     pub(crate) refresh_token: Option<String>,
     pub(crate) version: String,
     pub(crate) secret_required: bool,
+    pub(crate) organisation_id: Option<String>,
+    pub(crate) user_id: Option<String>,
 }
 
 impl Default for Client {
@@ -130,6 +132,8 @@ impl Client {
             refresh_token: None,
             secret_required: true,
             version: "v60.0".to_string(),
+            organisation_id: None,
+            user_id: None,
         }
     }
 
@@ -698,6 +702,10 @@ impl Client {
         }
     }
 
+    pub fn get_user_id(&self) -> Option<String> {
+        self.user_id.clone()
+    }
+
     /// Asynchronously ensures that the access token is refreshed if it has expired or
     /// if it cannot be parsed for comparison.
     ///
@@ -864,6 +872,24 @@ impl Client {
     /// - The function assumes the existence of `get_refresh_params`, `set_access_token`,
     ///   and other utility methods within the struct to handle token management.
     pub async fn refresh(&mut self) -> Result<&mut Self, Error> {
+
+        /// Extracts the Salesforce organization id and user idL.
+        ///
+        /// Example: `https://login.salesforce.com/id/00D50000000IZ3ZEAW/00550000001fg5OAAQ`
+        fn extract_organisation_and_user_id(url: &str) -> Option<(String, String)> {
+            let path = url.split_once("/id/")?.1;
+            let mut parts = path.split('/');
+
+            let organisation_id = parts.next()?.trim();
+            let user_id = parts.next()?.trim();
+
+            if organisation_id.is_empty() || user_id.is_empty() {
+                return None;
+            }
+
+            Some((organisation_id.to_string(), user_id.to_string()))
+        }
+
         let token_url = format!("{}/services/oauth2/token", self.login_endpoint);
         let params = self.get_refresh_params();
 
@@ -888,6 +914,17 @@ impl Client {
         let token_type = response.token_type.unwrap_or_default();
         self.set_access_token(response.access_token, response.issued_at, token_type);
         self.instance_url = Some(response.instance_url);
+
+        match extract_organisation_and_user_id(response.id.as_str()) {
+            Some((org_id, user_id)) => {
+                self.organisation_id = Some(org_id);
+                self.user_id = Some(user_id);
+            }
+            None => {
+                log::warn!("Could not extract organisation and user ID from token response.");
+            }
+        }
+
         Ok(self)
     }
 
@@ -1079,11 +1116,36 @@ impl Client {
                 token_type: r.token_type.ok_or(Error::NotLoggedIn)?,
             });
             self.instance_url = Some(r.instance_url);
+
+            match self.extract_organisation_and_user_id(r.id.as_str()) {
+                Some((org_id, user_id)) => {
+                    self.organisation_id = Some(org_id);
+                    self.user_id = Some(user_id);
+                }
+                None => {
+                    log::warn!("Could not extract organisation and user ID from token response.");
+                }
+            }
+
             Ok(self)
         } else {
             let error_response = res.json().await?;
             Err(Error::TokenError(error_response))
         }
+    }
+
+    fn extract_organisation_and_user_id(&self, url: &str) -> Option<(String, String)> {
+        let path = url.split_once("/id/")?.1;
+        let mut parts = path.split('/');
+
+        let organisation_id = parts.next()?.trim();
+        let user_id = parts.next()?.trim();
+
+        if organisation_id.is_empty() || user_id.is_empty() {
+            return None;
+        }
+
+        Some((organisation_id.to_string(), user_id.to_string()))
     }
 
     /// Asynchronously performs a login process using a SOAP API and updates the client instance

@@ -138,7 +138,7 @@ let res = api.create("Account", vec![account]).await?;
 ```
 
 Examples:
-- [Create a single record](./examples/rest_api/create.rs) or [Create a single record](./examples/rest_api/create_alt.rs)
+- Create a single record [Simple example](./examples/rest_api/create.rs) or [Alternative example](./examples/rest_api/create_alt.rs)
 - [Create](./examples/rest_api/create.rs)
 
 #### Update Record

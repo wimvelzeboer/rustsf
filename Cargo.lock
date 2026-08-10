@@ -1233,9 +1233,9 @@ dependencies = [
 
 [[package]]
 name = "rustsf_marcos"
-version = "0.0.1"
+version = "0.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6562c6108c9763f9fb6eb889e8ed33cfaac4b2b5c11b1700fbdb724a739a4df9"
+checksum = "0ae26f69d0ae2a2d968192e54c1c9393500094c420866a9a7d5529f2abf91bb9"
 dependencies = [
  "proc-macro2",
  "quote",

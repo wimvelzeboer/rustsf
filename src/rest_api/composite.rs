@@ -18,7 +18,9 @@
 //!
 use std::fmt::Debug;
 use serde::Serialize;
+use crate::client::responses::response_error::ResponseError;
 use crate::Error;
+use crate::primary_types::SObject;
 use crate::rest_api::{handle_json_response, RestApi};
 use crate::rest_api::responses::sobject_create_response::SObjectCreateResponse;
 use crate::rest_api::responses::sobject_create_request::SObjectCreateRequest;
@@ -55,16 +57,11 @@ impl RestApi {
     /// use rustsf::rest_api::responses::sobject_attribute::SObjectAttribute;
     ///
     /// #[DefSObject(sobject_type = "Account", fields="name")]
-    /// struct Account {}
+    /// struct NewAccount {}
     ///
     /// impl Account {
-    ///     pub fn new_named( name: String) -> Self {
-    ///         Self {
-    ///             attributes: SObjectAttribute::new("Account"),
-    ///             name: Some(name),
-    ///             ..Default::default()
-    ///         }
-    ///     }
+    ///     pub fn set_name(&mut self name: String) -> &mut Self {
+    ///         self.name = Some(name);
     /// }
     ///
     /// #[tokio::main]
@@ -75,8 +72,8 @@ impl RestApi {
     ///     let mut api = RestApi::new(client);
     ///
     ///     let accounts = vec![
-    ///         Account::new_named("Acme Inc".to_string()),
-    ///         Account::new_named("Acme Co".to_string()),
+    ///         Account::new().set_name("Acme Inc".to_string()),
+    ///         Account::new().set_name("Acme Co".to_string()),
     ///     ];
     ///
     ///     match api.create(accounts, true).await {
@@ -89,15 +86,43 @@ impl RestApi {
     ///
     /// # See
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_composite_sobjects_collections_create.htm>
-    pub async fn create<T: Serialize + Debug>(
+    pub async fn create<T: Serialize + Debug + SObject + Clone>(
         &mut self,
-        records: Vec<T>,
+        records: &mut Vec<T>,
         all_or_none: bool
-    ) -> Result<Vec<SObjectCreateResponse>, Error> {        // todo - take a mutable reference to the records and update them with the id
+    ) -> Result<Vec<SObjectCreateResponse>, Error> {
+        if records.len() > 200 {
+            return Err(Error::ResponseError(ResponseError::new("Max 200 records per request".to_string())));
+        } else if records.len() == 0 {
+            return Ok(Vec::new());
+        }
+
+        // make sure the owner id field is set
+        for record in records.iter_mut() {
+            if record.get_owner_id().is_none() {
+                record.set_owner_id(self.client.get_user_id().as_deref().map(str::to_string).as_deref());
+            }
+        }
+
         let resource_url = format!("{}/composite/sobjects", self.client.base_version_path()?);
-        let body = SObjectCreateRequest::new(records, all_or_none);
+        let body = SObjectCreateRequest::new(records.clone(), all_or_none);
         let response = self.client.post(resource_url, body, vec![]).await?;
-        handle_json_response(response).await
+        let responses : Vec<SObjectCreateResponse> = handle_json_response(response).await?;
+
+        if responses.len() != records.len() {
+            return Err(
+                Error::ResponseError(
+                    ResponseError::new(
+                    format!("Expected the same amount of responses, send {}, response {}", responses.len(), records.len()))))
+        };
+
+        for i in 0..responses.len() {
+            let id = &responses.get(i).unwrap().id;
+            let record = records.iter_mut().nth(i).unwrap();
+            record.set_id(Some(id));
+        }
+
+        Ok(responses)
     }
        /*
     /// # See

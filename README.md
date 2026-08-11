@@ -7,7 +7,7 @@ Rust Salesforce API SDK
 
 This crate to supports the Salesforce APIs:
 
-- Rest API, <br/>version 67.0 (latest, Summer 2028), enabled via the feature `rest-api`
+- Rest API, <br/>version 67.0 (latest, Summer 2026), enabled via the feature `rest-api`
 - Bulk API v1
 - Bulk API v2
 - Streaming API

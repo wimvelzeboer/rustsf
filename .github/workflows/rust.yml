@@ -1,0 +1,74 @@
+name: Build and Test
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build
+      run: cargo build --verbose
+    - name: Run tests
+      run: cargo test --verbose --lib
+  
+  integration_tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: ["build"]
+    env:
+      SFDX_AUTH_URL: ${{ secrets.SFDX_AUTH_URL }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install Salesforce CLI with NPM
+        run: npm install @salesforce/cli --global
+
+      - name: Authorize with the Salesforce DevHub
+        env:
+          SFDX_AUTH_URL: ${{ secrets.SFDX_AUTH_URL }}
+        run: |
+          echo "${{ secrets.SFDX_AUTH_URL }}" | sf org login sfdx-url --alias DEVHUB --set-default-dev-hub --sfdx-url-stdin
+          
+      - name: Setup the config parameters needed
+        run: |
+          sf config set target-dev-hub DEVHUB --global      
+
+      - name: Create Salesforce Scratch Org
+        run: |
+          sf org create scratch \
+          --target-dev-hub DEVHUB \
+          --definition-file project-scratch-def.json \
+          --set-default \
+          --duration-days 1 \
+          --wait 10
+          --alias SCRATCH
+
+      - name: Fetch Authentication Token for Scratch Org
+        run: |
+          JSON=$(sf org auth show-sfdx-auth-url -o SCRATCH --no-prompt --json)
+          SCRATCH_AUTH_URL=$(echo "$JSON" | jq -r '.result.sfdxAuthUrl')
+          echo "SFDX_AUTH_URLCRATCH_AUTH_URL=$SCRATCH_AUTH_URL" >> $GITHUB_ENV
+
+      - name: Run REST API Integration Tests
+        run: |
+          cargo test --test rest_api_integration_test
+           
+    

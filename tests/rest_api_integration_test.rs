@@ -35,7 +35,7 @@ async fn create_fetch_delete_sobject() -> Result<()> {
 
     match client.fetch_by_id::<common::Account>("Account", &account.id().unwrap()).await {
         Ok(_) => panic!("Account record should have been deleted"),
-        Err(e) => (),  // fixme assert the right error message
+        Err(_) => (),  // fixme assert the right error message
     };
 
     Ok(())

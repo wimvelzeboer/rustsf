@@ -23,6 +23,7 @@
 //! # See
 //! <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_sobject_basic_info.htm>
 
+use std::collections::HashMap;
 use super::{RestApi, handle_empty_response, handle_json_response};
 use crate::Error;
 use crate::rest_api::responses::create_response::CreateResponse;
@@ -32,10 +33,12 @@ use crate::rest_api::responses::describe_sobject_result::DescribeSObjectResult;
 use crate::rest_api::responses::sobject_info::SObjectInfo;
 use crate::rest_api::responses::updated_sobjects_response::UpdatedSObjectsResponse;
 use reqwest::Response;
-use serde::Serialize;
+use serde::{Serialize};
 use serde::de::DeserializeOwned;
 use std::fmt::Debug;
+use serde_json::Value;
 use crate::primary_types::SObject;
+use crate::rest_api::responses::sobject_attribute::SObjectAttribute;
 
 impl RestApi {
     /// Creates a single new record in a Salesforce with the provided values.
@@ -75,7 +78,7 @@ impl RestApi {
     ///     account.name = Some("Example Account".to_string());
     ///
     ///     match api.create_sobject(account).await {
-    ///         Ok(record) => println!("Record ID: {}", record.id),
+    ///         Ok(record) => println!("Record ID: {:?}", record.id()),
     ///         Err(error) => println!("Error creating account: {:?}", error),
     ///     }
     ///     Ok(())
@@ -500,6 +503,9 @@ impl RestApi {
     /// This function depends on the client's `base_path()` method to obtain the base URL and the
     /// `get` method to perform the HTTP GET request. The response is then handled by the
     /// `handle_json_response` utility.
+    ///
+    /// # See
+    /// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_sobject_retrieve_get.htm>
     pub async fn fetch_by_id<T: DeserializeOwned>( // fixme rename into sobject_by_id
         &mut self,
         sobject_name: &str,
@@ -512,7 +518,16 @@ impl RestApi {
             id
         );
         let response = self.client.get(resource_url, vec![], vec![]).await?;
-        handle_json_response(response).await
+
+        // Adds the Attribute attribute to the response
+        let mut attr = SObjectAttribute::new(sobject_name);
+        attr.set_id(Some(id));
+        let json = serde_json::to_value(attr).map_err(Error::from)?;
+
+        let mut hm: HashMap<String, Value> = handle_json_response(response).await?;
+        hm.insert("attributes".to_string(), json);
+        let json = serde_json::to_value(hm).map_err(Error::from)?;
+        serde_json::from_value(json).map_err(Error::from)
     }
 
     /// sObject Get Deleted

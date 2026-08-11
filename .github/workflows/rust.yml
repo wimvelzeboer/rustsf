@@ -70,5 +70,9 @@ jobs:
       - name: Run REST API Integration Tests
         run: |
           cargo test --test rest_api_integration_test
-           
+
+      - name: Destroy Scratch Org
+        if: always()  # This step runs even if 'Run Tests' failed
+        run: |
+          sf org delete scratch --target-org SCRATCH --no-prompt
     

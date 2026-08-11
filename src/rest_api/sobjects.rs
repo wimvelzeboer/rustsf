@@ -23,6 +23,7 @@
 //! # See
 //! <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_sobject_basic_info.htm>
 
+use std::collections::HashMap;
 use super::{RestApi, handle_empty_response, handle_json_response};
 use crate::Error;
 use crate::rest_api::responses::create_response::CreateResponse;
@@ -32,9 +33,12 @@ use crate::rest_api::responses::describe_sobject_result::DescribeSObjectResult;
 use crate::rest_api::responses::sobject_info::SObjectInfo;
 use crate::rest_api::responses::updated_sobjects_response::UpdatedSObjectsResponse;
 use reqwest::Response;
-use serde::Serialize;
+use serde::{Serialize};
 use serde::de::DeserializeOwned;
 use std::fmt::Debug;
+use serde_json::Value;
+use crate::primary_types::SObject;
+use crate::rest_api::responses::sobject_attribute::SObjectAttribute;
 
 impl RestApi {
     /// Creates a single new record in a Salesforce with the provided values.
@@ -47,8 +51,8 @@ impl RestApi {
     /// - `params`: An instance of type `T` containing the details of the record to be created.
     ///
     /// # Returns
-    /// - `Result<CreateResponse, Error>`:
-    ///     - On success, returns a `CreateResponse` containing information about the created record, such as its ID.
+    /// - `Result<T, Error>`:
+    ///     - On success, returns the updated instance of type 'T' containing the Salesforce record id.
     ///     - On failure, returns an `Error` detailing what went wrong during the request.
     ///
     /// # Errors
@@ -73,8 +77,8 @@ impl RestApi {
     ///     let mut account = Account::new();
     ///     account.name = Some("Example Account".to_string());
     ///
-    ///     match api.create_sobject("Account", account).await {
-    ///         Ok(response) => println!("Record ID: {}", response.id),
+    ///     match api.create_sobject(account).await {
+    ///         Ok(record) => println!("Record ID: {:?}", record.id()),
     ///         Err(error) => println!("Error creating account: {:?}", error),
     ///     }
     ///     Ok(())
@@ -90,18 +94,28 @@ impl RestApi {
     ///
     /// # See
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_sobject_basic_info_post.htm>
-    pub async fn create_sobject<T: Serialize + Debug>(
+    pub async fn create_sobject<T: Serialize + Debug + SObject + Clone>(
         &mut self,
-        object_name: &str,
-        params: T,
-    ) -> Result<CreateResponse, Error> {
+        mut record: T,
+    ) -> Result<T, Error> {
+
+        // Set the owner_id attribute to the authenticated user's ID if its None
+        if record.get_owner_id().is_none() {
+            record.set_owner_id(self.client.get_user_id().as_deref().map(str::to_string).as_deref());
+        }
+
         let resource_url = format!(
             "{}/sobjects/{}",
             self.client.base_version_path()?,
-            object_name
+            record.get_sobject_type()
         );
-        let response = self.client.post(resource_url, params, vec![]).await?;
-        handle_json_response(response).await
+        let response = self.client.post(resource_url, record.clone(), vec![]).await?;
+        let response: CreateResponse = handle_json_response(response).await?;
+        if response.success {
+            record.set_id(Some(&response.id));
+        }
+        // Fixme - should we throw an error if the response is not success?
+        Ok(record)
     }
 
     /// Get Object Metadata Using sObject Basic Information
@@ -489,7 +503,10 @@ impl RestApi {
     /// This function depends on the client's `base_path()` method to obtain the base URL and the
     /// `get` method to perform the HTTP GET request. The response is then handled by the
     /// `handle_json_response` utility.
-    pub async fn fetch_by_id<T: DeserializeOwned>(
+    ///
+    /// # See
+    /// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_sobject_retrieve_get.htm>
+    pub async fn fetch_by_id<T: DeserializeOwned>( // fixme rename into sobject_by_id
         &mut self,
         sobject_name: &str,
         id: &str,
@@ -501,7 +518,16 @@ impl RestApi {
             id
         );
         let response = self.client.get(resource_url, vec![], vec![]).await?;
-        handle_json_response(response).await
+
+        // Adds the Attribute attribute to the response
+        let mut attr = SObjectAttribute::new(sobject_name);
+        attr.set_id(Some(id));
+        let json = serde_json::to_value(attr).map_err(Error::from)?;
+
+        let mut hm: HashMap<String, Value> = handle_json_response(response).await?;
+        hm.insert("attributes".to_string(), json);
+        let json = serde_json::to_value(hm).map_err(Error::from)?;
+        serde_json::from_value(json).map_err(Error::from)
     }
 
     /// sObject Get Deleted

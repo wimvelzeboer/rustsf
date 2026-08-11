@@ -3,7 +3,7 @@ name = "rustsf"
 version = "0.0.2"
 authors = ["Wim Velzeboer <wim@velzeboer.nl>"]
 license = "MIT"
-description = "Rust Salesforce API Client"
+description = "Salesforce SDK for Rust, supports the latest API version 67.0, (Summer 2026)"
 documentation = "https://docs.rs/rustsf"
 homepage = "https://github.com/wimvelzeboer/rustsf"
 repository = "https://github.com/wimvelzeboer/rustsf"
@@ -27,8 +27,8 @@ log = "0.4.33"
 regex = "1.13.1"
 compact_str = { version = "0.10.0", features = ["serde"] }
 chrono = { version = "0.4.45", features = ["serde"] }
-[dev-dependencies]
 
+[dev-dependencies]
 #cargo-license = "0.6.1"
 mockito = "1.7.2"
 tokio = { version = "1.53.1", features = ["rt-multi-thread", "macros"] }

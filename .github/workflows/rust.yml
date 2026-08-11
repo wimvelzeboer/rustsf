@@ -58,7 +58,7 @@ jobs:
           --definition-file project-scratch-def.json \
           --set-default \
           --duration-days 1 \
-          --wait 10
+          --wait 10 \
           --alias SCRATCH
 
       - name: Fetch Authentication Token for Scratch Org

@@ -141,8 +141,8 @@ impl RestApi {
     ///     // Authentication logic...
     ///
     ///     let mut api = RestApi::new(client);
-    ///     let resources: HashMap<String, String> = api.list_resources().await?;
-    ///     match resources {
+    ///     let res: Result<HashMap<String, String>, Error> = api.list_resources().await;
+    ///     match res {
     ///         Ok(data) => println!("Resources: {:?}", data),
     ///         Err(e) => eprintln!("Failed to list resources: {}", e),
     ///     }

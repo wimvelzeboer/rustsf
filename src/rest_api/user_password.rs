@@ -137,7 +137,7 @@ impl RestApi {
     ///     // Authentication logic...
     ///     let mut api = RestApi::new(client);
     ///     match api.user_password_set("user_id", "password").await {
-    ///         Ok(new_password) => println!("The new password is: {}", new_password),
+    ///         Ok(new_password) => println!("Successful password change"),
     ///         Err(e) => println!("Failed to reset password: {:?}", e),
     ///     }
     ///     Ok(())

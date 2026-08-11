@@ -1891,7 +1891,7 @@ impl Client {
     ///     let headers = vec![("Authorization".to_string(), "Bearer token".to_string())];
     ///     let url = "https://www.salesforce.com/api/v60.0".to_string();
     ///     let mut acc = Account::new();
-    ///     acc.set_id("001xx000003DGbX".to_string());
+    ///     acc.set_id(Some("001xx000003DGbX"));
     ///     acc.name = Some("Test".to_string());
     ///
     ///     let response = client.post(url, acc, headers).await;

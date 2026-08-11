@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use crate::primary_types::Id18;
 use super::sobject_error_response::SObjectErrorResponse;
 
 #[derive(Debug, Deserialize, Serialize)]

@@ -12,6 +12,6 @@ pub trait SObject {
     fn set_id(&mut self, id: Option<&str>) -> &mut Self;
 
     fn set_owner_id(&mut self, id: Option<&str>) -> &mut Self;
-
+    
     fn get_owner_id(&self) -> Option<&str>;
 }

@@ -232,7 +232,7 @@ async fn test_create() {
     let mut api = create_test_rest_api(&server.url());
     let mut params = std::collections::HashMap::new();
     params.insert("Name", "Test Account");
-    let res = api.create_sobject("Account", params).await.unwrap();
+    let res = api.create_sobject(params).await.unwrap();
     assert_eq!(res.id, "001xx000003DGbX");
     assert_eq!(res.success, true);
     mock.assert_async().await;

@@ -65,7 +65,7 @@ jobs:
         run: |
           JSON=$(sf org auth show-sfdx-auth-url -o SCRATCH --no-prompt --json)
           SCRATCH_AUTH_URL=$(echo "$JSON" | jq -r '.result.sfdxAuthUrl')
-          echo "SFDX_AUTH_URLCRATCH_AUTH_URL=$SCRATCH_AUTH_URL" >> $GITHUB_ENV
+          echo "SCRATCH_AUTH_URL=$SCRATCH_AUTH_URL" >> $GITHUB_ENV
 
       - name: Run REST API Integration Tests
         run: |

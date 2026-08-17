@@ -3,8 +3,8 @@ use crate::DefSObject;
 use crate as rustsf;
 use rustsf::tooling_api::primary_types::log_category_level::LogCategoryLevel;
 
-#[DefSObject(sobject_type = "ApexLog")]
-pub struct TraceFlag {
+#[DefSObject(sobject_type = "DebugLevel")]
+pub struct DebugLevel {
     #[serde(rename = "ApexCode")]
     pub apex_code: LogCategoryLevel,
 
@@ -14,32 +14,20 @@ pub struct TraceFlag {
     #[serde(rename = "Callout")]
     pub callout: LogCategoryLevel,
 
-    #[serde(rename = "DataAccess")]
-    pub data_access: LogCategoryLevel,
-
     #[serde(rename = "Database")]
     pub database: LogCategoryLevel,
 
-    #[serde(rename = "DebugLevelId")]
-    pub debug_level_id: String,
+    #[serde(rename = "DeveloperName")]
+    pub developer_name: String,
 
-    #[serde(rename = "ExpirationDate")]
-    pub expiration_date: String,
+    #[serde(rename = "Language")]
+    pub language: Option<String>,
 
-    #[serde(rename = "LogType")]
-    pub log_type: String,
-
-    #[serde(rename = "Nba")]
-    pub nba: LogCategoryLevel,
-
-    #[serde(rename = "StartDate")]
-    pub start_date: String,
+    #[serde(rename = "MasterLabel")]
+    pub master_label: String,
 
     #[serde(rename = "System")]
     pub system: LogCategoryLevel,
-
-    #[serde(rename = "TracedEntityId")]
-    pub traced_entity_id: String,
 
     #[serde(rename = "Validation")]
     pub validation: LogCategoryLevel,
@@ -47,33 +35,23 @@ pub struct TraceFlag {
     #[serde(rename = "Visualforce")]
     pub visualforce: LogCategoryLevel,
 
-    #[serde(rename = "Wave")]
-    pub wave: LogCategoryLevel,
-
     #[serde(rename = "Workflow")]
     pub workflow: LogCategoryLevel,
 }
 
-pub const SOBJECT_NAME: &'static str = "TraceFlag";
+pub const SOBJECT_NAME: &'static str = "DebugLevel";
 
 pub const FIELD_NAMES: &'static [&'static str] = &[
     "ApexCode",
     "ApexProfiling",
     "Callout",
-    "CreatedById",
-    "CreatedDate",
-    "DataAccess",
     "Database",
-    "DebugLevelId",
-    "ExpirationDate",
+    "DeveloperName",
     "Id",
-    "LogType",
-    "Nba",
-    "StartDate",
+    "Language",
+    "MasterLabel",
     "System",
-    "TracedEntityId",
     "Validation",
     "Visualforce",
-    "Wave",
     "Workflow",
 ];

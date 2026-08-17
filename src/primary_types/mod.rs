@@ -10,8 +10,10 @@ pub trait SObject {
     fn get_sobject_type(&self) -> &str;
 
     fn set_id(&mut self, id: Option<&str>) -> &mut Self;
+}
 
+pub trait SObjectOwner {
     fn set_owner_id(&mut self, id: Option<&str>) -> &mut Self;
-    
+
     fn get_owner_id(&self) -> Option<&str>;
 }

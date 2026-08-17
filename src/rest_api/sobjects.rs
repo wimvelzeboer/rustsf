@@ -37,7 +37,7 @@ use serde::{Serialize};
 use serde::de::DeserializeOwned;
 use std::fmt::Debug;
 use serde_json::Value;
-use crate::primary_types::SObject;
+use crate::primary_types::{SObject, SObjectOwner};
 use crate::rest_api::responses::sobject_attribute::SObjectAttribute;
 
 impl RestApi {
@@ -94,7 +94,7 @@ impl RestApi {
     ///
     /// # See
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_sobject_basic_info_post.htm>
-    pub async fn create_sobject<T: Serialize + Debug + SObject + Clone>(
+    pub async fn create_sobject<T: Serialize + Debug + SObject + SObjectOwner + Clone>(
         &mut self,
         mut record: T,
     ) -> Result<T, Error> {
@@ -754,7 +754,7 @@ impl RestApi {
     pub async fn update_sobject<T: Serialize + Debug>(
         &mut self,
         object_name: &str,
-        id: &str,
+        id: &str, // Fixme get this from the object itself
         params: T,
     ) -> Result<(), Error> {
         let resource_url = format!(

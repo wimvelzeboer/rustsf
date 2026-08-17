@@ -1,6 +1,6 @@
 [package]
 name = "rustsf"
-version = "0.0.2"
+version = "0.0.4"
 authors = ["Wim Velzeboer <wim@velzeboer.nl>"]
 license = "MIT"
 description = "Salesforce SDK for Rust, supports the latest API version 67.0, (Summer 2026)"
@@ -20,7 +20,7 @@ tooling-api = []
 default = ["rest-api"]
 
 [dependencies]
-rustsf_marcos = "0.0.2"
+rustsf_marcos = "0.0.4"
 reqwest = { version = "0.13.4", features = ["form", "json", "query"] }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"

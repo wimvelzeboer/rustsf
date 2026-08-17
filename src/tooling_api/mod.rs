@@ -1,13 +1,14 @@
 use crate::Client;
 use crate::errors::Error;
-use crate::primary_types::SObject;
 use crate::rest_api::responses::error_response::ErrorResponse;
 use crate::rest_api::responses::query_response::QueryResponse;
 use crate::tooling_api::responses::execute_anonymous_result::ExecuteAnonymousResult;
+use crate::tooling_api::responses::create_result::CreateResult;
 use reqwest::Response;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
+use crate::primary_types::SObject;
 
 pub mod responses;
 pub mod schema;
@@ -191,9 +192,8 @@ impl ToolingApi {
             schema::trace_flag::SOBJECT_NAME,
             user_id
         ))
-        .await {
+            .await {
             Ok(query_result) => {
-                println!("query result {:?}", query_result);
                 let mut records = Vec::new();
                 for record in query_result.records {
                     records.push(serde_json::from_value::<schema::trace_flag::TraceFlag>(record)?);
@@ -202,6 +202,134 @@ impl ToolingApi {
             },
             Err(error) => Err(error),
         }
+    }
+
+    /// Create a new trace flag.
+    ///
+    /// Uses `POST /services/data/{version}/tooling/sobjects/TraceFlag/`.
+    ///
+    /// # Example
+    /// ```rust
+    /// use rustsf::{Client, ToolingApi, Error, DefSObject};
+    /// use rustsf::tooling_api::schema::trace_flag::TraceFlag;
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let client = Client::new();
+    ///     // Authentication logic...
+    ///
+    ///     let mut api = ToolingApi::new(client);
+    ///     let debug_level = api.get_debug_level("MyDebugLevel").await?;
+    ///     let debug_level_id = debug_level.first().unwrap().id.as_ref().unwrap().to_string();
+    ///
+    ///     let mut trace_flag = TraceFlag::new();
+    ///     trace_flag.traced_entity_id = user_id;
+    ///     trace_flag.debug_level_id = debug_level_id;
+    ///     trace_flag.log_type = "DEVELOPER_LOG".to_string();
+    ///     trace_flag.expiration_date = "2026-08-17T23:59:59.000+0000".to_string();
+    ///
+    ///     let response = api.create_trace_flag(trace_flag).await?;
+    ///     println!("Apex trace flag: {:?}", response),
+    ///     Ok(())
+    /// }
+    /// ```
+    pub async fn create_trace_flag<T: Serialize + std::fmt::Debug + SObject + Clone>(
+        &mut self,
+        mut record: T,
+    ) -> Result<T, Error> {
+        match self.create("TraceFlag", record.clone()).await {
+            Ok(response) => {
+                let result = serde_json::from_value::<CreateResult>(response)?;
+                if result.success {
+                    record.set_id(Some(&result.id));
+                }
+                Ok(record)
+            },
+            Err(error) => return Err(error),
+        }
+    }
+
+    /// Update an existing trace flag.
+    ///
+    /// Uses `PATCH /services/data/{version}/tooling/sobjects/TraceFlag/{id}`.
+    pub async fn update_trace_flag<T: Serialize + std::fmt::Debug>(
+        &mut self,
+        id: &str, // fixme get this from the object itself
+        params: T,
+    ) -> Result<(), Error> {
+        self.update("TraceFlag", id, params).await
+    }
+
+    /// Query for a debug level by its DeveloperName.
+    ///
+    /// Queries `SELECT Id,... FROM DebugLevel WHERE DeveloperName = '{name}'`.
+    ///
+    /// # Example
+    /// ```rust
+    /// use rustsf::{Client, ToolingApi, Error, DefSObject};
+    /// use rustsf::tooling_api::schema::debug_level::DebugLevel;
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let client = Client::new();
+    ///     // Authentication logic...
+    ///
+    ///     let mut api = ToolingApi::new(client);
+    ///     let response: Vec<DebugLevel> = api.get_debug_level("SFDC_DevConsole").await?;
+    ///     println!("Debug Level: {:?}", response),
+    ///     Ok(())
+    /// }
+    /// ```
+    pub async fn get_debug_level(&mut self, developer_name: &str) -> Result<Vec<schema::debug_level::DebugLevel>, Error> {
+        match self.query(&format!(
+            "SELECT {} FROM {} WHERE DeveloperName = '{}'",
+            schema::debug_level::FIELD_NAMES.join(","),
+            schema::debug_level::SOBJECT_NAME,
+            developer_name
+        ))
+            .await {
+            Ok(result) => {
+                let mut records = Vec::new();
+                for record in result.records {
+                    records.push(serde_json::from_value::<schema::debug_level::DebugLevel>(record)?);
+                }
+                Ok(records)
+            },
+            Err(error) => Err(error),
+        }
+    }
+
+    /// Create a new debug level.
+    ///
+    /// Uses `POST /services/data/{version}/tooling/sobjects/DebugLevel/`.
+    ///
+    /// # Examples
+    /// ```rust
+    /// use rustsf::{Client, ToolingApi, Error, DefSObject};
+    /// use std::collections::HashMap;
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let client = Client::new();
+    ///     // Authentication logic...
+    ///
+    ///     let mut api = ToolingApi::new(client);
+    ///
+    ///     let mut params = HashMap::new();
+    ///     params.insert("DeveloperName", "SFDataloaderDebug");
+    ///     params.insert("MasterLabel", "SFDataloaderDebug");
+    ///     params.insert("ApexCode", "FINEST");
+    ///     params.insert("Visualforce", "NONE");
+    ///     let response = tooling.create_debug_level(params).await?;
+    ///     println!("Debug Level: {:?}", response),
+    ///     Ok(())
+    /// }
+    /// ```
+    pub async fn create_debug_level<T: Serialize + std::fmt::Debug>(
+        &mut self,
+        params: T,
+    ) -> Result<Value, Error> {
+        self.create("DebugLevel", params).await
     }
 
     // ── Generic Tooling CRUD ────────────────────────────────────────────

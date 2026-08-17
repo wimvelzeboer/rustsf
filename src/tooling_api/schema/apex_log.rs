@@ -18,7 +18,7 @@ pub struct ApexLog {
 
     /// The length of the log file
     #[serde(rename = "LogLength")]
-    pub log_Length: u32,
+    pub log_length: u32,
 
     /// The user ID of the user who created the log entry.
     #[serde(rename = "LogUserId")]

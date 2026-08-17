@@ -8,7 +8,7 @@ pub async fn get_rest_api_client() -> Result<RestApi> {
     Ok(RestApi::new(client))
 }
 
-#[DefSObject(sobject_type = "Account", fields="name")]
+#[DefSObject(sobject_type = "Account", fields="name,owner")]
 pub struct Account {
 
 }

@@ -52,7 +52,7 @@ async fn test_base_path_not_logged_in() {
     }
 }
 
-#[DefSObject(sobject_type = "Account", fields="name")]
+#[DefSObject(sobject_type = "Account", fields="name,owner")]
 struct Account { }
 
 impl Account {
@@ -238,7 +238,7 @@ async fn test_create() {
         .await;
 
     let mut api = create_test_rest_api(&server.url());
-    let mut account = Account::new().set_name("Test Account".to_string());
+    let account = Account::new().set_name("Test Account".to_string());
 
     let account = api.create_sobject(account).await.unwrap();
     assert_eq!(account.id(), Some("001xx000003DGbX"));

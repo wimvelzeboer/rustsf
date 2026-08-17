@@ -21,7 +21,7 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use crate::client::responses::response_error::ResponseError;
 use crate::Error;
-use crate::primary_types::SObject;
+use crate::primary_types::{SObject, SObjectOwner};
 use crate::rest_api::{handle_json_response, RestApi};
 use crate::rest_api::responses::sobject_create_response::SObjectCreateResponse;
 use crate::rest_api::responses::sobject_create_request::SObjectCreateRequest;
@@ -96,7 +96,7 @@ impl RestApi {
     ///
     /// # See
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_composite_sobjects_collections_create.htm>
-    pub async fn create<T: Serialize + Debug + SObject + Clone>(
+    pub async fn create<T: Serialize + Debug + SObject + SObjectOwner + Clone>(
         &mut self,
         records: &mut Vec<T>,
         all_or_none: bool

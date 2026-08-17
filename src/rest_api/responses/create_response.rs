@@ -25,6 +25,7 @@ use serde::Deserialize;
 pub struct CreateResponse {
     pub id: String,
     pub success: bool,
+    // fixme - aren't there more fields? similar to tool api CreateResult?
 }
 
 #[cfg(test)]

@@ -7,19 +7,37 @@
 //! ## Features
 //!
 //! - [**Rest API**](crate::rest_api), version 67.0, Summer 2026
-//! - **Bulk API**: Provides access to the Salesforce Bulk API for uploading and downloading data in bulk.
-//! - **Bulk API v2**: Provides access to the Salesforce Bulk API v2 for uploading and downloading data in bulk.
+//! - [**Tooling API**](crate::tooling_api), version 67.0, Summer 2026
 //!
+//! ## Installation
+//!
+//! Add the following to your `Cargo.toml`:
+//!
+//! ```toml
+//! [dependencies]
+//! rustsf = { version = "0.0.2", features = ["rest-api", "tooling-api"] }
+//!```
 pub mod client;
 pub mod errors;
+
+#[cfg(feature = "rest-api")]
 pub mod rest_api;
+
+#[cfg(feature = "tooling-api")]
+pub mod tooling_api;
 
 pub mod bulk_api;
 pub mod bulk_api_v2;
 pub mod primary_types;
 
 pub use client::client::Client;
+
+#[cfg(feature = "rest-api")]
 pub use rest_api::RestApi;
+
+#[cfg(feature = "tooling-api")]
+pub use tooling_api::ToolingApi;
+
 pub use bulk_api::BulkApi;
 pub use bulk_api_v2::BulkApiV2;
 pub use errors::Error;

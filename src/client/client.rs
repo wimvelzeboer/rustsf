@@ -702,8 +702,8 @@ impl Client {
         }
     }
 
-    pub fn get_user_id(&self) -> Option<String> {
-        self.user_id.clone()
+    pub fn get_user_id(&self) -> Option<&str> {
+        self.user_id.as_deref()
     }
 
     /// Asynchronously ensures that the access token is refreshed if it has expired or

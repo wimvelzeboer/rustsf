@@ -16,6 +16,8 @@ rust-version = "1.93.0"
 [features]
 ## Enable Salesforce REST API v67.0 (Summer 2026)
 rest-api = []
+tooling-api = []
+default = ["rest-api"]
 
 [dependencies]
 rustsf_marcos = "0.0.2"

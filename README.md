@@ -5,15 +5,19 @@
 
 Rust Salesforce API SDK
 
-This crate to supports the Salesforce APIs:
+This crate to supports the Salesforce APIs with the latest version 67.0 (Summer 2026)
 
-- Rest API, <br/>version 67.0 (latest, Summer 2026), enabled via the feature `rest-api`
+- Rest API, enabled via the feature `rest-api`
+- Tooling API, enabled via the feature `tooling-api`
+
+It also supports the following, but they are still a work in progress:
+
+This crate to supports the Salesforce APIs:
 - Bulk API v1
 - Bulk API v2
 - Streaming API
 
 These APIs are not yet implemented, but high on the list. If you are interested in contributing, or want to speed up the development, please go to Discussions and leave a message. 
-- Tooling API
 - Metadata API
 - CPQ API
 - Heroku Platform API
@@ -28,7 +32,7 @@ for the rustforce repo seemed to be abandoned. The [rustforce](https://github.co
 
 ```toml
 [dependencies]
-rustsf = { version = "0.0.2", features = ["rest-api"] }
+rustsf = { version = "0.0.2", features = ["rest-api", "tooling-api"] }
 ```
 
 ```rust

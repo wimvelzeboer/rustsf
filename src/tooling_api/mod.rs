@@ -11,6 +11,7 @@ use serde_json::Value;
 
 pub mod responses;
 pub mod schema;
+pub mod primary_types;
 
 /// Client for the Salesforce Tooling API.
 ///

@@ -1,14 +1,15 @@
 use crate::DefSObject;
 
 use crate as rustsf;
+use rustsf::tooling_api::primary_types::log_category_level::LogCategoryLevel;
 
 #[DefSObject(sobject_type = "ApexLog")]
 pub struct TraceFlag {
     #[serde(rename = "ApexCode")]
-    pub apex_code: String,
+    pub apex_code: LogCategoryLevel,
 
     #[serde(rename = "ApexProfiling")]
-    pub apex_profiling: String,
+    pub apex_profiling: LogCategoryLevel,
 
     #[serde(rename = "Callout")]
     pub callout: String,
@@ -20,10 +21,10 @@ pub struct TraceFlag {
     pub created_date: String,
 
     #[serde(rename = "DataAccess")]
-    pub data_access: String,
+    pub data_access: LogCategoryLevel,
 
     #[serde(rename = "Database")]
-    pub database: String,
+    pub database: LogCategoryLevel,
 
     #[serde(rename = "DebugLevelId")]
     pub debug_level_id: String,
@@ -35,28 +36,28 @@ pub struct TraceFlag {
     pub log_type: String,
 
     #[serde(rename = "Nba")]
-    pub nba: String,
+    pub nba: LogCategoryLevel,
 
     #[serde(rename = "StartDate")]
     pub start_date: String,
 
     #[serde(rename = "System")]
-    pub system: String,
+    pub system: LogCategoryLevel,
 
     #[serde(rename = "TracedEntityId")]
     pub traced_entity_id: String,
 
     #[serde(rename = "Validation")]
-    pub validation: String,
+    pub validation: LogCategoryLevel,
 
     #[serde(rename = "Visualforce")]
-    pub visualforce: String,
+    pub visualforce: LogCategoryLevel,
 
     #[serde(rename = "Wave")]
-    pub wave: String,
+    pub wave: LogCategoryLevel,
 
     #[serde(rename = "Workflow")]
-    pub workflow: String,
+    pub workflow: LogCategoryLevel,
 }
 
 pub const SOBJECT_NAME: &'static str = "TraceFlag";

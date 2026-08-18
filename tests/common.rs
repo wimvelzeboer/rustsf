@@ -1,6 +1,7 @@
 use rustsf::{Client, RestApi, DefSObject};
 use std::env;
 use anyhow::Result;
+use rustsf::primary_types::SObjectOwner;
 
 pub async fn get_rest_api_client() -> Result<RestApi> {
     let mut client = Client::new();

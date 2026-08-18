@@ -1,6 +1,6 @@
 [package]
 name = "rustsf"
-version = "0.0.4"
+version = "0.0.5"
 authors = ["Wim Velzeboer <wim@velzeboer.nl>"]
 license = "MIT"
 description = "Salesforce SDK for Rust, supports the latest API version 67.0, (Summer 2026)"
@@ -17,6 +17,7 @@ rust-version = "1.93.0"
 ## Enable Salesforce REST API v67.0 (Summer 2026)
 rest-api = []
 tooling-api = []
+metadata-api = ["reqwest/multipart"]
 default = ["rest-api"]
 
 [dependencies]

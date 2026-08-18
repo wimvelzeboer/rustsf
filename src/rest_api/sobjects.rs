@@ -65,7 +65,7 @@ impl RestApi {
     /// ```rust
     /// use rustsf::{Client, RestApi, Error, DefSObject};
     ///
-    /// #[DefSObject(sobject_type = "Account", fields="system,type,name")]
+    /// #[DefSObject(sobject_type = "Account", fields="system,type,name,owner")]
     /// struct Account { }
     ///
     /// #[tokio::main]
@@ -78,7 +78,7 @@ impl RestApi {
     ///     account.name = Some("Example Account".to_string());
     ///
     ///     match api.create_sobject(account).await {
-    ///         Ok(record) => println!("Record ID: {:?}", record.id()),
+    ///         Ok(record) => println!("Record ID: {:?}", record.id),
     ///         Err(error) => println!("Error creating account: {:?}", error),
     ///     }
     ///     Ok(())

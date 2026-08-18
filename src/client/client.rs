@@ -17,6 +17,10 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+#[cfg(feature = "metadata-api")]
+use reqwest::multipart::Form;
+
+
 /// Represents a client used for interacting with a remote API.
 /// This struct encapsulates all the necessary data required to authenticate
 /// and send HTTP requests to the API.
@@ -315,6 +319,29 @@ impl Client {
     /// ```
     pub fn version(&self) -> &str {
         &self.version
+    }
+
+    /// Returns the bare version of the current instance. (without the 'v' prefix)
+    ///
+    /// # Returns
+    /// A string that holds the version information.
+    ///
+    /// # Examples
+    /// ```
+    /// use rustsf::{Client, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///     assert_eq!(client.version(), "60.0");
+    ///     Ok(())
+    /// }
+    /// ```
+    pub fn version_number(&self) -> Result<String, Error> {
+        let mut chars = self.version.chars();
+        chars.next();
+        Ok(chars.as_str().to_string())
     }
 
     /// Returns an optional reference to the refresh token.
@@ -1924,6 +1951,61 @@ impl Client {
             .await?;
         Ok(res)
     }
+
+    /// Asynchronously sends an HTTP POST multipart equest to the specified URL with the given parameters and headers.
+    ///
+    /// This function ensures the client is refreshed before making the request.
+    /// It constructs the POST request by combining the given URL, serialization of parameters, and custom headers,
+    /// and uses the `reqwest` HTTP client to send the request.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T`: A type that implements the `Serialize` trait, representing the body of the POST request.
+    ///
+    /// # Parameters
+    ///
+    /// * `url` - A `String` representing the URL endpoint for the POST request.
+    /// * `headers` - A vector of tuples where each tuple contains a header name and its corresponding value (`Vec<(String, String)>`).
+    /// * `from` - A multipart form to include in the request.
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result`:
+    /// - `Ok(Response)` on success, where `Response` is the HTTP response returned by the request.
+    /// - `Err(Error)` if an error occurs during the request, such as serialization issues, header creation errors, or HTTP client errors.
+    ///
+    /// Note: Ensure that the given `url` is valid and accessible and that proper error handling is implemented
+    /// for production use.
+    #[cfg(feature = "metadata-api")]
+    pub async fn post_multipart(&mut self, url: String, headers: Vec<(String, String)>, form: Form) -> Result<Response, Error> {
+        println!("url {:?}", url);
+
+        let request = self.http_client
+            .post(&url)
+            .multipart(form)
+            .headers(self.create_header(headers)?)
+            .build()?;
+
+        println!("Request URL: {}", request.url());
+        println!("Request Method: {}", request.method());
+
+        // Log headers
+        for (name, value) in request.headers() {
+            println!("Header {}: {:?}", name, value);
+        }
+
+        // Log body size (reqwest hides the exact body bytes if it's a stream/json,
+        // but you can check if a body exists)
+        if let Some(body) = request.body() {
+            println!("Body: {:?}", body.as_bytes());
+        }
+
+        let response = self.http_client.execute(request).await?;
+
+        Ok(response)
+    }
+
+
     /// Asynchronously sends an HTTP POST request to the specified URL with the given parameters and headers.
     ///
     /// This function ensures the client is refreshed before making the request.

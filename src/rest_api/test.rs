@@ -7,7 +7,7 @@ use crate as rustsf;
 use serde_json::json;
 use crate::DefSObject;
 use crate::rest_api::responses::query_response::QueryResponse;
-use crate::primary_types::SObject;
+use crate::primary_types::{SObjectOwner};
 
 fn create_test_rest_api(server_url: &str) -> RestApi {
     let mut client = Client::new();

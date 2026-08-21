@@ -1288,7 +1288,7 @@ dependencies = [
 
 [[package]]
 name = "rustsf_marcos"
-version = "0.0.5"
+version = "0.0.6"
 dependencies = [
  "proc-macro2",
  "quote",

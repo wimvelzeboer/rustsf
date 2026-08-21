@@ -221,7 +221,7 @@ async fn test_find_by_id() {
 
     let mut api = create_test_rest_api(&server.url());
     let account = api.fetch_by_id::<Account>("Account", "001xx000003DGbX").await.unwrap();
-    assert_eq!(account.id(), Some("001xx000003DGbX"));
+    assert_eq!(account.id, Some("001xx000003DGbX".to_string()));
     assert_eq!(account.get_name(), Some("Acme"));
     mock.assert_async().await;
 }
@@ -241,7 +241,7 @@ async fn test_create() {
     let account = Account::new().set_name("Test Account".to_string());
 
     let account = api.create_sobject(account).await.unwrap();
-    assert_eq!(account.id(), Some("001xx000003DGbX"));
+    assert_eq!(account.id, Some("001xx000003DGbX".to_string()));
     mock.assert_async().await;
 }
 

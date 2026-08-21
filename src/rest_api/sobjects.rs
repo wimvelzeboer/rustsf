@@ -143,8 +143,10 @@ impl RestApi {
     ///     // Authentication logic...
     ///
     ///     let mut api = RestApi::new(client);
-    ///     let describe_result = api.describe("Account").await?;
-    ///     println!("Describe result: {:?}", describe_result);
+    ///     match api.describe("Account").await {
+    ///         Ok(response) => println!("Describe result: {:?}", response),
+    ///         Err(e) => println!("Error retrieving object description: {:?}", e),
+    ///     }
     ///     Ok(())
     /// }
     /// ```

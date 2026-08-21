@@ -334,7 +334,7 @@ impl Client {
     /// async fn main() -> Result<(), Error> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
-    ///     assert_eq!(client.version(), "60.0");
+    ///     assert_eq!(client.version(), "v60.0");
     ///     Ok(())
     /// }
     /// ```

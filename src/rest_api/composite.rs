@@ -57,7 +57,7 @@ impl RestApi {
     /// use rustsf::{Client, RestApi, Error, DefSObject};
     /// use rustsf::rest_api::responses::sobject_attribute::SObjectAttribute;
     ///
-    /// #[DefSObject(sobject_type = "Account", fields="name")]
+    /// #[DefSObject(sobject_type = "Account", fields="name,owner")]
     /// struct Account {}
     ///
     /// impl Account {

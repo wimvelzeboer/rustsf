@@ -92,6 +92,7 @@ pub enum Error {
     DescribeError(ErrorResponse),
     LoginError(LoginErrorResponse),
     ResponseError(ResponseError),
+    RequestError(String),
 }
 
 impl std::error::Error for Error {
@@ -118,6 +119,7 @@ impl fmt::Display for Error {
             Error::DescribeError(resp) => write!(f, "Error completing describe {:?}", resp),
             Error::LoginError(resp) => write!(f, "Error logging in {:?}", resp),
             Error::ResponseError(resp) => write!(f, "Error in Salesforce response {:?}", resp),
+            Error::RequestError(msg) => write!(f, "Error in Salesforce request {:?}", msg),
         }
     }
 }

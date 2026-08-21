@@ -3,36 +3,40 @@
 
 ## RustSF
 
-Rust Salesforce API SDK
+Thé most comprehensive Salesforce SDK for Rust, that supports most of the primary Salesforce APIs.
+It contains many examples and has very detailed documententation. 
 
-This crate to supports the Salesforce APIs with the latest version 67.0 (Summer 2026)
+The currently supported Salesforce APIs with the latest version 67.0 (Summer 2026) are:
 
 - Rest API, enabled via the feature `rest-api`
 - Tooling API, enabled via the feature `tooling-api`
+- Metadata API, enabled via the feature `metadata-api`
 
-It also supports the following, but they are still a work in progress:
+_It also supports the following APIs, but they still need a bit of work:_
 
-This crate to supports the Salesforce APIs:
 - Bulk API v1
 - Bulk API v2
 - Streaming API
 
-These APIs are not yet implemented, but high on the list. If you are interested in contributing, or want to speed up the development, please go to Discussions and leave a message. 
-- Metadata API
+And we have a number of APIs which are high on the wish list. 
+If you are interested in contributing, please start a discussion with your suggestions. 
+
 - CPQ API
 - Heroku Platform API
 - Streaming API
 
 
-Forked from [rustforce](https://github.com/sile/rustforce) and from [tance77](https://github.com/tance77/rustforce/tree/modular-client-refactor), 
-for the rustforce repo seemed to be abandoned. The [rustforce](https://github.com/sile/rustforce) repo also lacked some important features and had some design flows around API versioning.
+#### Notes
+This repo was forked from [rustforce](https://github.com/sile/rustforce) and a PR from [tance77](https://github.com/tance77/rustforce/tree/modular-client-refactor), 
+for the rustforce repo seemed to be abandoned. The [rustforce](https://github.com/sile/rustforce) repo also lacked some important
+features and had some design flows around API versioning.
 
 
 ## Usage
 
 ```toml
 [dependencies]
-rustsf = { version = "0.0.2", features = ["rest-api", "tooling-api"] }
+rustsf = { version = "0.0.2", features = ["rest-api", "tooling-api", "metadata-api"] }
 ```
 
 ```rust

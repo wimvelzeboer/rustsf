@@ -155,7 +155,7 @@ impl BulkApi {
     /// use serde::Serialize;
     /// use rustsf::{Client, BulkApi, Error};
     ///
-    /// #[derive(Serialize)]
+    /// #[derive(Serialize, Debug)]
     /// struct JobParams {
     ///     name: String,
     ///     priority: u8,

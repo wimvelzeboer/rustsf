@@ -408,3 +408,7 @@ async fn handle_empty_response(response: reqwest::Response) -> Result<(), Error>
         Err(Error::ErrorResponses(errors))
     }
 }
+
+
+#[cfg(test)]
+mod tests;

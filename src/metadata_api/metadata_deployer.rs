@@ -339,7 +339,7 @@ impl MetadataDeployer {
     ///     Err(e) => eprintln!("Error generating JSON: {}", e),
     /// }
     /// ```
-    fn get_deploy_request_json(&self) -> Result<String, Error> {
+    pub(crate) fn get_deploy_request_json(&self) -> Result<String, Error> {
         let request = DeployRequest {
             options: self.options.clone(),
         };
@@ -376,7 +376,7 @@ impl MetadataDeployer {
     /// - If `pre_destructive` or `post_destructive` is empty, the corresponding file will not be added to the ZIP.
     /// - The `finish` method on the ZIP writer is expected to finalize the ZIP and produce a writable result.
     ///
-    fn get_zip_file(mut self) -> Result<Vec<u8>, Error> {
+    pub(crate) fn get_zip_file(mut self) -> Result<Vec<u8>, Error> {
         // Add the package.xml files to the zip
         self.add_package("package.xml", self.package.clone())?;
         if !self.pre_destructive.is_empty() {

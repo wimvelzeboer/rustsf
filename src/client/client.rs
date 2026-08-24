@@ -77,12 +77,12 @@ use reqwest::multipart::Form;
 /// to avoid unintended exposure of confidential data.
 #[derive(Clone, Debug)]
 pub struct Client {
-    pub(crate) http_client: reqwest::Client,
+    pub http_client: reqwest::Client,
     pub(crate) client_id: Option<String>,
     pub(crate) client_secret: Option<String>,
     pub(crate) login_endpoint: String,
     pub(crate) instance_url: Option<String>,
-    pub(crate) access_token: Option<AccessToken>,
+    pub access_token: Option<AccessToken>,
     pub(crate) refresh_token: Option<String>,
     pub(crate) version: String,
     pub(crate) secret_required: bool,
@@ -341,7 +341,7 @@ impl Client {
     pub fn version_number(&self) -> Result<String, Error> {
         let mut chars = self.version.chars();
         chars.next();
-        Ok(chars.as_str().to_string())
+        Ok(chars.as_str().to_string())  // fixme might want to store just the base version number and then add the "v" when really needed...
     }
 
     /// Returns an optional reference to the refresh token.
@@ -411,6 +411,18 @@ impl Client {
         let instance_url = self.instance_url.as_ref().ok_or(Error::NotLoggedIn)?;
         Ok(format!("{}/services/data/", instance_url))
     }
+
+    pub fn soap_path(&self) -> Result<String, Error> {
+        let instance_url = self.instance_url.as_ref().ok_or(Error::NotLoggedIn)?;
+        Ok(format!("{}/services/Soap/m/", instance_url))
+    }
+
+    pub fn soap_version_path(&self) -> Result<String, Error> {
+        let instance_url = self.instance_url.as_ref().ok_or(Error::NotLoggedIn)?;
+        Ok(format!("{}/services/Soap/m/{}", instance_url, self.version_number()?))
+    }
+
+
 
     // --- Setters ---
 
@@ -1950,6 +1962,20 @@ impl Client {
             .send()
             .await?;
         Ok(res)
+    }
+
+    pub async fn post_soap(&mut self, action: &str, body: String) -> Result<Response, Error> {
+
+        let url = self.soap_version_path()?;
+        debug!("Soap Metadata API '{}' request: POST {} : {}", action, url, body );
+
+        Ok(self.http_client
+            .post(url)
+            .header("Content-Type", "text/xml")
+            .header("SOAPAction", format!("'{}'", action))
+            .body(body)
+            .send()
+            .await?)
     }
 
     /// Asynchronously sends an HTTP POST multipart equest to the specified URL with the given parameters and headers.

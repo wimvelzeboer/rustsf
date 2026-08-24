@@ -21,8 +21,10 @@ metadata-api = ["reqwest/multipart"]
 default = ["rest-api"]
 
 [dependencies]
+base64 = "0.23.1"
 s-zip = "0.11.3"
-rustsf_marcos = "0.0.6"
+rustsf_marcos = {path = "../rustsf-marcos"}
+#rustsf_marcos = "0.0.6"
 reqwest = { version = "0.13.4", features = ["form", "json", "query"] }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"

@@ -15,6 +15,9 @@ use reqwest::header::InvalidHeaderValue;
 use std::fmt;
 use crate::client::responses::response_error::ResponseError;
 
+#[cfg(feature = "metadata-api")]
+use crate::metadata_api::errors::XmlParseError;
+
 /// An enumeration representing various errors that can occur in the application.
 ///
 /// This `Error` enum is marked as `#[non_exhaustive]`, which means new variants
@@ -93,6 +96,9 @@ pub enum Error {
     LoginError(LoginErrorResponse),
     ResponseError(ResponseError),
     RequestError(String),
+
+    #[cfg(feature = "metadata-api")]
+    MetadataError(String),
 }
 
 impl std::error::Error for Error {
@@ -120,6 +126,9 @@ impl fmt::Display for Error {
             Error::LoginError(resp) => write!(f, "Error logging in {:?}", resp),
             Error::ResponseError(resp) => write!(f, "Error in Salesforce response {:?}", resp),
             Error::RequestError(msg) => write!(f, "Error in Salesforce request {:?}", msg),
+
+            #[cfg(feature = "metadata-api")]
+            Error::MetadataError(msg) => write!(f, "Error in Salesforce metadata request {:?}", msg),
         }
     }
 }
@@ -139,6 +148,13 @@ impl From<InvalidHeaderValue> for Error {
 impl From<serde_json::Error> for Error {
     fn from(e: serde_json::Error) -> Self {
         Error::DeserializeError(e)
+    }
+}
+
+#[cfg(feature = "metadata-api")]
+impl From<XmlParseError> for Error {
+    fn from(value: XmlParseError) -> Self {
+        Self::MetadataError(value.to_string())
     }
 }
 

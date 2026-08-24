@@ -28,11 +28,21 @@ use reqwest::{Response, multipart};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use std::collections::HashMap;
+use log::{debug, trace};
 use crate::metadata_api::responses::cancel_request::CancelRequest;
 use metadata_deployer::MetadataDeployer;
+use crate::metadata_api::metadata_retriever::MetadataRetriever;
+use crate::metadata_api::responses::async_result::AsyncResult;
+use crate::metadata_api::responses::check_retrieve_status_response::CheckRetrieveStatusResponse;
 
 pub mod responses;
 pub mod metadata_deployer;
+pub mod metadata_retriever;
+
+const METADATA_NAMESPACE: &str = "http://soap.sforce.com/2006/04/metadata";
+const ENVELOPE_NAMESPACE: &str = "http://schemas.xmlsoap.org/soap/envelope/";
+
+pub(crate) mod errors;
 
 /// A `MetadataApi` that represents the core component for interacting with a Metadata API.
 ///
@@ -130,37 +140,6 @@ impl MetadataApi {
         handle_json_response(response).await
     }
 
-    /// Creates a new `MetadataRequest` instance using the current client's configuration
-    /// This instance is used to build and execute metadata deployment requests.
-    ///
-    /// # Returns
-    /// A `MetadataRequest` object initialized with the underlying client's settings.
-    ///
-    /// # Examples
-    /// ```rust
-    /// use rustsf::{Client, MetadataApi, Error};
-    ///
-    /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
-    ///     let client = Client::new();
-    ///     // Authentication logic...
-    ///
-    ///     let mut api = MetadataApi::new(client);
-    ///
-    ///     let mut request = api.new_deployment_request();
-    ///     // ... add your logic here to all things to the deployment
-    ///     // e.g. request.add(....)?;
-    ///     let response = api.deploy(deployer).await?;
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// # See
-    /// <https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_rest_deploy.htm>
-    pub fn new_deployment_request(&self) -> MetadataDeployer {
-        MetadataDeployer::new(&self.client)
-    }
-
     /// Asynchronously deploys metadata to the server using the given `MetadataRequest`.
     ///
     /// # Parameters
@@ -226,7 +205,98 @@ impl MetadataApi {
         handle_json_response(response).await
     }
 
-    ///  Retrieves the status of a deployment request.
+    /// Creates a new `MetadataRequest` instance using the current client's configuration
+    /// This instance is used to build and execute metadata deployment requests.
+    ///
+    /// # Returns
+    /// A `MetadataRequest` object initialized with the underlying client's settings.
+    ///
+    /// # Examples
+    /// ```rust
+    /// use rustsf::{Client, MetadataApi, Error};
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let client = Client::new();
+    ///     // Authentication logic...
+    ///
+    ///     let mut api = MetadataApi::new(client);
+    ///
+    ///     let mut request = api.new_deployment_request();
+    ///     // ... add your logic here to all things to the deployment
+    ///     // e.g. request.add(....)?;
+    ///     let response = api.deploy(deployer).await?;
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// # See
+    /// <https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_rest_deploy.htm>
+    pub fn new_deployment_request(&self) -> MetadataDeployer {
+        MetadataDeployer::new(&self.client)
+    }
+
+    pub fn new_retrieval_request(&self) -> MetadataRetriever {
+        MetadataRetriever::new()
+    }
+
+    pub async fn retrieve(&mut self, request: MetadataRetriever) -> Result<AsyncResult, Error> {
+
+        let body = format!(
+            r#"<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="{}" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="{}">
+  <soapenv:Header><SessionHeader><sessionId>{}</sessionId></SessionHeader></soapenv:Header>
+  <soapenv:Body>
+    <retrieve>
+      <retrieveRequest>
+        <apiVersion>{}</apiVersion>
+        <unpackaged>{}</unpackaged>
+      </retrieveRequest>
+    </retrieve>
+  </soapenv:Body>
+</soapenv:Envelope>"#,
+            ENVELOPE_NAMESPACE,
+            METADATA_NAMESPACE,
+            escape_xml(self.session_id()?),
+            self.client.version_number()?,
+            request.get_package(),
+        );
+
+        let response = self.client.post_soap("retrieve", body).await?;
+
+        let xml = response.text().await?;
+        trace!("Soap Metadata API retrieve response: {}", xml );
+
+        Ok(AsyncResult::from_xml(&xml)?)
+    }
+
+    pub async fn retrieve_status(&mut self, id: &str) -> Result<CheckRetrieveStatusResponse, Error> {
+
+        let body = format!(
+            r#"<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="{}" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="{}">
+  <soapenv:Header><SessionHeader><sessionId>{}</sessionId></SessionHeader></soapenv:Header>
+  <soapenv:Body>
+      <checkRetrieveStatus>
+        <id>{}</id>
+        <includeZip>true</includeZip>
+      </checkRetrieveStatus>
+  </soapenv:Body>
+</soapenv:Envelope>"#,
+            ENVELOPE_NAMESPACE,
+            METADATA_NAMESPACE,
+            escape_xml(self.session_id()?),
+            id,
+        );
+
+        let response = self.client.post_soap("retrieve", body).await?;
+
+        let xml = response.text().await?;
+
+        Ok(CheckRetrieveStatusResponse::from_xml(&xml)?)
+    }
+
+    /// Retrieves the status of a deployment request.
     ///
     /// # Parameters
     /// - `deploy_request_id`: The unique identifier of the deployment request for which the status is being queried.
@@ -280,7 +350,7 @@ impl MetadataApi {
     ///   the API endpoint.
     /// - `handle_json_response`: An asynchronous function that processes the
     ///   JSON-formatted response from the server.
-    pub async fn status(
+    pub async fn deploy_status(
         &mut self,
         deploy_request_id: &str,
         include_details: bool,
@@ -305,6 +375,10 @@ impl MetadataApi {
             .await?;
 
         handle_json_response(response).await
+    }
+
+    fn session_id(&self) -> Result<&str, Error> {
+        self.client.access_token_value().ok_or(Error::NotLoggedIn)
     }
 }
 
@@ -366,7 +440,14 @@ fn add_file_to_package(
 
 pub struct Deployment {}
 
-mod zipper;
+fn escape_xml(value: &str) -> String {
+    value
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&apos;")
+}
 
 #[cfg(test)]
 mod tests;

@@ -98,10 +98,14 @@ impl RestApi {
     ///     // Authentication logic...
     ///
     ///     let mut api = RestApi::new(client);
-    ///     let limits = api.list_limits().await?;
-    ///     println!("Daily API Requests: Max {}, Remaining: {}",
-    ///         limits.daily_api_requests.max,
-    ///         limits.daily_api_requests.remaining);
+    ///     match api.list_limits().await {
+    ///         Ok(limits) => {
+    ///             println!("Daily API Requests: Max {}, Remaining: {}",
+    ///             limits.daily_api_requests.max,
+    ///             limits.daily_api_requests.remaining);
+    ///         },
+    ///         Err(e) => println!("Error retrieving limits: {:?}", e),
+    ///     }
     ///     Ok(())
     /// }
     /// ```

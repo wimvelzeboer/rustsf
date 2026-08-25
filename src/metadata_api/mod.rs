@@ -293,6 +293,8 @@ impl MetadataApi {
 
         let xml = response.text().await?;
 
+        trace!("Soap Metadata API retrieve status response: {}", xml );
+
         Ok(CheckRetrieveStatusResponse::from_xml(&xml)?)
     }
 

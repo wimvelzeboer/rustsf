@@ -94,15 +94,10 @@ impl RestApi {
     ///
     /// # See
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_sobject_basic_info_post.htm>
-    pub async fn create_sobject<T: Serialize + Debug + SObject + SObjectOwner + Clone>(
+    pub async fn create_sobject<T: Serialize + Debug + SObject + Clone>(
         &mut self,
         mut record: T,
     ) -> Result<T, Error> {
-
-        // Set the owner_id attribute to the authenticated user's ID if its None
-        if record.get_owner_id().is_none() {
-            record.set_owner_id(self.client.get_user_id().as_deref().map(str::to_string).as_deref());
-        }
 
         let resource_url = format!(
             "{}/sobjects/{}",
@@ -116,6 +111,73 @@ impl RestApi {
         }
         // Fixme - should we throw an error if the response is not success?
         Ok(record)
+    }
+
+    /// Creates a single new record in a Salesforce with the provided values
+    /// and applies the current user as the owner of the record 'OwnerId'.
+    ///
+    /// # Generic
+    /// - `T`: A type that implements the `Serialize` trait, representing the parameters for the new record.
+    ///
+    /// # Arguments
+    /// - `object_name`: A string slice that holds the API name of the Salesforce object (e.g., "Account", "Contact").
+    /// - `params`: An instance of type `T` containing the details of the record to be created.
+    ///
+    /// # Returns
+    /// - `Result<T, Error>`:
+    ///     - On success, returns the updated instance of type 'T' containing the Salesforce record id.
+    ///     - On failure, returns an `Error` detailing what went wrong during the request.
+    ///
+    /// # Errors
+    /// This function returns an `Error` in the following cases:
+    /// - If the Salesforce client fails to resolve the base path.
+    /// - If the HTTP POST request to the Salesforce API fails.
+    /// - If the response contains invalid JSON or an error from Salesforce.
+    ///
+    /// # Example
+    /// ```rust
+    /// use rustsf::{Client, RestApi, Error, DefSObject};
+    ///
+    /// #[DefSObject(sobject_type = "Account", fields="system,type,name,owner")]
+    /// struct Account { }
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), Error> {
+    ///     let mut client = Client::new();
+    ///     // Authentication logic...
+    ///
+    ///     let mut api = RestApi::new(client);
+    ///     let mut account = Account::new();
+    ///     account.name = Some("Example Account".to_string());
+    ///
+    ///     match api.create_sobject(account).await {
+    ///         Ok(record) => println!("Record ID: {:?}", record.id),
+    ///         Err(error) => println!("Error creating account: {:?}", error),
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// # Notes
+    /// - Ensure that the `object_name` matches the correct API name of the Salesforce object.
+    /// - The `params` object should conform to the structure expected by the Salesforce API for the specified object.
+    ///
+    /// # Dependencies
+    /// - Ensure the `T` type implements the `Serialize` trait (usually through a derived implementation).
+    ///
+    /// # See
+    /// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_sobject_basic_info_post.htm>
+    pub async fn create_owned_sobject<T: Serialize + Debug + SObject + SObjectOwner + Clone>(
+        &mut self,
+        mut record: T,
+    ) -> Result<T, Error> {
+
+        // Set the owner_id attribute to the authenticated user's ID if its None
+        if record.get_owner_id().is_none() {
+            record.set_owner_id(self.client.get_user_id().as_deref().map(str::to_string).as_deref());
+        }
+
+        self.create_sobject(record).await
     }
 
     /// Get Object Metadata Using sObject Basic Information

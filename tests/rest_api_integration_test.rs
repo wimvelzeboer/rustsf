@@ -23,7 +23,7 @@ async fn create_fetch_delete_sobject() -> Result<()> {
     let mut client = common::get_rest_api_client().await?;
 
     // Create an Account record
-    let account = client.create_sobject(common::Account::new()
+    let account = client.create_owned_sobject(common::Account::new()
         .set_name("Test Account".to_string())).await?;
     assert!(account.id.is_some());
     assert_eq!(18, account.id.as_ref().unwrap().len()); // We got a 18 character Salesforce Id

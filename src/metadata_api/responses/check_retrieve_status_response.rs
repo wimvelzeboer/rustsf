@@ -1,7 +1,8 @@
-use std::io::Cursor;
 use std::io::Seek;
 use base64::prelude::*;
 use s_zip::{SZipError, StreamingZipReader};
+use std::io::{Cursor, Read};
+use zip::ZipArchive;
 use crate::Error;
 
 /*
@@ -69,7 +70,7 @@ pub struct CheckRetrieveStatusResponse {
     /// The zip file returned by the retrieve request. Base 64-encoded binary data.
     /// Before making an API call, client applications must encode the binary attachment data as base64.
     /// Upon receiving a response, client applications must decode the base64 data to binary. This conversion is handled for you by a SOAP client.
-    zip_file: Vec<u8>,
+    zip_file: Option<Vec<u8>>,
 }
 
 impl CheckRetrieveStatusResponse {
@@ -110,9 +111,10 @@ impl CheckRetrieveStatusResponse {
             },
             status: parse_text_child(result, "status")?,
             success: parse_bool_child(result, "success")?,
-            zip_file: BASE64_STANDARD
+            zip_file: Some(BASE64_STANDARD
                 .decode(parse_text_child(result, "zipFile")?)
-                .unwrap(),
+                .unwrap() // fixme
+            ),
         })
     }
 
@@ -121,15 +123,33 @@ impl CheckRetrieveStatusResponse {
     }
 
     pub fn get_files(mut self) -> Result<Vec<FileProperties>, Error> {
-        /* fixme
-        let cursor = Cursor::new(self.zip_file);
-        let reader = StreamingZipReader::from_seekable_reader(cursor)?;
 
-        for file in self.file_properties {
-            let data = reader.read_entry_by_name(file.file_name)?;
-            file.contents = data;
+       match self.zip_file {
+            Some(zip_file) => {
+
+                // 1. Wrap the in-memory ZIP bytes in a Cursor (implements Read + Seek)
+                let mut cursor = Cursor::new(zip_file);
+
+                // 2. Open the archive from the cursor
+                let mut archive = ZipArchive::new(&mut cursor)?;
+
+                for file_props in &mut self.file_properties {
+
+                    // 3. Locate the file by name
+                    let mut file = match archive.by_name(&file_props.file_name) {
+                        Ok(file) => file,
+                        Err(_) => continue,
+                    };
+
+                    // 4. Read the file contents into a buffer
+                    let mut contents = Vec::new();
+                    file.read_to_end(&mut contents).unwrap();
+
+                    file_props.contents = Some(contents);
+                }
+            },
+            None => return Ok(vec![]),
         }
-        */
 
         Ok(self.file_properties)
     }
@@ -141,8 +161,8 @@ impl CheckRetrieveStatusResponse {
         &self.status
     }
 
-    pub fn get_zip_file(&self) -> &[u8] {
-        &self.zip_file
+    pub fn get_zip_file(&self) -> Option<&[u8]> {
+        self.zip_file.as_deref()
     }
 
     pub fn is_success(&self) -> bool {
@@ -252,4 +272,22 @@ fn parse_bool_child<'a, 'input>(
         element: local_name,
         value,
     })
+}
+
+
+fn extract_file_from_memory(zip_data: Vec<u8>, filename: &str) -> Option<Vec<u8>> {
+    // 1. Wrap the in-memory ZIP bytes in a Cursor (implements Read + Seek)
+    let mut cursor = Cursor::new(zip_data);
+
+    // 2. Open the archive from the cursor
+    let mut archive = ZipArchive::new(&mut cursor).ok()?;
+
+    // 3. Locate the file by name
+    let mut file = archive.by_name(filename).ok()?;
+
+    // 4. Read the file contents into a buffer
+    let mut contents = Vec::new();
+    file.read_to_end(&mut contents).ok()?;
+
+    Some(contents)
 }

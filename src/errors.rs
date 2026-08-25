@@ -13,6 +13,8 @@ use crate::client::responses::token_error_response::TokenErrorResponse;
 use crate::rest_api::responses::error_response::ErrorResponse;
 use reqwest::header::InvalidHeaderValue;
 use std::fmt;
+#[cfg(feature = "metadata-api")]
+use zip::result::ZipError;
 use crate::client::responses::response_error::ResponseError;
 
 #[cfg(feature = "metadata-api")]
@@ -148,6 +150,13 @@ impl From<InvalidHeaderValue> for Error {
 impl From<serde_json::Error> for Error {
     fn from(e: serde_json::Error) -> Self {
         Error::DeserializeError(e)
+    }
+}
+
+#[cfg(feature = "metadata-api")]
+impl From<ZipError> for Error {
+    fn from(value: ZipError) -> Self {
+        Error::MetadataError(value.to_string())
     }
 }
 

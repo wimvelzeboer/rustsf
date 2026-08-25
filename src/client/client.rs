@@ -1134,7 +1134,6 @@ impl Client {
         self.set_login_endpoint(&caps[4]);
 
         let token_url = format!("https://{}/services/oauth2/token", self.login_endpoint);
-        println!("token_url: {}", token_url);
         let params = [
             ("grant_type", "refresh_token"),
             ("client_id", self.client_id.as_ref().unwrap()),

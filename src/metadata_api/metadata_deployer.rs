@@ -19,6 +19,37 @@ use crate::metadata_api::responses::deploy_options::DeployOptions;
 use crate::metadata_api::responses::deploy_request::DeployRequest;
 
 
+/**
+fix me refactor s-zip into zip
+
+use std::io::Write;
+use zip::write::SimpleFileOptions;
+use zip::ZipWriter;
+use std::io::Cursor;
+
+fn create_zip_in_memory() -> Vec<u8> {
+    // 1. Create an in-memory buffer
+    let mut buf = Cursor::new(Vec::new());
+
+    // 2. Initialize the ZipWriter
+    let mut zip = ZipWriter::new(&mut buf);
+
+    // 3. Add a file with options (e.g., compression method)
+    let options = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflate);
+    zip.start_file("hello.txt", options).unwrap();
+
+    // 4. Write the in-memory data to the zip entry
+    zip.write_all(b"Hello, World!").unwrap();
+
+    // 5. Finalize the archive
+    zip.finish().unwrap();
+
+    // 6. Retrieve the resulting bytes
+    buf.into_inner()
+}
+*/
+
+
 /// A `RestApi` struct that represents the core component for reparing a deployment
 pub struct MetadataDeployer {
     version: String,

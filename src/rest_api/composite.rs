@@ -19,12 +19,11 @@
 use std::fmt::Debug;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-use crate::client::responses::response_error::ResponseError;
-use crate::Error;
 use crate::primary_types::{SObject, SObjectOwner};
 use crate::rest_api::{handle_json_response, RestApi};
 use crate::rest_api::responses::sobject_create_response::SObjectCreateResponse;
 use crate::rest_api::responses::sobject_create_request::SObjectCreateRequest;
+use anyhow::{anyhow, Result};
 
 impl RestApi {
     /// Creates a batch of records in Salesforce using the Composite SObjects API.
@@ -54,8 +53,9 @@ impl RestApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, RestApi, Error, DefSObject};
+    /// use rustsf::{Client, RestApi, DefSObject};
     /// use rustsf::rest_api::responses::sobject_attribute::SObjectAttribute;
+    /// use anyhow::Result;
     ///
     /// #[DefSObject(sobject_type = "Account", fields="name,owner")]
     /// struct Account {}
@@ -68,7 +68,7 @@ impl RestApi {
     /// }
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let client = Client::new();
     ///     // Authentication logic...
     ///
@@ -100,11 +100,11 @@ impl RestApi {
         &mut self,
         records: &mut Vec<T>,
         all_or_none: bool
-    ) -> Result<Vec<SObjectCreateResponse>, Error> {
+    ) -> Result<Vec<SObjectCreateResponse>> {
 
         // fixme - should we do automatically multiple requests if needed?
         if records.len() > 200 {
-            return Err(Error::ResponseError(ResponseError::new("Max 200 records per request".to_string())));
+            return Err(anyhow!("Max 200 records per request"));
         } else if records.len() == 0 {
             return Ok(Vec::new());
         }
@@ -122,10 +122,7 @@ impl RestApi {
         let responses : Vec<SObjectCreateResponse> = handle_json_response(response).await?;
 
         if responses.len() != records.len() {
-            return Err(
-                Error::ResponseError(
-                    ResponseError::new(
-                    format!("Expected the same amount of responses, send {}, response {}", responses.len(), records.len()))))
+            return Err(anyhow!("Expected the same amount of responses, send {}, response {}", responses.len(), records.len()))
         };
 
         for i in 0..responses.len() {
@@ -165,7 +162,8 @@ impl RestApi {
      ///
      /// # Example
      /// ```rust
-     /// use rustsf::{Client, RestApi, Error, DefSObject};
+     /// use rustsf::{Client, RestApi, DefSObject};
+     /// use anyhow::Result;
      ///
      /// #[DefSObject(sobject_type = "Account", fields="system,name")]
      /// struct Account {
@@ -174,7 +172,7 @@ impl RestApi {
      /// }
      ///
      /// #[tokio::main]
-     /// async fn main() -> Result<(), Error> {
+     /// async fn main() -> Result<()> {
      ///     let mut client = Client::new();
      ///     // Authentication logic...
      ///
@@ -210,7 +208,7 @@ impl RestApi {
         object_name: &str,
         ids: Vec<&str>,
         fields: Vec<&str>
-    ) -> Result<Vec<T>, Error> {
+    ) -> Result<Vec<T>> {
 
         let url = format!("{}/composite/sobjects/{}", self.client.base_version_path()?, object_name);
         let params = vec![("fields", fields.join(",")), ("ids", ids.join(","))];

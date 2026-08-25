@@ -50,10 +50,10 @@ impl DeployResponse {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, MetadataApi, Error};
+    /// use rustsf::{Client, MetadataApi};
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let client = Client::new();
     ///     // Authentication logic...
     ///

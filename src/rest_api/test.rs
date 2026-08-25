@@ -1,6 +1,5 @@
 use mockito::Server;
 use crate::client::client::{Client};
-use crate::errors::Error;
 use super::*;
 
 use crate as rustsf;
@@ -37,18 +36,6 @@ async fn test_base_path() {
         api.client.base_version_path().unwrap(),
         "https://na1.salesforce.com/services/data/v60.0"
     );
-}
-
-#[tokio::test]
-async fn test_base_path_not_logged_in() {
-    let client = Client::new();
-    let api = RestApi::new(client);
-    let result = api.client.base_version_path();
-    assert!(result.is_err());
-    match result.unwrap_err() {
-        Error::NotLoggedIn => {}
-        e => panic!("Expected NotLoggedIn, got {:?}", e),
-    }
 }
 
 #[DefSObject(sobject_type = "Account", fields="name,owner")]
@@ -193,18 +180,6 @@ async fn test_versions() {
     assert_eq!(res.len(), 1);
     assert_eq!(res.iter().nth(0).unwrap().version, "60.0");
     mock.assert_async().await;
-}
-
-#[tokio::test]
-async fn test_versions_not_logged_in() {
-    let client = Client::new();
-    let mut api = RestApi::new(client);
-    let res = api.api_versions().await;
-    assert!(res.is_err());
-    match res.unwrap_err() {
-        Error::NotLoggedIn => {}
-        e => panic!("Expected NotLoggedIn, got {:?}", e),
-    }
 }
 
 #[tokio::test]

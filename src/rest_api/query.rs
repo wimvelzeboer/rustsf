@@ -16,9 +16,9 @@
 //! <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_query.htm>
 
 use super::{RestApi, handle_json_response};
-use crate::Error;
 use crate::rest_api::responses::query_response::QueryResponse;
 use serde::de::DeserializeOwned;
+use anyhow::{Context, Result};
 
 impl RestApi {
     /// Executes an asynchronous query against the client's configured base path and returns the parsed response.
@@ -42,13 +42,14 @@ impl RestApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, RestApi, Error, DefSObject};
+    /// use rustsf::{Client, RestApi, DefSObject};
+    /// use anyhow::Result;
     ///
     /// #[DefSObject(sobject_type = "Account", fields="system,audit,type,name")]
     /// struct Account { }
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let client = Client::new();
     ///     // Authentication logic...
     ///
@@ -65,7 +66,7 @@ impl RestApi {
     pub async fn query<T: DeserializeOwned>(
         &mut self,
         query: &str,
-    ) -> Result<QueryResponse<T>, Error> {
+    ) -> Result<QueryResponse<T>> {
         let query_url = format!("{}/query/", self.client.base_version_path()?);
         let params = vec![("q".to_string(), query.to_string())];
         let response = self.client.get(query_url, params, vec![]).await?;
@@ -96,13 +97,14 @@ impl RestApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, RestApi, Error, DefSObject};
+    /// use rustsf::{Client, RestApi, DefSObject};
+    /// use anyhow::Result;
     ///
     /// #[DefSObject(sobject_type = "Account", fields="system,type,audit,name")]
     /// struct Account { }
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let client = Client::new();
     ///     // Authentication logic...
     ///
@@ -118,7 +120,7 @@ impl RestApi {
     pub async fn query_all<T: DeserializeOwned>(
         &mut self,
         query: &str,
-    ) -> Result<QueryResponse<T>, Error> {
+    ) -> Result<QueryResponse<T>> {
         let query_url = format!("{}/queryAll/", self.client.base_version_path()?);
         let params = vec![("q".to_string(), query.to_string())];
         let response = self.client.get(query_url, params, vec![]).await?;
@@ -154,13 +156,14 @@ impl RestApi {
     ///
     /// # Examples
     /// ```rust
-    /// use rustsf::{Client, RestApi, Error, DefSObject};
+    /// use rustsf::{Client, RestApi, DefSObject};
+    /// use anyhow::Result;
     ///
     /// #[DefSObject(sobject_type = "Account", fields="system,type,audit,name")]
     /// struct Account { }
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///
@@ -185,12 +188,12 @@ impl RestApi {
     pub async fn query_more<T: DeserializeOwned>(
         &mut self,
         next_records_url: &str,
-    ) -> Result<QueryResponse<T>, Error> {
+    ) -> Result<QueryResponse<T>> {
         let instance_url = self
             .client
             .instance_url
             .as_ref()
-            .ok_or(Error::NotLoggedIn)?;
+            .context("Not logged in")?;
         let query_url = format!("{}/{}", instance_url, next_records_url);
         let response = self.client.get(query_url, vec![], vec![]).await?;
         handle_json_response(response).await
@@ -225,13 +228,14 @@ impl RestApi {
     ///
     /// # Examples
     /// ```rust
-    /// use rustsf::{Client, RestApi, Error, DefSObject};
+    /// use rustsf::{Client, RestApi, DefSObject};
+    /// use anyhow::Result;
     ///
     /// #[DefSObject(sobject_type = "Account", fields="system,type,name")]
     /// struct Account { }
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///
@@ -256,12 +260,12 @@ impl RestApi {
     pub async fn query_all_more<T: DeserializeOwned>(
         &mut self,
         next_records_url: &str,
-    ) -> Result<QueryResponse<T>, Error> {
+    ) -> Result<QueryResponse<T>> {
         let instance_url = self
             .client
             .instance_url
             .as_ref()
-            .ok_or(Error::NotLoggedIn)?;
+            .context("Not logged in")?;
         let query_url = format!("{}/{}", instance_url, next_records_url);
         let response = self.client.get(query_url, vec![], vec![]).await?;
         handle_json_response(response).await

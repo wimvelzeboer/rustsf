@@ -20,7 +20,6 @@
 //! rustsf = { version = "0.0.2", features = ["rest-api", "tooling-api", "metadata_api""] }
 //!```
 pub mod client;
-pub mod errors;
 
 #[cfg(feature = "rest-api")]
 pub mod rest_api;
@@ -48,6 +47,5 @@ pub use metadata_api::MetadataApi;
 
 pub use bulk_api::BulkApi;
 pub use bulk_api_v2::BulkApiV2;
-pub use errors::Error;
 
 pub use rustsf_marcos::def_sobject as DefSObject;

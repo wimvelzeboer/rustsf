@@ -122,7 +122,7 @@ impl CheckRetrieveStatusResponse {
         self.done
     }
 
-    pub fn get_files(mut self) -> Result<Vec<FileProperties>, Error> {
+    pub fn get_files(mut self) -> Result<Vec<FileProperties>> {
 
        match self.zip_file {
             Some(zip_file) => {

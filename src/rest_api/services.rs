@@ -16,10 +16,10 @@
 //! <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/using_resources_getting_info_about_my_org.htm>
 
 use super::{RestApi, handle_json_response};
-use crate::Error;
 use crate::rest_api::responses::limits_response::LimitsResponse;
 use crate::rest_api::responses::version_response::VersionResponse;
 use std::collections::HashMap;
+use anyhow::Result;
 
 impl RestApi {
     /// Lists available REST API Versions
@@ -46,11 +46,12 @@ impl RestApi {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, RestApi, Error};
+    /// use rustsf::{Client, RestApi};
     /// use serde::{Deserialize, Serialize};
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///
@@ -78,7 +79,7 @@ impl RestApi {
     /// # See
     /// - [VersionResponse]
     /// - <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/dome_versions.htm>
-    pub async fn api_versions(&mut self) -> Result<Vec<VersionResponse>, Error> {
+    pub async fn api_versions(&mut self) -> Result<Vec<VersionResponse>> {
         let url = self.client.base_path()?;
         let response = self.client.get(url, vec![], vec![]).await?;
         handle_json_response(response).await
@@ -89,11 +90,12 @@ impl RestApi {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, RestApi, Error};
+    /// use rustsf::{Client, RestApi};
     /// use serde::{Deserialize, Serialize};
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///
@@ -112,7 +114,7 @@ impl RestApi {
     ///
     /// # See
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/dome_limits.htm>
-    pub async fn list_limits(&mut self) -> Result<LimitsResponse, Error> {
+    pub async fn list_limits(&mut self) -> Result<LimitsResponse> {
         let url = format!("{}/limits/", self.client.base_version_path()?);
         let response = self.client.get(url, vec![], vec![]).await?;
         handle_json_response(response).await
@@ -136,16 +138,17 @@ impl RestApi {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, RestApi, Error};
+    /// use rustsf::{Client, RestApi};
     ///use std::collections::HashMap;
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///
     ///     let mut api = RestApi::new(client);
-    ///     let res: Result<HashMap<String, String>, Error> = api.list_resources().await;
+    ///     let res: Result<HashMap<String, String>> = api.list_resources().await;
     ///     match res {
     ///         Ok(data) => println!("Resources: {:?}", data),
     ///         Err(e) => eprintln!("Failed to list resources: {}", e),
@@ -156,7 +159,7 @@ impl RestApi {
     ///
     /// # See
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/dome_discoveryresource.htm>
-    pub async fn list_resources(&mut self) -> Result<HashMap<String, String>, Error> {
+    pub async fn list_resources(&mut self) -> Result<HashMap<String, String>> {
         let url = format!("{}/{}/", self.client.base_path()?, self.client.version());
         let response = self.client.get(url, vec![], vec![]).await?;
         handle_json_response(response).await

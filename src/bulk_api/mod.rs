@@ -15,7 +15,7 @@
 //! ## Example
 //!
 //! ```rust,ignore
-//! use rustsf::{Client, BulkApi, Error};
+//! use rustsf::{Client, BulkApi};
 //! use serde::Serialize;
 //!
 //! #[derive(Serialize)]
@@ -26,7 +26,7 @@
 //! }
 //!
 //! #[tokio::main]
-//! async fn main() -> Result<(), Error> {
+//! async fn main() -> Result<()> {
 //!     let mut client = Client::new();
 //!     // Perform authentication...
 //!     
@@ -57,11 +57,11 @@
 //! <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/>
 
 use crate::client::client::Client;
-use crate::errors::Error;
 use reqwest::Response;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::fmt::Debug;
+use anyhow::{Context, Result};
 
 #[derive(Default)]
 pub struct BulkApi {
@@ -84,10 +84,11 @@ impl BulkApi {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, BulkApi, Error};
+    /// use rustsf::{Client, BulkApi};
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///     let bulk_api = BulkApi::new(client);
@@ -118,12 +119,12 @@ impl BulkApi {
     ///     let base_path = bulk_api.base_path()?;
     ///     println!("Base path: {}", base_path);
     /// ```
-    fn base_path(&self) -> Result<String, Error> {
+    fn base_path(&self) -> Result<String> {
         let instance_url = self
             .client
             .instance_url
             .as_ref()
-            .ok_or(Error::NotLoggedIn)?;
+            .context("Not logged in")?;
 
         let version = &self.client.version[1..];
         Ok(format!("{}/services/async/{}", instance_url, version))
@@ -153,7 +154,8 @@ impl BulkApi {
     /// # Example
     /// ```rust
     /// use serde::Serialize;
-    /// use rustsf::{Client, BulkApi, Error};
+    /// use rustsf::{Client, BulkApi};
+    /// use anyhow::Result;
     ///
     /// #[derive(Serialize, Debug)]
     /// struct JobParams {
@@ -162,7 +164,7 @@ impl BulkApi {
     /// }
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let client = Client::new();
     ///     // Authentication logic...
     ///
@@ -188,7 +190,7 @@ impl BulkApi {
     ///
     /// # See
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_jobs_create.htm>
-    pub async fn create_job<T: Serialize + Debug>(&mut self, params: T) -> Result<Response, Error> {
+    pub async fn create_job<T: Serialize + Debug>(&mut self, params: T) -> Result<Response> {
         let resource_url = format!("{}/job", self.base_path()?);
         let headers = self.get_auth_headers()?;
         self.client.post(resource_url, params, headers).await
@@ -216,10 +218,11 @@ impl BulkApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, BulkApi, Error};
+    /// use rustsf::{Client, BulkApi};
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///
@@ -245,7 +248,7 @@ impl BulkApi {
     ///
     /// # See
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_quickstart_add_batch.htm>
-    pub async fn add_batch_job(&mut self, job_id: &str, csv: Vec<u8>) -> Result<Response, Error> {
+    pub async fn add_batch_job(&mut self, job_id: &str, csv: Vec<u8>) -> Result<Response> {
         let resource_url = format!("{}/job/{}/batch", self.base_path()?, job_id);
         let mut headers = self.get_auth_headers()?;
         headers.push(("Content-Type".to_string(), "text/csv".to_string()));
@@ -279,10 +282,11 @@ impl BulkApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, BulkApi, Error};
+    /// use rustsf::{Client, BulkApi};
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///
@@ -297,7 +301,7 @@ impl BulkApi {
     /// ```
     /// # See
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_quickstart_check_status.htm>
-    pub async fn get_batch(&mut self, job_id: &str, batch_id: &str) -> Result<Response, Error> {
+    pub async fn get_batch(&mut self, job_id: &str, batch_id: &str) -> Result<Response> {
         let resource_url = format!("{}/job/{}/batch/{}/", self.base_path()?, job_id, batch_id);
         let headers = self.get_auth_headers()?;
         self.client.get_raw(&resource_url, headers).await
@@ -322,10 +326,11 @@ impl BulkApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, BulkApi, Error};
+    /// use rustsf::{Client, BulkApi};
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///
@@ -341,7 +346,7 @@ impl BulkApi {
     ///
     /// # See
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_jobs_close.htm>
-    pub async fn close_job(&mut self, job_id: &str) -> Result<Response, Error> {
+    pub async fn close_job(&mut self, job_id: &str) -> Result<Response> {
         let resource_url = format!("{}/job/{}", self.base_path()?, job_id);
         let headers = self.get_auth_headers()?;
         let mut params = HashMap::new();
@@ -371,10 +376,11 @@ impl BulkApi {
     /// # Examples
     ///
     /// ```rust
-    /// use rustsf::{Client, BulkApi, Error};
+    /// use rustsf::{Client, BulkApi};
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///
@@ -394,7 +400,7 @@ impl BulkApi {
     ///
     /// # See
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_jobs_get_details.htm>
-    pub async fn get_job_details(&mut self, job_id: &str) -> Result<Response, Error> {
+    pub async fn get_job_details(&mut self, job_id: &str) -> Result<Response> {
         let resource_url = format!("{}/job/{}", self.base_path()?, job_id);
         let headers = self.get_auth_headers()?;
         self.client.get_raw(&resource_url, headers).await
@@ -421,10 +427,11 @@ impl BulkApi {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, BulkApi, Error};
+    /// use rustsf::{Client, BulkApi};
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///
@@ -450,7 +457,7 @@ impl BulkApi {
         &mut self,
         job_id: &str,
         content_type: &str,
-    ) -> Result<Response, Error> {
+    ) -> Result<Response> {
         let resource_url = format!("{}/job/{}/batch", self.base_path()?, job_id);
         let mut headers = self.get_auth_headers()?;
         headers.push(("Content-Type".to_string(), content_type.to_string()));
@@ -476,10 +483,11 @@ impl BulkApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, BulkApi, Error};
+    /// use rustsf::{Client, BulkApi};
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///
@@ -515,7 +523,7 @@ impl BulkApi {
         job_id: &str,
         batch_id: &str,
         content_type: &str,
-    ) -> Result<Response, Error> {
+    ) -> Result<Response> {
         let resource_url = format!(
             "{}/job/{}/batch/{}/result",
             self.base_path()?,
@@ -556,10 +564,11 @@ impl BulkApi {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, BulkApi, Error};
+    /// use rustsf::{Client, BulkApi};
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///
@@ -584,7 +593,7 @@ impl BulkApi {
         job_id: &str,
         batch_id: &str,
         result_id: &str,
-    ) -> Result<Response, Error> {
+    ) -> Result<Response> {
         let resource_url = format!(
             "{}/job/{}/batch/{}/result/{}",
             self.base_path()?,
@@ -624,10 +633,11 @@ impl BulkApi {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, BulkApi, Error};
+    /// use rustsf::{Client, BulkApi};
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///
@@ -642,7 +652,7 @@ impl BulkApi {
     /// 
     /// # See
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_jobs_abort.htm>
-    pub async fn abort_job(&mut self, job_id: &str) -> Result<Response, Error> {
+    pub async fn abort_job(&mut self, job_id: &str) -> Result<Response> {
         let resource_url = format!("{}/job/{}", self.base_path()?, job_id);
         let mut headers = self.get_auth_headers()?;
         headers.push(("Content-Type".to_string(), "application/json".to_string()));
@@ -667,12 +677,12 @@ impl BulkApi {
     ///
     /// # Notes
     /// * The `X-SFDC-Session` header is specifically required for API version 1 requests.
-    fn get_auth_headers(&self) -> Result<Vec<(String, String)>, Error> {
+    fn get_auth_headers(&self) -> Result<Vec<(String, String)>> {
         let token = self
             .client
             .access_token
             .as_ref()
-            .ok_or(Error::NotLoggedIn)?;
+            .context("Not logged in")?;
         Ok(vec![
             //X-SFDC-Session is needed for API v1 we can just pass it our access token
             (

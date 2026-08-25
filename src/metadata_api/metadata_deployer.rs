@@ -13,7 +13,7 @@
 use std::collections::HashMap;
 use std::io::Cursor;
 use s_zip::{SZipError, StreamingZipWriter};
-use crate::{Client, Error};
+use crate::{Client};
 use crate::metadata_api::{add_file_to_package, generate_package_xml};
 use crate::metadata_api::responses::deploy_options::DeployOptions;
 use crate::metadata_api::responses::deploy_request::DeployRequest;
@@ -146,10 +146,10 @@ impl MetadataDeployer {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, MetadataApi, Error};
+    /// use rustsf::{Client, MetadataApi};
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let client = Client::new();
     ///     // Authentication logic...
     ///
@@ -186,7 +186,7 @@ impl MetadataDeployer {
         content: &[u8], //
         file_name_xml: Option<&str>, // e.g. "MyClass.cls-meta.xml"
         content_xml: Option<&[u8]>, //
-    ) -> Result<&mut Self, Error> {
+    ) -> Result<&mut Self> {
         self.add_file_to_zip(folder, file_name, content)
             .map_err(|mut e| Error::RequestError(e.to_string()))?;
 
@@ -226,10 +226,10 @@ impl MetadataDeployer {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, MetadataApi, Error};
+    /// use rustsf::{Client, MetadataApi};
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let client = Client::new();
     ///     // Authentication logic...
     ///
@@ -268,10 +268,10 @@ impl MetadataDeployer {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, MetadataApi, Error};
+    /// use rustsf::{Client, MetadataApi};
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let client = Client::new();
     ///     // Authentication logic...
     ///
@@ -337,7 +337,7 @@ impl MetadataDeployer {
         &mut self,
         name: &str,
         content: HashMap<String, Vec<String>>,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         let package = generate_package_xml(&self.version, &content);
         println!("Adding package: {}\n{}", name, package);
 
@@ -370,7 +370,7 @@ impl MetadataDeployer {
     ///     Err(e) => eprintln!("Error generating JSON: {}", e),
     /// }
     /// ```
-    pub(crate) fn get_deploy_request_json(&self) -> Result<String, Error> {
+    pub(crate) fn get_deploy_request_json(&self) -> Result<String> {
         let request = DeployRequest {
             options: self.options.clone(),
         };
@@ -407,7 +407,7 @@ impl MetadataDeployer {
     /// - If `pre_destructive` or `post_destructive` is empty, the corresponding file will not be added to the ZIP.
     /// - The `finish` method on the ZIP writer is expected to finalize the ZIP and produce a writable result.
     ///
-    pub(crate) fn get_zip_file(mut self) -> Result<Vec<u8>, Error> {
+    pub(crate) fn get_zip_file(mut self) -> Result<Vec<u8>> {
         // Add the package.xml files to the zip
         self.add_package("package.xml", self.package.clone())?;
         if !self.pre_destructive.is_empty() {

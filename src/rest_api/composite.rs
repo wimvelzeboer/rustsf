@@ -53,7 +53,7 @@ impl RestApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, RestApi, DefSObject};
+    /// use rustsf::{Client, Credentials, RestApi, DefSObject};
     /// use rustsf::rest_api::responses::sobject_attribute::SObjectAttribute;
     /// use anyhow::Result;
     ///
@@ -69,7 +69,7 @@ impl RestApi {
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let client = Client::new();
+    ///     let client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut api = RestApi::new(client);
@@ -162,7 +162,7 @@ impl RestApi {
      ///
      /// # Example
      /// ```rust
-     /// use rustsf::{Client, RestApi, DefSObject};
+     /// use rustsf::{Client, Credentials, RestApi, DefSObject};
      /// use anyhow::Result;
      ///
      /// #[DefSObject(sobject_type = "Account", fields="system,name")]
@@ -173,7 +173,7 @@ impl RestApi {
      ///
      /// #[tokio::main]
      /// async fn main() -> Result<()> {
-     ///     let mut client = Client::new();
+     ///     let mut client= Client::new(Credentials::new()).await?;
      ///     // Authentication logic...
      ///
      ///     let mut api = RestApi::new(client);

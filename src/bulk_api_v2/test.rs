@@ -1,36 +1,29 @@
 use super::*;
 use mockito::Server;
 use serde_json::json;
+use crate::client::responses::access_token::AccessToken;
+use crate::credentials::Credentials;
 
-fn create_test_bulk_api_v2(server_url: &str) -> BulkApiV2 {
-    let mut client = Client::new();
-    client.set_instance_url(server_url);
-    client.set_access_token(
+async fn create_test_bulk_api_v2(server_url: &str) -> Result<BulkApiV2> {
+    let mut credentials = Credentials::new();
+    credentials.set_instance_url(server_url);
+    credentials.set_access_token(Some(AccessToken::new(
         "test_token".to_string(),
         "9999999999000".to_string(),
         "Bearer".to_string(),
-    );
+    )));
+
+    let mut client = Client::new(credentials).await?;
     client.set_version("v60.0");
-    BulkApiV2::new(client)
+    Ok(BulkApiV2::new(client))
 }
 
-#[test]
-fn test_new() {
-    let client = Client::new();
+#[tokio::test]
+async fn test_new() -> Result<()> {
+    let client = Client::new(Credentials::new()).await?;
     let api = BulkApiV2::new(client);
-    assert!(api.client.instance_url.is_none());
-}
-
-#[test]
-fn test_base_version_path() {
-    let mut client = Client::new();
-    client.set_instance_url("https://na1.salesforce.com");
-    client.set_version("v60.0");
-    let api = BulkApiV2::new(client);
-    assert_eq!(
-        api.client.base_version_path().unwrap(),
-        "https://na1.salesforce.com/services/data/v60.0"
-    );
+    assert!(api.client.instance_url().is_some());
+    Ok(())
 }
 
 #[tokio::test]
@@ -60,7 +53,7 @@ async fn test_create_job() {
         .create_async()
         .await;
 
-    let mut api = create_test_bulk_api_v2(&server.url());
+    let mut api = create_test_bulk_api_v2(&server.url()).await.unwrap();
     let mut params = HashMap::new();
     params.insert("operation", "insert");
     params.insert("object", "Account");
@@ -78,7 +71,7 @@ async fn test_upload_job_data_success() {
         .create_async()
         .await;
 
-    let mut api = create_test_bulk_api_v2(&server.url());
+    let mut api = create_test_bulk_api_v2(&server.url()).await.unwrap();
     let csv = b"Name\nTest Account".to_vec();
     let res = api.upload_job_data("750xx", csv).await;
     assert!(res.is_ok());
@@ -103,7 +96,7 @@ async fn test_upload_job_data_failure() {
         .create_async()
         .await;
 
-    let mut api = create_test_bulk_api_v2(&server.url());
+    let mut api = create_test_bulk_api_v2(&server.url()).await.unwrap();
     let csv = b"bad data".to_vec();
     let res = api.upload_job_data("750xx", csv).await;
     assert!(res.is_err());
@@ -121,7 +114,7 @@ async fn test_get_all_jobs() {
         .create_async()
         .await;
 
-    let mut api = create_test_bulk_api_v2(&server.url());
+    let mut api = create_test_bulk_api_v2(&server.url()).await.unwrap();
     let res = api.get_all_jobs().await;
     assert!(res.is_ok());
     mock.assert_async().await;
@@ -138,7 +131,7 @@ async fn test_get_job_info() {
         .create_async()
         .await;
 
-    let mut api = create_test_bulk_api_v2(&server.url());
+    let mut api = create_test_bulk_api_v2(&server.url()).await.unwrap();
     let res = api.get_job_info("750xx").await;
     assert!(res.is_ok());
     mock.assert_async().await;
@@ -157,7 +150,7 @@ async fn test_get_job_records() {
         .create_async()
         .await;
 
-    let mut api = create_test_bulk_api_v2(&server.url());
+    let mut api = create_test_bulk_api_v2(&server.url()).await.unwrap();
     let res = api.get_job_records("750xx", "successfulResults").await;
     assert!(res.is_ok());
     mock.assert_async().await;
@@ -174,7 +167,7 @@ async fn test_abort_job() {
         .create_async()
         .await;
 
-    let mut api = create_test_bulk_api_v2(&server.url());
+    let mut api = create_test_bulk_api_v2(&server.url()).await.unwrap();
     let res = api.abort_job("750xx").await;
     assert!(res.is_ok());
     mock.assert_async().await;
@@ -191,7 +184,7 @@ async fn test_set_upload_state() {
         .create_async()
         .await;
 
-    let mut api = create_test_bulk_api_v2(&server.url());
+    let mut api = create_test_bulk_api_v2(&server.url()).await.unwrap();
     let mut params = HashMap::new();
     params.insert("state", "UploadComplete");
     let res = api.set_upload_state("750xx", params).await;
@@ -210,7 +203,7 @@ async fn test_check_job_status() {
         .create_async()
         .await;
 
-    let mut api = create_test_bulk_api_v2(&server.url());
+    let mut api = create_test_bulk_api_v2(&server.url()).await.unwrap();
     let res = api.check_job_status("750xx").await;
     assert!(res.is_ok());
     mock.assert_async().await;

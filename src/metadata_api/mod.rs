@@ -71,11 +71,11 @@ impl MetadataApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, MetadataApi};
+    /// use rustsf::{Client, Credentials, MetadataApi};
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let client = Client::new();
+    ///     let client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut api = MetadataApi::new(client);
@@ -105,11 +105,11 @@ impl MetadataApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, MetadataApi};
+    /// use rustsf::{Client, Credentials, MetadataApi};
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let client = Client::new();
+    ///     let client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut api = MetadataApi::new(client);
@@ -152,11 +152,11 @@ impl MetadataApi {
     ///
     /// # Examples
     /// ```rust
-    /// use rustsf::{Client, MetadataApi};
+    /// use rustsf::{Client, Credentials, MetadataApi};
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let client = Client::new();
+    ///     let client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut api = MetadataApi::new(client);
@@ -213,11 +213,11 @@ impl MetadataApi {
     ///
     /// # Examples
     /// ```rust
-    /// use rustsf::{Client, MetadataApi};
+    /// use rustsf::{Client, Credentials, MetadataApi};
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let client = Client::new();
+    ///     let client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut api = MetadataApi::new(client);
@@ -318,11 +318,11 @@ impl MetadataApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, MetadataApi};
+    /// use rustsf::{Client, Credentials, MetadataApi};
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let client = Client::new();
+    ///     let client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut api = MetadataApi::new(client);

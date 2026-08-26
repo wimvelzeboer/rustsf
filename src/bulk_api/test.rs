@@ -2,30 +2,36 @@
 use super::*;
 use mockito::Server;
 use serde_json::json;
+use crate::client::responses::access_token::AccessToken;
+use crate::{Credentials};
 
-fn create_test_bulk_api(server_url: &str) -> BulkApi {
-    let mut client = Client::new();
-    client.set_instance_url(server_url);
-    client.set_access_token(
+async fn create_test_bulk_api(server_url: &str) -> BulkApi {
+    let mut credentials = Credentials::new();
+    credentials.set_instance_url(server_url);
+    credentials.set_access_token(Some(AccessToken::new(
         "test_token".to_string(),
         "9999999999000".to_string(),
         "Bearer".to_string(),
-    );
+    )));
+
+    let mut client = Client::new(credentials).await.unwrap();
     client.set_version("v60.0");
     BulkApi::new(client)
 }
 
-#[test]
-fn test_new() {
-    let client = Client::new();
+#[tokio::test]
+async fn test_new() -> Result<()> {
+    let client = Client::new(Credentials::new()).await?;
     let api = BulkApi::new(client);
-    assert!(api.client.instance_url.is_none());
+    assert!(api.client.instance_url().is_some());
+    Ok(())
 }
 
-#[test]
-fn test_base_path() {
-    let mut client = Client::new();
-    client.set_instance_url("https://na1.salesforce.com");
+#[tokio::test]
+async fn test_base_path() -> Result<()> {
+    let mut credentials = Credentials::new();
+    credentials.set_instance_url("https://na1.salesforce.com");
+    let mut client = Client::new(credentials).await?;
     client.set_version("v60.0");
     let api = BulkApi::new(client);
     // v60.0 -> strips the 'v' to get 60.0
@@ -33,25 +39,28 @@ fn test_base_path() {
         api.base_path().unwrap(),
         "https://na1.salesforce.com/services/async/60.0"
     );
+    Ok(())
 }
 
-#[test]
-fn test_get_auth_headers() {
-    let mut client = Client::new();
-    client.set_access_token(
+#[tokio::test]
+async fn test_get_auth_headers() -> Result<()> {
+    let mut credentials = Credentials::new();
+    credentials.set_access_token(Some(AccessToken::new(
         "my_session_token".to_string(),
         "".to_string(),
-        "Bearer".to_string(),
+        "Bearer".to_string(),))
     );
+    let client = Client::new(credentials).await?;
     let api = BulkApi::new(client);
     let headers = api.get_auth_headers().unwrap();
     assert_eq!(headers.len(), 1);
     assert_eq!(headers[0].0, "X-SFDC-Session");
     assert_eq!(headers[0].1, "my_session_token");
+    Ok(())
 }
 
 #[tokio::test]
-async fn test_create_job() {
+async fn test_create_job() -> Result<()>{
     let mut server = Server::new_async().await;
     let mock = server
         .mock("POST", "/services/async/60.0/job")
@@ -61,17 +70,18 @@ async fn test_create_job() {
         .create_async()
         .await;
 
-    let mut api = create_test_bulk_api(&server.url());
+    let mut api = create_test_bulk_api(&server.url()).await;
     let mut params = HashMap::new();
     params.insert("operation", "insert");
     params.insert("object", "Account");
     let res = api.create_job(params).await;
     assert!(res.is_ok());
     mock.assert_async().await;
+    Ok(())
 }
 
 #[tokio::test]
-async fn test_add_batch_job() {
+async fn test_add_batch_job() -> Result<()>{
     let mut server = Server::new_async().await;
     let mock = server
         .mock("POST", "/services/async/60.0/job/750xx/batch")
@@ -79,15 +89,16 @@ async fn test_add_batch_job() {
         .create_async()
         .await;
 
-    let mut api = create_test_bulk_api(&server.url());
+    let mut api = create_test_bulk_api(&server.url()).await;
     let csv = b"Name\nTest Account".to_vec();
     let res = api.add_batch_job("750xx", csv).await;
     assert!(res.is_ok());
     mock.assert_async().await;
+    Ok(())
 }
 
 #[tokio::test]
-async fn test_get_batch() {
+async fn test_get_batch() -> Result<()>{
     let mut server = Server::new_async().await;
     let mock = server
         .mock("GET", "/services/async/60.0/job/750xx/batch/751xx/")
@@ -96,14 +107,15 @@ async fn test_get_batch() {
         .create_async()
         .await;
 
-    let mut api = create_test_bulk_api(&server.url());
+    let mut api = create_test_bulk_api(&server.url()).await;
     let res = api.get_batch("750xx", "751xx").await;
     assert!(res.is_ok());
     mock.assert_async().await;
+    Ok(())
 }
 
 #[tokio::test]
-async fn test_close_job() {
+async fn test_close_job() -> Result<()>{
     let mut server = Server::new_async().await;
     let mock = server
         .mock("POST", "/services/async/60.0/job/750xx")
@@ -112,14 +124,15 @@ async fn test_close_job() {
         .create_async()
         .await;
 
-    let mut api = create_test_bulk_api(&server.url());
+    let mut api = create_test_bulk_api(&server.url()).await;
     let res = api.close_job("750xx").await;
     assert!(res.is_ok());
     mock.assert_async().await;
+    Ok(())
 }
 
 #[tokio::test]
-async fn test_get_job_details() {
+async fn test_get_job_details() -> Result<()> {
     let mut server = Server::new_async().await;
     let mock = server
         .mock("GET", "/services/async/60.0/job/750xx")
@@ -128,10 +141,11 @@ async fn test_get_job_details() {
         .create_async()
         .await;
 
-    let mut api = create_test_bulk_api(&server.url());
+    let mut api = create_test_bulk_api(&server.url()).await;
     let res = api.get_job_details("750xx").await;
     assert!(res.is_ok());
     mock.assert_async().await;
+    Ok(())
 }
 
 #[tokio::test]
@@ -144,7 +158,7 @@ async fn test_get_batches() {
         .create_async()
         .await;
 
-    let mut api = create_test_bulk_api(&server.url());
+    let mut api = create_test_bulk_api(&server.url()).await;
     let res = api.get_batches("750xx", "application/json").await;
     assert!(res.is_ok());
     mock.assert_async().await;
@@ -160,7 +174,7 @@ async fn test_get_result_list() {
         .create_async()
         .await;
 
-    let mut api = create_test_bulk_api(&server.url());
+    let mut api = create_test_bulk_api(&server.url()).await;
     let res = api
         .get_result_list("750xx", "751xx", "application/json")
         .await;
@@ -181,7 +195,7 @@ async fn test_get_result() {
         .create_async()
         .await;
 
-    let mut api = create_test_bulk_api(&server.url());
+    let mut api = create_test_bulk_api(&server.url()).await;
     let res = api.get_result("750xx", "751xx", "752xx").await;
     assert!(res.is_ok());
     mock.assert_async().await;
@@ -197,7 +211,7 @@ async fn test_abort_job() {
         .create_async()
         .await;
 
-    let mut api = create_test_bulk_api(&server.url());
+    let mut api = create_test_bulk_api(&server.url()).await;
     let res = api.abort_job("750xx").await;
     assert!(res.is_ok());
     mock.assert_async().await;

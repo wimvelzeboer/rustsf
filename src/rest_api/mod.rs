@@ -35,7 +35,6 @@ pub mod responses;
 ///
 /// Note: To use the `RestApi` struct effectively, ensure all required components
 /// of the `Client` type are configured appropriately.
-#[derive(Default)]
 pub struct RestApi {
     pub(crate) client: Client,
 }
@@ -71,12 +70,12 @@ impl RestApi {
     /// # Examples
     ///
     /// ```
-    /// use rustsf::{Client, RestApi};
+    /// use rustsf::{Client, Credentials, RestApi};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let client = Client::new();
+    ///     let client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut api = RestApi::new(client);

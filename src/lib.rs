@@ -21,6 +21,8 @@
 //!```
 pub mod client;
 
+pub mod credentials;
+
 #[cfg(feature = "rest-api")]
 pub mod rest_api;
 
@@ -34,7 +36,13 @@ pub mod bulk_api;
 pub mod bulk_api_v2;
 pub mod primary_types;
 
+
+
 pub use client::client::Client;
+pub use credentials::Credentials;
+pub use credentials::auth_url::AuthUrl;
+pub use credentials::client_credentials::ClientCredentials;
+pub use credentials::credential_file::CredentialFile;
 
 #[cfg(feature = "rest-api")]
 pub use rest_api::RestApi;

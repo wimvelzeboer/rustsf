@@ -40,9 +40,10 @@ rustsf = { version = "0.0.2", features = ["rest-api", "tooling-api", "metadata-a
 ```
 
 ```rust
-use rustsf::{Client, RestApi, Error, QueryResponse};
+use rustsf::{Client, RestApi, Credentials, QueryResponse};
 use serde::Deserialize;
 use std::env;
+use anyhow::Result;
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "PascalCase")]
@@ -52,17 +53,14 @@ struct Account {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Error> {
-    let client_id = env::var("SFDC_CLIENT_ID").unwrap();
-    let client_secret = env::var("SFDC_CLIENT_SECRET").unwrap();
-    let username = env::var("SFDC_USERNAME").unwrap();
-    let password = env::var("SFDC_PASSWORD").unwrap();
+async fn main() -> Result<()> {
+    let mut credentials = Credentials::new();
+    credentials.set_client_id(env::var("SFDC_CLIENT_ID").unwrap());
+    credentials.set_client_secret(env::var("SFDC_CLIENT_SECRET").unwrap());
+    credentials.set_username(env::var("SFDC_USERNAME").unwrap());
+    credentials.set_password(env::var("SFDC_PASSWORD").unwrap());
 
-    let mut client = Client::new();
-    client.set_client_id(&client_id);
-    client.set_client_secret(&client_secret);
-    client.login_with_credential(&username, &password).await?;
-
+    let mut client = Client::new(credentials).await?;
     let mut api = RestApi::new(client);
 
     let res: QueryResponse<Account> = api.query("SELECT Id, Name FROM Account").await?;
@@ -77,39 +75,32 @@ async fn main() -> Result<(), Error> {
 #### Username Password Flow (OAuth2)
 
 ```rust
-let mut client = Client::new();
-client.set_client_id(&client_id);
-client.set_client_secret(&client_secret);
-client.login_with_credential(&username, &password).await?;
-```
+let mut credentials = Credentials::new();
+credentials.set_client_id(env::var("SFDC_CLIENT_ID").unwrap());
+credentials.set_client_secret(env::var("SFDC_CLIENT_SECRET").unwrap());
+credentials.set_username(env::var("SFDC_USERNAME").unwrap());
+credentials.set_password(env::var("SFDC_PASSWORD").unwrap());
 
-#### SOAP Login
-
-```rust
-let mut client = Client::new();
-client.login_by_soap(&username, &password).await?;
+let mut client = Client::new(credentials).await?;
 ```
 
 #### Using an Existing Access Token
 
 ```rust
-let mut client = Client::new();
-client.set_instance_url("https://na1.salesforce.com");
-client.set_access_token(token, issued_at, token_type);
+let mut credentials = Credentials::new();
+credentials.set_access_token(Some(AccessToken {
+    value,
+    issued_at,
+    token_type,
+}));
+credentials.set_instance_url("https://na1.salesforce.com");
+let mut client = Client::new(credentials).await?;
 ```
 
 #### SFDX AUTH URL
 
 ```rust
-let mut client = Client::new();
-client.login_by_sfdx_auth_url("sfdx auth url").await?;
-```
-
-#### Refresh Token
-
-```rust
-client.set_refresh_token("your_refresh_token");
-client.refresh().await?;
+let mut client = Client::new(AuthUrl::new("...SFDX_AUTH_URL...")).await?;
 ```
 
 ### REST API

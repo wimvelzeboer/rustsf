@@ -3,7 +3,7 @@ use mockito::Server;
 use serde_json::json;
 
 fn create_test_tooling_api(server_url: &str) -> ToolingApi {
-    let mut client = Client::new();
+    let mut client = Client::new(Credentials::new_mock()).await?;
     client.set_instance_url(server_url);
     client.set_access_token(
         "test_token".to_string(),
@@ -16,14 +16,14 @@ fn create_test_tooling_api(server_url: &str) -> ToolingApi {
 
 #[test]
 fn test_new() {
-    let client = Client::new();
+    let client = Client::new(Credentials::new_mock()).await?;
     let api = ToolingApi::new(client);
     assert!(api.client.instance_url.is_none());
 }
 
 #[test]
 fn test_base_path() {
-    let mut client = Client::new();
+    let mut client= Client::new(Credentials::new()).await?;
     client.set_instance_url("https://na1.salesforce.com");
     client.set_version("v60.0");
     let api = ToolingApi::new(client);

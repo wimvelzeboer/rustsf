@@ -5,19 +5,17 @@
 
 use crate::client::responses::access_token::AccessToken;
 use crate::client::responses::token_response::TokenResponse;
-use crate::client::xml::{create_login_envelope, extract_xml_tag};
 use log::debug;
-use regex::Regex;
 use reqwest::header::{AUTHORIZATION, HeaderMap, HeaderName, HeaderValue};
 use reqwest::{Response, Url};
 use serde::Serialize;
 use std::collections::HashMap;
 use std::fmt::Debug;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use anyhow::{anyhow, Result, Context};
 
 #[cfg(feature = "metadata-api")]
 use reqwest::multipart::Form;
+use crate::credentials::{Credentials, CredentialsType};
 
 /// Represents a client used for interacting with a remote API.
 /// This struct encapsulates all the necessary data required to authenticate
@@ -51,17 +49,20 @@ use reqwest::multipart::Form;
 ///
 /// # Example
 /// ```rust
-/// use rustsf::Client;
+/// use rustsf::{Client, Credentials};
 /// use anyhow::Result;
 ///
 /// #[tokio::main]
 /// async fn main() -> Result<()> {
-///     let mut client = Client::new();
 ///
 ///     // Configure authentication credentials, e.g.:
-///     client.set_client_id("client_Id");
-///     client.set_client_secret("client_secret");
-///     match client.login_with_credential("username", "password").await {
+///     let mut credentials = Credentials::new();
+///     credentials.set_client_id("client_Id");
+///     credentials.set_client_secret("client_secret");
+///
+///     let client = Client::new(Credentials::new()).await;
+///
+///     match client {
 ///         Ok(_) => println!("Login successful!"),
 ///         Err(e) => println!("Login failed: {}", e),
 ///     }
@@ -74,25 +75,11 @@ use reqwest::multipart::Form;
 ///
 /// Ensure that sensitive fields like `client_secret` and `access_token` are handled securely
 /// to avoid unintended exposure of confidential data.
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct Client {
     pub http_client: reqwest::Client,
-    pub(crate) client_id: Option<String>,
-    pub(crate) client_secret: Option<String>,
-    pub(crate) login_endpoint: String,
-    pub(crate) instance_url: Option<String>,
-    pub access_token: Option<AccessToken>,
-    pub(crate) refresh_token: Option<String>,
+    pub(crate) credentials: Credentials,
     pub(crate) version: String,
-    pub(crate) secret_required: bool,
-    pub(crate) organisation_id: Option<String>,
-    pub(crate) user_id: Option<String>,
-}
-
-impl Default for Client {
-    fn default() -> Self {
-        Client::new()
-    }
 }
 
 impl Client {
@@ -114,107 +101,33 @@ impl Client {
     ///
     /// # Examples
     /// ```
-    /// use rustsf::Client;
+    /// use rustsf::{Client, Credentials};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
-    ///     // Authentication logic...
+    ///     let mut client = Client::new(Credentials::new()).await?;
     ///     Ok(())
     /// }
     /// ```
-    pub fn new() -> Client {
+    pub async fn new(credentials: Credentials) -> Result<Client> {
         let http_client = reqwest::Client::new();
-        Client {
+
+        let credentials = match credentials.get_flow_type() {
+            Some(flow_type) => match flow_type {
+                CredentialsType::AuthUrl => login_with_sfdx_auth_url(credentials).await.context("Failed to login with SFDX Authentication URL")?,
+                CredentialsType::ClientCredentials
+                    | CredentialsType::Password => login_with_credential(credentials).await.context("Failed to login with username and password")?,
+                CredentialsType::None => credentials,
+            },
+            None => credentials
+        };
+
+        Ok(Client {
             http_client,
-            client_id: None,
-            client_secret: None,
-            login_endpoint: "https://login.salesforce.com".to_string(),
-            access_token: None,
-            instance_url: None,
-            refresh_token: None,
-            secret_required: true,
+            credentials,
             version: "v60.0".to_string(),
-            organisation_id: None,
-            user_id: None,
-        }
-    }
-
-    // --- Read-only getters ---
-
-    /// Retrieves the client ID associated with the current object, if it exists.
-    ///
-    /// # Returns
-    /// - `Option<&str>`:
-    ///    - `Some(&str)` containing the reference to the client ID if it is present.
-    ///    - `None` if the client ID is not set.
-    ///
-    /// # Example
-    /// ```rust
-    /// use rustsf::Client;
-    /// use anyhow::Result;
-    ///
-    /// #[tokio::main]
-    /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
-    ///     // ... set client ID and other fields ...
-    ///     let client_id = client.client_id();
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// This method allows for safely accessing the client ID without taking ownership of the value.
-    pub fn client_id(&self) -> Option<&str> {
-        self.client_id.as_deref()
-    }
-
-    /// Retrieves the client secret as an optional reference to a string slice.
-    ///
-    /// # Returns
-    /// - `Some(&str)` if the `client_secret` field is set in the struct.
-    /// - `None` if the `client_secret` field is `None`.
-    ///
-    /// This method allows safe access to the client secret without consuming the value.
-    ///
-    /// # Example
-    /// ```rust
-    /// use rustsf::Client;
-    /// use anyhow::Result;
-    ///
-    /// #[tokio::main]
-    /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
-    ///     // Authentication logic...
-    ///     let client_id = client.client_secret();
-    ///     Ok(())
-    /// }
-    /// ```
-    pub fn client_secret(&self) -> Option<&str> {
-        self.client_secret.as_deref()
-    }
-
-    /// Returns the login endpoint URL as a string slice.
-    ///
-    /// # Example
-    /// ```rust
-    /// use rustsf::Client;
-    /// use anyhow::Result;
-    ///
-    /// #[tokio::main]
-    /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
-    ///     // Authentication logic...
-    ///     let endpoint = client.login_endpoint();
-    ///     assert_eq!(endpoint, "https://login.salesforce.com");
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// # Returns
-    /// * `&str` - A reference to the login endpoint URL.
-    pub fn login_endpoint(&self) -> &str {
-        &self.login_endpoint
+        })
     }
 
     /// Retrieves the instance URL as an optional string slice.
@@ -230,80 +143,24 @@ impl Client {
     /// # Examples
     ///
     /// ```
-    /// use rustsf::Client;
+    /// use rustsf::{Client, Credentials};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///     let endpoint = client.instance_url();
     ///     Ok(())
     /// }
     /// ```
     pub fn instance_url(&self) -> Option<&str> {
-        self.instance_url.as_deref()
+        self.credentials.instance_url()
     }
 
     pub fn validated_base_url(&self) -> Result<String> {
-        let instance_url = self.instance_url.as_ref().context("Not logged in")?;
+        let instance_url = self.credentials.instance_url().context("Not logged in")?;
         Ok(format!("{}/services/data/", instance_url))
-    }
-
-    /// Retrieves a reference to the `AccessToken` if it exists.
-    ///
-    /// # Returns
-    ///
-    /// - `Some(&AccessToken)` - A reference to the `AccessToken` if it is available.
-    /// - `None` - If the `access_token` is not set.
-    ///
-    /// This method provides a way to access the `AccessToken` field of the
-    /// struct without taking ownership of it. It is useful when you want
-    /// to inspect or work with the token without modifying the struct.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use rustsf::Client;
-    /// use anyhow::Result;
-    ///
-    /// #[tokio::main]
-    /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
-    ///     // Authentication logic...
-    ///     let token = client.access_token();
-    ///     Ok(())
-    /// }
-    /// ```
-    pub fn access_token(&self) -> Option<&AccessToken> {
-        self.access_token.as_ref()
-    }
-
-    /// Retrieves the value of the access token, if it exists.
-    ///
-    /// This method accesses the `access_token` field of the struct and extracts its
-    /// `value` as a string slice. If the `access_token` is `None`, this method will
-    /// return `None`.
-    ///
-    /// # Returns
-    /// * `Option<&str>` - `Some(&str)` containing the value of the access token if it exists,
-    ///   or `None` if the `access_token` is not present.
-    ///
-    /// # Example
-    /// ```rust
-    /// use rustsf::Client;
-    /// use anyhow::Result;
-    ///
-    /// #[tokio::main]
-    /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
-    ///     // Authentication logic...
-    ///     let token_value = client.access_token_value();
-    ///     Ok(())
-    /// }
-    /// ```
-    pub fn access_token_value(&self) -> Option<&str> {
-        self.access_token.as_ref().map(|t| t.value.as_str())
     }
 
     /// Returns the version of the current instance.
@@ -313,12 +170,12 @@ impl Client {
     ///
     /// # Examples
     /// ```
-    /// use rustsf::Client;
+    /// use rustsf::{Client, Credentials};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///     assert_eq!(client.version(), "v60.0");
     ///     Ok(())
@@ -335,12 +192,12 @@ impl Client {
     ///
     /// # Examples
     /// ```
-    /// use rustsf::Client;
+    /// use rustsf::{Client, Credentials};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///     assert_eq!(client.version(), "v60.0");
     ///     Ok(())
@@ -350,33 +207,6 @@ impl Client {
         let mut chars = self.version.chars();
         chars.next();
         Ok(chars.as_str().to_string())  // fixme might want to store just the base version number and then add the "v" when really needed...
-    }
-
-    /// Returns an optional reference to the refresh token.
-    ///
-    /// This method provides a way to retrieve the refresh token, returning it as an
-    /// `Option<&str>`. If a refresh token exists within the structure, it is returned
-    /// as a `Some(&str)`; otherwise, `None` is returned.
-    ///
-    /// # Returns
-    /// - `Some(&str)` if the refresh token is present.
-    /// - `None` if the refresh token is absent.
-    ///
-    /// # Example
-    /// ```rust
-    /// use rustsf::Client;
-    /// use anyhow::Result;
-    ///
-    /// #[tokio::main]
-    /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
-    ///     // Authentication logic...
-    ///     let token = client.refresh_token();
-    ///     Ok(())
-    /// }
-    /// ```
-    pub fn refresh_token(&self) -> Option<&str> {
-        self.refresh_token.as_deref()
     }
 
     /// Constructs the base path URL for the API, incorporating the instance URL and version.
@@ -394,12 +224,12 @@ impl Client {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::Client;
+    /// use rustsf::{Client, Credentials};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///     match client.base_version_path() {
     ///         Ok(base_path) => println!("Base path: {}", base_path),
@@ -413,61 +243,25 @@ impl Client {
     ///
     /// This method assumes that `version` is a valid string and does not perform validation on it.
     pub fn base_version_path(&self) -> Result<String> {
-        let instance_url = self.instance_url.as_ref().context("Not logged in")?;
+        let instance_url = self.credentials.instance_url().context("Not logged in")?;
         Ok(format!("{}/services/data/{}", instance_url, self.version))
     }
 
     pub fn base_path(&self) -> Result<String> {
-        let instance_url = self.instance_url.as_ref().context("Not logged in")?;
+        let instance_url = self.credentials.instance_url().context("Not logged in")?;
         Ok(format!("{}/services/data/", instance_url))
     }
 
     pub fn soap_path(&self) -> Result<String> {
-        let instance_url = self.instance_url.as_ref().context("Not logged in")?;
+        let instance_url = self.credentials.instance_url().context("Not logged in")?;
         Ok(format!("{}/services/Soap/m/", instance_url))
     }
 
     pub fn soap_version_path(&self) -> Result<String> {
-        let instance_url = self.instance_url.as_ref().context("Not logged in")?;
+        let instance_url = self.credentials.instance_url().context("Not logged in")?;
         Ok(format!("{}/services/Soap/m/{}", instance_url, self.version_number()?))
     }
 
-
-
-    // --- Setters ---
-
-    /// Sets the login endpoint for the current instance.
-    ///
-    /// This method allows you to specify a custom login endpoint URL
-    /// for the object. It internally converts the provided string slice (`&str`)
-    /// into a `String` and assigns it to the `login_endpoint` field.
-    ///
-    /// # Arguments
-    ///
-    /// * `endpoint` - A string slice that specifies the login endpoint URL to be set.
-    ///
-    /// # Returns
-    ///
-    /// A mutable reference to the current instance, allowing method chaining.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use rustsf::Client;
-    /// use anyhow::Result;
-    ///
-    /// #[tokio::main]
-    /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
-    ///     client.set_login_endpoint("https://test.salesforce.com/login");
-    ///     // rest of authentication logic...
-    ///     Ok(())
-    /// }
-    /// ```
-    pub fn set_login_endpoint(&mut self, endpoint: &str) -> &mut Self {
-        self.login_endpoint = endpoint.to_string();
-        self
-    }
 
     /// Sets the version for the current instance.
     ///
@@ -483,12 +277,12 @@ impl Client {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::Client;
+    /// use rustsf::{Client, Credentials};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///     client.set_version("v65.0");
     ///     Ok(())
@@ -499,270 +293,8 @@ impl Client {
         self
     }
 
-    /// Sets the instance URL for the current object.
-    ///
-    /// This method allows you to set the `instance_url` field of the object to the specified
-    /// URL string. The provided URL is converted into an owned `String` and stored inside
-    /// the object. The method then returns a mutable reference to the current object,
-    /// allowing for method chaining.
-    ///
-    /// # Arguments
-    ///
-    /// * `instance_url` - A string slice that represents the URL to be set.
-    ///
-    /// # Returns
-    ///
-    /// A mutable reference to the current object (`&mut Self`) to enable method chaining.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use rustsf::Client;
-    /// use anyhow::Result;
-    ///
-    /// #[tokio::main]
-    /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
-    ///     client.set_instance_url("https://develop.sandbox.mu.salesforce.com");
-    ///     // Authentication logic...
-    ///     Ok(())
-    /// }
-    /// ```
-    pub fn set_instance_url(&mut self, instance_url: &str) -> &mut Self {
-        self.instance_url = Some(instance_url.to_string());
-        self
-    }
-
-    /// Sets the refresh token for the current instance.
-    ///
-    /// This method takes a string slice representing a refresh token,
-    /// converts it to a `String`, and assigns it to the `refresh_token` field
-    /// of the struct. After setting the value, it returns a mutable reference
-    /// to `self`, allowing method chaining.
-    ///
-    /// # Arguments
-    ///
-    /// * `refresh_token` - A string slice representing the refresh token to be set.
-    ///
-    /// # Returns
-    ///
-    /// * `&mut Self` - A mutable reference to the current instance, enabling method chaining.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use rustsf::Client;
-    /// use anyhow::Result;
-    ///
-    /// #[tokio::main]
-    /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
-    ///     client.set_refresh_token("new_refresh_token");
-    ///     Ok(())
-    /// }
-    /// ```
-    pub fn set_refresh_token(&mut self, refresh_token: &str) -> &mut Self {
-        self.refresh_token = Some(refresh_token.to_string());
-        self
-    }
-
-    /// Sets whether a secret is required for the entity and returns a mutable reference to the instance.
-    ///
-    /// # Parameters
-    /// - `secret_required`: A boolean value indicating whether the entity requires a secret.
-    ///    - `true`: A secret is required.
-    ///    - `false`: A secret is not required.
-    ///
-    /// # Returns
-    /// A mutable reference to the current instance of the object, enabling method chaining.
-    ///
-    /// # Example
-    /// ```rust
-    /// use rustsf::Client;
-    /// use anyhow::Result;
-    ///
-    /// #[tokio::main]
-    /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
-    ///     // Authentication logic...
-    ///     client.set_secret_required(true);
-    ///     Ok(())
-    /// }
-    /// ```
-    pub fn set_secret_required(&mut self, secret_required: bool) -> &mut Self {
-        self.secret_required = secret_required;
-        self
-    }
-
-    /// Sets the client ID for the instance.
-    ///
-    /// This method allows you to assign a client ID to the current instance.
-    /// The provided string reference is converted into an owned `String` and
-    /// stored internally. It returns a mutable reference to the instance,
-    /// allowing for method chaining.
-    ///
-    /// # Arguments
-    ///
-    /// * `client_id` - A string slice that holds the client ID to be set.
-    ///
-    /// # Returns
-    ///
-    /// * A mutable reference to the current instance (`Self`), enabling method chaining.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use rustsf::Client;
-    /// use anyhow::Result;
-    ///
-    /// #[tokio::main]
-    /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
-    ///     client.set_client_id("client_id");
-    ///     Ok(())
-    /// }
-    ///     // Rest of authentication logic...
-    /// ```
-    pub fn set_client_id(&mut self, client_id: &str) -> &mut Self {
-        self.client_id = Some(client_id.to_string());
-        self
-    }
-
-    /// Sets the client secret for the current instance.
-    ///
-    /// This method allows you to set the client secret, which is typically
-    /// used for authentication purposes or identifying the client in API requests.
-    ///
-    /// # Arguments
-    ///
-    /// * `client_secret` - A string slice containing the client secret to be set.
-    ///
-    /// # Returns
-    ///
-    /// Returns a mutable reference to the current instance, allowing method
-    /// chaining.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use rustsf::Client;
-    /// use anyhow::Result;
-    ///
-    /// #[tokio::main]
-    /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
-    ///     client.set_client_secret("client_secret");
-    ///     Ok(())
-    /// }
-    /// ```
-    pub fn set_client_secret(&mut self, client_secret: &str) -> &mut Self {
-        self.client_secret = Some(client_secret.to_string());
-        self
-    }
-
-    /// Sets the access token for the current instance.
-    ///
-    /// This function updates the access token along with its type and issuance time.
-    /// It allows method chaining by returning a mutable reference to the instance.
-    ///
-    /// # Arguments
-    ///
-    /// * `access_token` - A `String` containing the access token value.
-    /// * `issued_at` - A `String` representing the time at which the token was issued.
-    /// * `token_type` - A `String` denoting the type of the token, e.g., "Bearer".
-    ///
-    /// # Returns
-    ///
-    /// A mutable reference to the current instance (`&mut Self`), enabling method chaining.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use rustsf::Client;
-    /// use anyhow::Result;
-    ///
-    /// #[tokio::main]
-    /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
-    ///     client.set_access_token("abc123".to_string(), "2023-01-01T00:00:00Z".to_string(), "Bearer".to_string());
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// This sets the access token, token type, and issuance time for the client.
-    pub fn set_access_token(
-        &mut self,
-        access_token: String,
-        issued_at: String,
-        token_type: String,
-    ) -> &mut Self {
-        self.access_token = Some(AccessToken {
-            token_type,
-            value: access_token,
-            issued_at,
-        });
-        self
-    }
-
-    /// Asynchronously retrieves the identity from the provided URL.
-    ///
-    /// This function sends a GET request to the specified `identity_url`
-    /// without any additional headers. If the response has a successful
-    /// status code, the response body is returned as a `String`. Otherwise,
-    /// an error is returned, containing a detailed description of the
-    /// failure.
-    ///
-    /// # Arguments
-    ///
-    /// * `identity_url` - A `String` containing the URL to fetch the identity from.
-    ///
-    /// # Returns
-    ///
-    /// * `Result<String, Error>` - Returns `Ok(String)` containing the response body if the
-    ///   request was successful, or `Err(Error)` if an error occurred.
-    ///
-    /// # Errors
-    ///
-    /// This function returns an error in these cases:
-    /// - If the HTTP GET request fails.
-    /// - If the response status is not successful.
-    /// - If there is an issue reading or parsing the response body.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use rustsf::Client;
-    /// use anyhow::Result;
-    ///
-    /// #[tokio::main]
-    /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
-    ///     // Authentication logic...
-    ///     let identity_url = client.get_identity("identity_url".to_string()).await;
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// # Dependencies
-    ///
-    /// This function depends on the `get` method of the client object and assumes that:
-    /// * The `get` method takes a URL and headers as parameters.
-    /// * The `res` object has `status`, `text`, and `json` methods, where:
-    ///   - `status()` returns the status of the response.
-    ///   - `text().await` retrieves the response body as a `String`.
-    ///   - `json().await` deserializes the response body into an error description.
-    pub async fn get_identity(&mut self, identity_url: String) -> Result<String> {
-        let res = self.get(identity_url, vec![], vec![]).await
-            .context("Failed to get identity")?;
-        if res.status().is_success() {
-            Ok(res.text().await?)
-        } else {
-            Err(anyhow!("Get identity error: {}", res.text().await.context("Failed to parse identity error")?))
-        }
-    }
-
     pub fn get_user_id(&self) -> Option<&str> {
-        self.user_id.as_deref()
+        self.credentials.user_id.as_deref()
     }
 
     /// Asynchronously ensures that the access token is refreshed if it has expired or
@@ -791,562 +323,30 @@ impl Client {
     ///
     /// # Examples
     /// ```rust
-    /// use rustsf::Client;
+    /// use rustsf::{Client, Credentials};
     /// use anyhow::Result;
     ///
     /// async fn example() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     client.ensure_refresh().await?;
     ///     Ok(())
     /// }
     /// ```
     pub async fn ensure_refresh(&mut self) -> Result<&mut Self> {
-        if self.access_token.is_none() {
+        if !self.credentials.has_access_token() {
             return Ok(self);
         }
 
-        let issued_at = &self.access_token.as_ref().context("Not logged in, try to login first")?.issued_at;
-        let timestamp_ms = match issued_at.parse::<u64>() {
-            Ok(ts) => ts,
-            Err(_) => {
-                // SOAP login returns ISO timestamp; can't compare, attempt refresh
-                log::info!("Could not parse issued_at as timestamp, attempting refresh.");
-                return self.refresh().await;
-            }
-        };
-        let seconds = timestamp_ms / 1000;
-        let nanos = (timestamp_ms % 1000) * 1_000_000;
-
-        let given_time = UNIX_EPOCH + Duration::new(seconds, nanos as u32);
-
-        let two_hours = Duration::from_secs(2 * 60 * 60); // 2 hours in seconds
-        let modified_time = given_time + two_hours;
-
-        let current_time = SystemTime::now();
-
-        if current_time > modified_time {
+        if self.credentials.is_access_token_expired() {
             log::info!("Access Token Expired, Refreshing.");
-            Ok(self.refresh().await?)
-        } else {
-            Ok(self)
-        }
-    }
-
-    /// Generates a vector of key-value pairs representing parameters
-    /// required for a token refresh request.
-    ///
-    /// # Returns
-    ///
-    /// A `Vec` of tuples where each tuple contains:
-    /// - A `String` representing the parameter name.
-    /// - A `String` representing the parameter value.
-    ///
-    /// The parameters include:
-    /// - `"grant_type"`: Always set to `"refresh_token"`.
-    /// - `"refresh_token"`: The `refresh_token` value (empty if not provided).
-    /// - `"client_id"`: The `client_id` value (empty if not provided).
-    ///
-    /// If the `secret_required` field is `true`, the following parameter is also included:
-    /// - `"client_secret"`: The `client_secret` value (empty if not provided).
-    ///
-    /// # Example
-    ///
-    /// ```rust, ignore
-    /// let params = client.get_refresh_params();
-    /// for (key, value) in params {
-    ///     println!("{}: {}", key, value);
-    /// }
-    /// ```
-    ///
-    /// This function ensures that default values are used if any of the required
-    /// fields (`refresh_token`, `client_id`, `client_secret`) are not set.
-    fn get_refresh_params(&self) -> Vec<(String, String)> {
-        let refresh_token = self.refresh_token.clone().unwrap_or_default();
-        let client_id = self.client_id.clone().unwrap_or_default();
-
-        let mut params = vec![
-            ("grant_type".to_string(), "refresh_token".to_string()),
-            ("refresh_token".to_string(), refresh_token),
-            ("client_id".to_string(), client_id),
-        ];
-
-        if self.secret_required {
-            params.push((
-                "client_secret".to_string(),
-                self.client_secret.clone().unwrap_or_default(),
-            ));
-        }
-        params
-    }
-
-    /// Refreshes the authentication token using the refresh token flow.
-    ///
-    /// This asynchronous function performs the following steps:
-    /// 1. Constructs a token endpoint URL using the `login_endpoint`.
-    /// 2. Retrieves the required parameters for token refresh using `get_refresh_params()`.
-    /// 3. Sends an HTTP POST request with the parameters to the token endpoint.
-    /// 4. Processes the response:
-    ///    - If the HTTP request fails, an error is returned.
-    ///    - If the response status is not successful, it attempts to parse
-    ///      and return a token-specific error.
-    ///    - If the response is successful, it parses the token response,
-    ///      updates the current access token, sets the token issuance time,
-    ///      token type, and updates the instance URL.
-    ///
-    /// # Returns
-    /// - `Ok(&mut Self)` if the token has been successfully refreshed.
-    /// - `Err(Error)` if the token refresh fails due to an HTTP error,
-    ///   a server-side error, or an unexpected response structure.
-    ///
-    /// # Errors
-    /// Returns an `Error` in the following cases:
-    /// - HTTP transmission error during the token refresh request.
-    /// - Unsuccessful HTTP response due to invalid credentials or other
-    ///   server-side errors.
-    /// - Failure to parse the error or token response JSON into the
-    ///   appropriate data structures.
-    ///
-    /// # Example
-    /// ```rust
-    /// use rustsf::Client;
-    /// use anyhow::Result;
-    ///
-    /// #[tokio::main]
-    /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
-    ///     // Authentication logic...
-    ///     match client.refresh().await {
-    ///         Ok(updated_client) => {
-    ///          println!("Token refreshed successfully!");
-    ///         },
-    ///         Err(e) => {
-    ///             eprintln!("Failed to refresh token: {:?}", e);
-    ///         }
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// # Dependencies
-    /// - This function expects that the struct has an `http_client` field
-    ///   capable of making asynchronous HTTP requests (e.g., an instance of `reqwest::Client`).
-    /// - The function assumes the existence of `get_refresh_params`, `set_access_token`,
-    ///   and other utility methods within the struct to handle token management.
-    pub async fn refresh(&mut self) -> Result<&mut Self> {
-
-        /// Extracts the Salesforce organization id and user idL.
-        ///
-        /// Example: `https://login.salesforce.com/id/00D50000000IZ3ZEAW/00550000001fg5OAAQ`
-        fn extract_organisation_and_user_id(url: &str) -> Option<(String, String)> {
-            let path = url.split_once("/id/")?.1;
-            let mut parts = path.split('/');
-
-            let organisation_id = parts.next()?.trim();
-            let user_id = parts.next()?.trim();
-
-            if organisation_id.is_empty() || user_id.is_empty() {
-                return None;
-            }
-
-            Some((organisation_id.to_string(), user_id.to_string()))
-        }
-
-        let token_url = format!("{}/services/oauth2/token", self.login_endpoint);
-        let params = self.get_refresh_params();
-
-        let res = self
-            .http_client
-            .post(token_url.as_str())
-            .form(&params)
-            .send()
-            .await;
-
-        let res = match res {
-            Ok(res) => res,
-            Err(e) => return Err(e.into()),
-        };
-
-        if !res.status().is_success() {
-            let error_response = res.text().await?;
-            return Err(anyhow!("Token refresh error: {}", error_response));
-        }
-
-        let response: TokenResponse = res.json().await.context("Failed to parse token response")?;
-        let token_type = response.token_type.unwrap_or_default();
-        self.set_access_token(response.access_token, response.issued_at, token_type);
-        self.instance_url = Some(response.instance_url);
-
-        match extract_organisation_and_user_id(response.id.as_str()) {
-            Some((org_id, user_id)) => {
-                self.organisation_id = Some(org_id);
-                self.user_id = Some(user_id);
-            }
-            None => {
-                log::warn!("Could not extract organisation and user ID from token response.");
-            }
-        }
-
-        Ok(self)
-    }
-
-    /// Logs in using the provided username and password credentials,
-    /// retrieves an access token from the OAuth2 token endpoint,
-    /// and updates the internal client state.
-    ///
-    /// # Arguments
-    ///
-    /// - `username`: A string slice containing the user's username.
-    /// - `password`: A string slice containing the user's password.
-    ///
-    /// # Returns
-    ///
-    /// Returns:
-    /// - `Ok(&mut Self)` if the login and token retrieval are successful, allowing method chaining.
-    /// - `Err(Error)` if there are any configuration issues, HTTP request errors, or unsuccessful responses.
-    ///
-    /// # Errors
-    ///
-    /// The function can return the following errors:
-    /// - `ConfigError`: If `client_id` or `client_secret` is not configured.
-    /// - `HttpError`: If there is an issue with the HTTP request, such as network failure.
-    /// - `TokenError`: If the server returns an unsuccessful response, e.g., invalid credentials.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use rustsf::Client;
-    /// use anyhow::Result;
-    ///
-    /// #[tokio::main]
-    /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
-    ///     client.set_client_id("example_client_id");
-    ///     client.set_client_secret("example_client_secret");
-    ///
-    ///     let result = client.login_with_credential("username", "password").await;
-    ///     match result {
-    ///         Ok(client) => println!("Login successful!"),
-    ///         Err(e) => eprintln!("Login failed: {:?}", e),
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// # Behavior
-    ///
-    /// - Constructs a token request URL based on the configured `login_endpoint`.
-    /// - Validates the presence of `client_id` and `client_secret` configurations.
-    /// - Sends an HTTP POST request with the required parameters to fetch an access token.
-    /// - Upon a successful response:
-    ///     - Updates the internal client state with the access token, token type, issue timestamp, and instance URL.
-    /// - On error, the function returns a descriptive `Error` for troubleshooting.
-    ///
-    /// # Notes
-    ///
-    /// - Ensure that the `client_id` and `client_secret` are set before calling this method.
-    /// - The function uses the `reqwest` library for HTTP requests and assumes the `http_client` is properly initialized.
-    pub async fn login_with_credential(
-        &mut self,
-        username: &str,
-        password: &str,
-    ) -> Result<&mut Self> {
-        let token_url = format!("{}/services/oauth2/token", self.login_endpoint);
-        let client_id = self
-            .client_id
-            .as_ref()
-            .context("Client ID is not configured")?;
-            // .ok_or_else(|| Error::ConfigError("client_id is required".to_string()))?;
-        let client_secret = self
-            .client_secret
-            .as_ref()
-            .context("Client Secret is not configured")?;
-            // .ok_or_else(|| Error::ConfigError("client_secret is required".to_string()))?;
-        let params = [
-            ("grant_type", "password"),
-            ("client_id", client_id.as_str()),
-            ("client_secret", client_secret.as_str()),
-            ("username", username),
-            ("password", password),
-        ];
-        let res = self
-            .http_client
-            .post(token_url.as_str())
-            .form(&params)
-            .send()
-            .await
-            .context("Failed to get token")?;
-
-        if !(res.status().is_success()) {
-            let error_response = res.text().await?;
-            return Err(anyhow!("Failed to get token: {}", error_response));
-        }
-
-        let response: TokenResponse = res.json().await.context("Failed to parse token response")?;
-        let token_type = response.token_type.unwrap_or_default();
-        self.set_access_token(response.access_token, response.issued_at, token_type);
-        self.instance_url = Some(response.instance_url);
-        Ok(self)
-    }
-
-    /// Asynchronously log in to Salesforce using an SFDX Auth URL.
-    ///
-    /// This method allows the user to authenticate with Salesforce by parsing an SFDX authentication URL,
-    /// extracting the necessary credentials, and exchanging the refresh token for an access token.
-    ///
-    /// # Parameters
-    /// - `sfdx_auth_url`: A `&str` containing the SFDX authentication URL. The format of the auth URL must
-    ///   match the pattern:
-    ///   `force://<client_id>:<client_secret>:<refresh_token>@<login_endpoint>`.
-    ///
-    /// # Returns
-    /// - On success, this function returns a mutable reference to the `Self` instance wrapped in a
-    ///   `Result::Ok`. The `Self` instance will have the `access_token` and `instance_url` fields updated
-    ///   with the authentication response.
-    /// - On failure, an `Error` is returned, which can indicate issues like errors during the token fetch
-    ///   process or invalid credentials.
-    ///
-    /// # Errors
-    /// - Returns `Error::NotLoggedIn` if the response from Salesforce does not include a valid `token_type`.
-    /// - Returns `Error::TokenError` if the Salesforce token service responds with an error payload.
-    /// - Returns other `Error` variants if the HTTP request fails or is invalid.
-    ///
-    /// # Example
-    /// ```rust
-    /// use rustsf::Client;
-    /// use anyhow::Result;
-    ///
-    /// #[tokio::main]
-    /// async fn main() -> Result<()> {
-    ///     let sfdx_auth_url = "force://your_client_id:your_secret_token:your_refresh_token@your.login.endpoint";
-    ///     let mut client = Client::new();
-    ///
-    ///     match client.login_with_sfdx_auth_url(sfdx_auth_url).await {
-    ///         Ok(_) => {
-    ///             println!("Successfully logged in!");
-    ///         },
-    ///         Err(e) => {
-    ///             eprintln!("Failed to log in: {:?}", e);
-    ///         }
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// # Details
-    /// - The function utilizes a regular expression to extract credentials from the `sfdx_auth_url`.
-    /// - It uses an HTTP POST request to exchange the refresh token for an access token via Salesforce's
-    ///   OAuth2 token endpoint.
-    /// - The response, if successful, updates the following fields of the `Self` instance:
-    ///   - `access_token`: Contains the access token and associated metadata.
-    ///   - `instance_url`: Contains the base URL of the Salesforce instance.
-    ///
-    /// # Dependencies
-    /// - This function uses the `regex` crate for regular expression handling.
-    /// - The `reqwest` crate is used for making the HTTP POST request.
-    ///
-    /// # Notes
-    /// - Ensure that the `sfdx_auth_url` provided is valid and has the expected format.
-    /// - This function relies on async/await for non-blocking execution. It must be used within an
-    ///   async runtime.
-    pub async fn login_with_sfdx_auth_url(
-        &mut self,
-        sfdx_auth_url: &str,
-    ) -> Result<&mut Self> {
-        let re = Regex::new(r"force://([a-zA-Z0-9._-]+):([a-zA-Z0-9._-]*):([a-zA-Z0-9._-]+={0,2})@([a-zA-Z0-9._-]+)")
-            .context("Incorrectly formatted authentication url")?;
-        let caps = re.captures(&sfdx_auth_url).context("Incorrect authentication url")?;
-
-        self.set_client_id(&caps[1]);
-        self.set_client_secret(&caps[2]);
-        self.set_refresh_token(&caps[3]);
-        self.set_login_endpoint(&caps[4]);
-
-        let token_url = format!("https://{}/services/oauth2/token", self.login_endpoint);
-        let params = [
-            ("grant_type", "refresh_token"),
-            ("client_id", self.client_id.as_ref().unwrap()),
-            ("refresh_token", self.refresh_token.as_ref().unwrap()),
-        ];
-        let res = self
-            .http_client
-            .post(token_url.as_str())
-            .form(&params)
-            .send()
-            .await
-            .context("Failed to login to Salesforce")?;
-
-        if res.status().is_success() {
-            let r: TokenResponse = res.json().await.context("Failed to parse token response")?;
-            self.access_token = Some(AccessToken {
-                value: r.access_token,
-                issued_at: r.issued_at,
-                token_type: r.token_type.context("Not logged in")?,
-            });
-            self.instance_url = Some(r.instance_url);
-
-            match self.extract_organisation_and_user_id(r.id.as_str()) {
-                Some((org_id, user_id)) => {
-                    self.organisation_id = Some(org_id);
-                    self.user_id = Some(user_id);
-                }
-                None => {
-                    log::warn!("Could not extract organisation and user ID from token response.");
-                }
-            }
-
+            self.credentials.set_access_token(
+                Some(
+                    get_new_access_token(&self.credentials)
+                        .await
+                        .context("Failed to refresh access token")?));
             Ok(self)
         } else {
-            let error_response = res.text().await?;
-            Err(anyhow!("Failed to login to Salesforce: {}", error_response))
-        }
-    }
-
-    fn extract_organisation_and_user_id(&self, url: &str) -> Option<(String, String)> {
-        let path = url.split_once("/id/")?.1;
-        let mut parts = path.split('/');
-
-        let organisation_id = parts.next()?.trim();
-        let user_id = parts.next()?.trim();
-
-        if organisation_id.is_empty() || user_id.is_empty() {
-            return None;
-        }
-
-        Some((organisation_id.to_string(), user_id.to_string()))
-    }
-
-    /// Asynchronously performs a login process using a SOAP API and updates the client instance
-    /// with the retrieved access token and instance URL.
-    ///
-    /// # Arguments
-    ///
-    /// - `username`: A reference to a string slice representing the username
-    ///   to authenticate with.
-    /// - `password`: A reference to a string slice representing the password
-    ///   associated with the username.
-    ///
-    /// # Returns
-    ///
-    /// Returns a `Result`:
-    /// - On success, it returns `Ok(&mut Self)`, where the instance is updated with
-    ///   the `access_token` and `instance_url` obtained from the SOAP response.
-    /// - On failure, it returns `Err(Error)`, where `Error` contains information about
-    ///   the login error, such as the error message and error code.
-    ///
-    /// # Errors
-    ///
-    /// This function will return an error if:
-    /// - The HTTP request fails.
-    /// - The SOAP API responds with an unsuccessful status code.
-    /// - The expected XML tags (`sessionId`, `serverTimestamp`, `serverUrl`, etc.)
-    ///   are not present in the response.
-    ///
-    /// # SOAP API Details
-    ///
-    /// - The SOAP endpoint URL is constructed using the `self.login_endpoint`
-    ///   and `self.version`, formatted as `{login_endpoint}/services/Soap/u/{version}`.
-    /// - The SOAP envelope containing the login request is generated by the
-    ///   `create_login_envelope` function.
-    /// - Relevant details such as the session token (`sessionId`) and instance URL
-    ///   (`serverUrl`) are extracted from the SOAP response using the `extract_xml_tag`
-    ///   utility.
-    ///
-    /// # Example
-    ///
-    /// ```rust,ignore
-    /// use rustsf::Client;
-    ///
-    /// #[tokio::main]
-    /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
-    ///     let result = client.login_with_soap("username", "password").await;
-    ///     match result {
-    ///         Ok(updated_client) => {
-    ///             println!("Login successful.");
-    ///             println!("Access Token: {:?}", updated_client.access_token);
-    ///             println!("Instance URL: {:?}", updated_client.instance_url);
-    ///         }
-    ///         Err(e) => {
-    ///             eprintln!("Login failed: {:?}", e);
-    ///         }
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// # Notes
-    ///
-    /// - Ensure that the input SOAP envelope and the response XML structure
-    ///   conform to the expected SOAP API specification.
-    /// - If the `access_token` cannot be extracted from the response,
-    ///   the `access_token` field will remain `None` in the updated client instance.
-    ///
-    /// # Dependencies
-    ///
-    /// - An HTTP client that supports asynchronous operations is required, e.g.,
-    ///   `reqwest`.
-    /// - XML parsing utilities (e.g., `extract_xml_tag`) must be able to handle
-    ///   the relevant tags properly in the SOAP response.
-    ///
-    /// # Associated Types
-    ///
-    /// - This function leverages an `AccessToken` struct, which contains
-    ///   fields like `value` (session token), `issued_at` (server timestamp),
-    ///   and `token_type` ("Bearer" by default).
-    ///
-    /// # See Also
-    ///
-    /// - `create_login_envelope` for generating the required SOAP envelope.
-    ///
-    /// - `extract_xml_tag` for parsing specific XML tags from the response.
-    ///
-    /// - `Error::LoginError` for understanding the structure of login errors.
-    ///
-    /// # Deprecated
-    /// The use of login by SOAP is deprecated by Salesforce and should be avoided
-    #[deprecated(
-        since = "0.0.1",
-        note = "The use of login by SOAP is deprecated by Salesforce and should be avoided"
-    )]
-    pub async fn login_with_soap(
-        &mut self,
-        username: &str,
-        password: &str,
-    ) -> Result<&mut Self> {
-        let token_url = format!("{}/services/Soap/u/{}", self.login_endpoint, self.version);
-        let body = create_login_envelope(username, password);
-        let res = self
-            .http_client
-            .post(token_url.as_str())
-            .body(body)
-            .header("Content-Type", "text/xml")
-            .header("SOAPAction", "\"\"")
-            .send()
-            .await?;
-        if res.status().is_success() {
-            let body_response = res.text().await?;
-            self.access_token = match extract_xml_tag("sessionId", body_response.as_str()) {
-                Some(t) => {
-                    let issued_at = extract_xml_tag("serverTimestamp", body_response.as_str())
-                        .unwrap_or_default();
-                    Some(AccessToken {
-                        value: t,
-                        issued_at,
-                        token_type: "Bearer".to_string(),
-                    })
-                }
-                None => None,
-            };
-            self.instance_url = extract_xml_tag("serverUrl", body_response.as_str());
             Ok(self)
-        } else {
-            let body_response = res.text().await?;
-            let error_message =
-                extract_xml_tag("faultstring", body_response.as_str()).unwrap_or_default();
-            let error_code =
-                extract_xml_tag("faultcode", body_response.as_str()).unwrap_or_default();
-
-            Err(anyhow!("Login error #{}: {}", error_code, error_message))
         }
     }
 
@@ -1380,12 +380,12 @@ impl Client {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::Client;
+    /// use rustsf::{Client, Credentials};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///     match client.rest_get_fulluri("my/resource/endpoint").await {
     ///         Ok(response) =>  println!("Response: {:?}", response),
@@ -1401,7 +401,7 @@ impl Client {
     pub async fn rest_get_fulluri(&mut self, uri: &str) -> Result<Response> {
         let resource_url = format!(
             "{}/services/apexrest/{}",
-            self.instance_url.as_ref().context("Not logged in")?,
+            self.credentials.instance_url().context("Not logged in")?,
             uri
         );
         let parsed = Url::parse(&resource_url)
@@ -1442,12 +442,12 @@ impl Client {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::Client;
+    /// use rustsf::{Client, Credentials};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///     let path = String::from("/api/v1/data");
     ///     let params = vec![("key", "value"), ("filter", "recent")];
@@ -1480,7 +480,7 @@ impl Client {
 
         let url = format!(
             "{}{}",
-            self.instance_url.as_ref()
+            self.credentials.instance_url()
                 .context("Not logged in")?,
             path
         );
@@ -1526,7 +526,7 @@ impl Client {
     /// # Examples
     /// ```rust
     /// use serde::Serialize;
-    /// use rustsf::Client;
+    /// use rustsf::{Client, Credentials};
     /// use anyhow::Result;
     ///
     /// #[derive(Serialize)]
@@ -1536,7 +536,7 @@ impl Client {
     /// }
     ///
     /// async fn example() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication...
     ///     let params = Params {
     ///         key: "example".into(),
@@ -1559,7 +559,7 @@ impl Client {
 
         let url = format!(
             "{}{}",
-            self.instance_url.as_ref()
+            self.credentials.instance_url()
                 .context("Not logged in")?,
             path
         );
@@ -1599,7 +599,7 @@ impl Client {
     /// # Examples
     /// ```rust
     /// use serde::Serialize;
-    /// use rustsf::Client;
+    /// use rustsf::{Client, Credentials};
     /// use anyhow::Result;
     ///
     /// #[derive(Serialize)]
@@ -1609,7 +609,7 @@ impl Client {
     /// }
     ///
     /// async fn example() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication...
     ///     let params = UpdateParams {
     ///         field: "example_field".to_string(),
@@ -1633,7 +633,7 @@ impl Client {
 
         let url = format!(
             "{}{}",
-            self.instance_url.as_ref()
+            self.credentials.instance_url()
                 .context("Not logged in")?,
             path
         );
@@ -1675,7 +675,7 @@ impl Client {
     /// # Examples
     /// ```rust
     /// use serde::Serialize;
-    /// use rustsf::Client;
+    /// use rustsf::{Client, Credentials};
     /// use anyhow::Result;
     ///
     /// #[derive(Serialize)]
@@ -1686,7 +686,7 @@ impl Client {
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()>  {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///
     ///     let data = UpdateData {
     ///         key: "example_key".to_string(),
@@ -1713,7 +713,7 @@ impl Client {
 
         let url = format!(
             "{}{}",
-            self.instance_url.as_ref()
+            self.credentials.instance_url()
                 .context("Not logged in")?,
             path
         );
@@ -1750,12 +750,12 @@ impl Client {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::Client;
+    /// use rustsf::{Client, Credentials};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///     let response = client.rest_delete("/resource/123".to_string()).await;
     ///
@@ -1775,7 +775,7 @@ impl Client {
 
         let url = format!(
             "{}{}",
-            self.instance_url.as_ref().context("Not logged in")?,
+            self.credentials.instance_url().context("Not logged in")?,
             path
         );
         let res = self
@@ -1815,12 +815,12 @@ impl Client {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::Client;
+    /// use rustsf::{Client, Credentials};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///     let response = client.get(
     ///         "https://api.example.com/items".into(),
@@ -1884,12 +884,12 @@ impl Client {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::Client;
+    /// use rustsf::{Client, Credentials};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///     let  url = "https://example.com/api/resource";
     ///     let  headers = vec![("Authorization".to_string(), "Bearer token".to_string())];
@@ -1952,7 +952,7 @@ impl Client {
     /// # Examples
     ///
     /// ```rust
-    /// use rustsf::{Client, BulkApiV2, DefSObject};
+    /// use rustsf::{Client, Credentials, BulkApiV2, DefSObject};
     /// use serde::{Deserialize, Serialize};
     /// use anyhow::Result;
     ///
@@ -1962,7 +962,7 @@ impl Client {
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
     ///     use rustsf::primary_types::SObject;
-    /// let mut client = Client::new();
+    /// let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let headers = vec![("Authorization".to_string(), "Bearer token".to_string())];
@@ -2102,12 +1102,12 @@ impl Client {
     /// # Examples
     ///
     /// ```rust
-    /// use rustsf::Client;
+    /// use rustsf::{Client, Credentials};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///     let headers = vec![("Authorization".to_string(), "Bearer token".to_string())];
     ///     let url = "https://example.com/api/accounts".to_string();
@@ -2166,12 +1166,12 @@ impl Client {
     /// # Examples
     ///
     /// ```rust
-    /// use rustsf::Client;
+    /// use rustsf::{Client, Credentials};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///     let url = "https://example.com/resource".to_string();
     ///     let data = b"column1,column2\nvalue1,value2".to_vec();
@@ -2225,7 +1225,7 @@ impl Client {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, DefSObject};
+    /// use rustsf::{Client, Credentials, DefSObject};
     /// use serde::Serialize;
     /// use anyhow::Result;
     ///
@@ -2234,7 +1234,7 @@ impl Client {
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///     let url = String::from("https://example.com/resource");
     ///     let mut acc = Account::new();
@@ -2292,12 +1292,12 @@ impl Client {
     ///
     /// # Examples
     /// ```
-    /// use rustsf::Client;
+    /// use rustsf::{Client, Credentials};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let url = "https://api.example.com/resource".to_string();
@@ -2361,7 +1361,7 @@ impl Client {
         let mut headers = HeaderMap::new();
         let auth_value = format!(
             "Bearer {}",
-            self.access_token.as_ref().context("Not logged in")?.value
+            self.credentials.access_token().context("Not logged in")?.value
         );
         headers.insert(AUTHORIZATION, HeaderValue::from_str(&auth_value)?);
 
@@ -2385,221 +1385,227 @@ impl Client {
     }
 }
 
+
+/// Logs in using the provided username and password credentials,
+/// retrieves an access token from the OAuth2 token endpoint,
+/// and updates the internal client state.
+///
+/// # Arguments
+///
+/// - `username`: A string slice containing the user's username.
+/// - `password`: A string slice containing the user's password.
+///
+/// # Returns
+///
+/// Returns:
+/// - `Ok(&mut Self)` if the login and token retrieval are successful, allowing method chaining.
+/// - `Err(Error)` if there are any configuration issues, HTTP request errors, or unsuccessful responses.
+///
+/// # Errors
+///
+/// The function can return the following errors:
+/// - `ConfigError`: If `client_id` or `client_secret` is not configured.
+/// - `HttpError`: If there is an issue with the HTTP request, such as network failure.
+/// - `TokenError`: If the server returns an unsuccessful response, e.g., invalid credentials.
+///
+/// # Example
+///
+/// ```rust
+/// use rustsf::{Client, Credentials};
+/// use anyhow::Result;
+///
+/// #[tokio::main]
+/// async fn main() -> Result<()> {
+///     let mut credentials = Credentials::new();
+///     credentials.set_client_id("example_client_id");
+///     credentials.set_client_secret("example_client_secret");
+///
+///     let mut client= Client::new(credentials).await;
+///
+///     match client {
+///         Ok(client) => println!("Login successful!"),
+///         Err(e) => eprintln!("Login failed: {:?}", e),
+///     }
+///     Ok(())
+/// }
+/// ```
+///
+/// # Behavior
+///
+/// - Constructs a token request URL based on the configured `login_endpoint`.
+/// - Validates the presence of `client_id` and `client_secret` configurations.
+/// - Sends an HTTP POST request with the required parameters to fetch an access token.
+/// - Upon a successful response:
+///     - Updates the internal client state with the access token, token type, issue timestamp, and instance URL.
+/// - On error, the function returns a descriptive `Error` for troubleshooting.
+///
+/// # Notes
+///
+/// - Ensure that the `client_id` and `client_secret` are set before calling this method.
+/// - The function uses the `reqwest` library for HTTP requests and assumes the `http_client` is properly initialized.
+pub async fn login_with_credential(mut credentials: Credentials) -> Result<Credentials> {
+    let token_url = format!("{}/services/oauth2/token", &credentials.login_endpoint());
+    let client_id = credentials.client_id()
+        .context("Client ID is not configured")?.to_string();
+    let client_secret = credentials.client_secret()
+        .context("Client Secret is not configured")?.to_string();
+    let username = credentials.username().unwrap_or("").to_string();
+    let password = credentials.password().unwrap_or("").to_string();
+
+    let params = [
+        ("grant_type", "password"),
+        ("client_id", client_id.as_str()),
+        ("client_secret", client_secret.as_str()),
+        ("username", username.as_str()),
+        ("password", password.as_str()),
+    ];
+    let http_client = reqwest::Client::new();
+    let res = http_client
+        .post(token_url.as_str())
+        .form(&params)
+        .send()
+        .await
+        .context("Failed to get token")?;
+
+    if !(res.status().is_success()) {
+        let error_response = res.text().await?;
+        return Err(anyhow!("Failed to get token: {}", error_response));
+    }
+
+    let response: TokenResponse = res.json().await.context("Failed to parse token response")?;
+    let token_type = response.token_type.unwrap_or_default();
+    credentials.set_access_token(
+        Some(AccessToken::new(response.access_token, response.issued_at, token_type)));
+    credentials.set_instance_url(&response.instance_url);
+    Ok(credentials)
+}
+
+async fn login_with_sfdx_auth_url(mut credentials: Credentials) -> Result<Credentials> {
+
+    let response = get_refresh_token_response(&credentials).await?;
+
+    if credentials.user_id.is_none() || credentials.organisation_id.is_none() {
+        match extract_organisation_and_user_id(response.id.as_str()) {
+            Some((org_id, user_id)) => {
+                credentials.set_organisation_id(&org_id);
+                credentials.set_user_id(&user_id);
+            }
+            None => {
+                log::warn!("Could not extract organisation and user ID from token response.");
+            }
+        }
+    }
+
+    credentials.access_token = Some(AccessToken::from_token_response(response));
+    Ok(credentials)
+}
+
+
+async fn get_refresh_token_response(credentials: &Credentials) -> Result<TokenResponse> {
+    let url = format!("{}/services/oauth2/token", credentials.login_endpoint());
+    let params = vec![
+        ("grant_type".to_string(), "refresh_token".to_string()),
+        (
+            "refresh_token".to_string(),
+            credentials
+                .refresh_token()
+                .context("Missing refresh token")?
+                .to_string(),
+        ),
+        (
+            "client_id".to_string(),
+            credentials
+                .client_id()
+                .context("Missing client id")?
+                .to_string(),
+        ),
+    ];
+
+    let http_client = reqwest::Client::new();
+    let res = http_client
+        .post(url)
+        .form(&params)
+        .send()
+        .await
+        .context("Failed to refresh access token")?;
+
+    if !res.status().is_success() {
+        let error_response = res.text().await
+            .context("Failed to parse refresh token error response")?;
+        return Err(anyhow!("Failed to get refresh token: {}", error_response));
+    }
+
+    Ok(res.json().await
+        .context("Failed to parse refresh token response")?)
+}
+
+async fn get_new_access_token(credentials: &Credentials) -> Result<AccessToken> {
+
+    let response = get_refresh_token_response(&credentials).await?;
+
+    Ok(AccessToken::from_token_response(response))
+}
+
+
+fn extract_organisation_and_user_id(url: &str) -> Option<(String, String)> {
+    let path = url.split_once("/id/")?.1;
+    let mut parts = path.split('/');
+
+    let organisation_id = parts.next()?.trim();
+    let user_id = parts.next()?.trim();
+
+    if organisation_id.is_empty() || user_id.is_empty() {
+        return None;
+    }
+
+    Some((organisation_id.to_string(), user_id.to_string()))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use mockito::Server;
     use serde_json::json;
 
-    fn create_test_client(server_url: &str) -> Client {
-        let mut client = Client::new();
-        client.set_instance_url(server_url);
-        client.set_access_token(
+    async fn create_test_client(server_url: &str) -> Client {
+        let mut credentials = Credentials::new();
+        credentials.set_instance_url(server_url);
+        credentials.set_access_token(Some(AccessToken::new(
             "test_token".to_string(),
-            // Use a timestamp far in the future so ensure_refresh doesn't trigger
             "9999999999000".to_string(),
             "Bearer".to_string(),
-        );
-        client
+        )));
+
+        Client::new(credentials).await.unwrap()
     }
 
-    // --- Constructor and defaults ---
-
-    #[test]
-    fn test_new_defaults() {
-        let client = Client::new();
-        assert_eq!(client.login_endpoint, "https://login.salesforce.com");
-        assert_eq!(client.version, "v60.0");
-        assert!(client.client_id.is_none());
-        assert!(client.client_secret.is_none());
-        assert!(client.access_token.is_none());
-        assert!(client.instance_url.is_none());
-        assert!(client.refresh_token.is_none());
-        assert!(client.secret_required);
-    }
-
-    #[test]
-    fn test_default_calls_new() {
-        let client = Client::default();
-        assert_eq!(client.version, "v60.0");
-    }
 
     // --- Setters and getters ---
-
-    #[test]
-    fn test_set_login_endpoint() {
-        let mut client = Client::new();
-        let result = client.set_login_endpoint("https://test.salesforce.com");
-        assert_eq!(result.login_endpoint, "https://test.salesforce.com");
-    }
-
-    #[test]
-    fn test_set_version() {
-        let mut client = Client::new();
+    #[tokio::test]
+    async fn test_set_version() {
+        let mut client = Client::new(Credentials::new()).await.unwrap();
         client.set_version("v55.0");
         assert_eq!(client.version, "v55.0");
     }
 
-    #[test]
-    fn test_set_instance_url() {
-        let mut client = Client::new();
-        client.set_instance_url("https://example.com");
-        assert_eq!(Some("https://example.com".to_string()), client.instance_url);
-    }
-
-    #[test]
-    fn test_instance_url_getter() {
-        let mut client = Client::new();
-        assert_eq!(None, client.instance_url());
-        client.set_instance_url("https://example.com");
-        assert_eq!(Some("https://example.com"), client.instance_url());
-    }
-
-    #[test]
-    fn test_set_refresh_token() {
-        let mut client = Client::new();
-        client.set_refresh_token("my_refresh_token");
-        assert_eq!(Some("my_refresh_token".to_string()), client.refresh_token);
-    }
-
-    #[test]
-    fn test_set_secret_required() {
-        let mut client = Client::new();
-        assert!(client.secret_required);
-        client.set_secret_required(false);
-        assert!(!client.secret_required);
-    }
-
-    #[test]
-    fn test_set_client_id() {
-        let mut client = Client::new();
-        client.set_client_id("my_client_id");
-        assert_eq!(Some("my_client_id".to_string()), client.client_id);
-    }
-
-    #[test]
-    fn test_set_client_secret() {
-        let mut client = Client::new();
-        client.set_client_secret("my_secret");
-        assert_eq!(Some("my_secret".to_string()), client.client_secret);
-    }
-
-    #[test]
-    fn test_set_access_token() {
-        let mut client = Client::new();
-        client.set_access_token(
-            "token_val".to_string(),
-            "issued".to_string(),
-            "Bearer".to_string(),
-        );
-        let token = client.access_token.as_ref().unwrap();
-        assert_eq!("token_val", token.value);
-        assert_eq!("issued", token.issued_at);
-        assert_eq!("Bearer", token.token_type);
-    }
-
-    #[test]
-    fn test_access_token_value() {
-        let mut client = Client::new();
-        assert_eq!(None, client.access_token_value());
-        client.set_access_token("abc".to_string(), "".to_string(), "".to_string());
-        assert_eq!(Some("abc"), client.access_token_value());
-    }
-
-    #[test]
-    fn test_read_only_getters() {
-        let mut client = Client::new();
-        client.set_client_id("cid");
-        client.set_client_secret("csecret");
-        client.set_refresh_token("rtoken");
-
-        assert_eq!(client.client_id(), Some("cid"));
-        assert_eq!(client.client_secret(), Some("csecret"));
-        assert_eq!(client.login_endpoint(), "https://login.salesforce.com");
-        assert_eq!(client.version(), "v60.0");
-        assert_eq!(client.refresh_token(), Some("rtoken"));
-    }
-
-    // --- Chaining setters ---
-
-    #[test]
-    fn test_setter_chaining() {
-        let mut client = Client::new();
-        client
-            .set_login_endpoint("https://test.salesforce.com")
-            .set_version("v55.0")
-            .set_instance_url("https://inst.salesforce.com")
-            .set_client_id("cid")
-            .set_client_secret("csecret")
-            .set_refresh_token("rtoken")
-            .set_secret_required(false);
-
-        assert_eq!(client.login_endpoint, "https://test.salesforce.com");
-        assert_eq!(client.version, "v55.0");
-        assert_eq!(
-            client.instance_url,
-            Some("https://inst.salesforce.com".to_string())
-        );
-        assert_eq!(client.client_id, Some("cid".to_string()));
-        assert_eq!(client.client_secret, Some("csecret".to_string()));
-        assert_eq!(client.refresh_token, Some("rtoken".to_string()));
-        assert!(!client.secret_required);
-    }
-
-    // --- Refresh params ---
-
-    #[test]
-    fn test_get_refresh_params_with_secret() {
-        let mut client = Client::new();
-        client.set_client_id("cid");
-        client.set_client_secret("csecret");
-        client.set_refresh_token("rtoken");
-
-        let params = client.get_refresh_params();
-        assert_eq!(params.len(), 4);
-        assert!(params.contains(&("grant_type".to_string(), "refresh_token".to_string())));
-        assert!(params.contains(&("refresh_token".to_string(), "rtoken".to_string())));
-        assert!(params.contains(&("client_id".to_string(), "cid".to_string())));
-        assert!(params.contains(&("client_secret".to_string(), "csecret".to_string())));
-    }
-
-    #[test]
-    fn test_get_refresh_params_without_secret() {
-        let mut client = Client::new();
-        client.set_secret_required(false);
-        client.set_client_id("cid");
-        client.set_refresh_token("rtoken");
-
-        let params = client.get_refresh_params();
-        assert_eq!(params.len(), 3);
-        assert!(!params.iter().any(|(k, _)| k == "client_secret"));
-    }
-
-    #[test]
-    fn test_get_refresh_params_defaults_when_none() {
-        let client = Client::new();
-        let params = client.get_refresh_params();
-        // Should use empty strings for missing values
-        assert!(params.contains(&("refresh_token".to_string(), "".to_string())));
-        assert!(params.contains(&("client_id".to_string(), "".to_string())));
-    }
-
     // --- create_header ---
 
-    #[test]
-    fn test_create_header_with_token() {
-        let mut client = Client::new();
-        client.set_access_token("mytoken".to_string(), "".to_string(), "Bearer".to_string());
+    #[tokio::test]
+    async fn test_create_header_with_token() {
+        let mut credentials = Credentials::new();
+        credentials.set_access_token(Some(AccessToken::new("mytoken".to_string(), "".to_string(), "Bearer".to_string())));
+        let client = Client::new(credentials).await.unwrap();
 
         let headers = client.create_header(vec![]).unwrap();
         assert_eq!(headers.get("Authorization").unwrap(), "Bearer mytoken");
         assert_eq!(headers.get("Accept").unwrap(), "application/json");
     }
 
-    #[test]
-    fn test_create_header_with_additional_headers() {
-        let mut client = Client::new();
-        client.set_access_token("mytoken".to_string(), "".to_string(), "Bearer".to_string());
+    #[tokio::test]
+    async fn test_create_header_with_additional_headers() {
+        let mut credentials = Credentials::new();
+        credentials.set_access_token(Some(AccessToken::new("mytoken".to_string(), "".to_string(), "Bearer".to_string())));
+        let client = Client::new(credentials).await.unwrap();
 
         let headers = client
             .create_header(vec![
@@ -2611,165 +1617,6 @@ mod tests {
         assert_eq!(headers.get("X-Custom").unwrap(), "custom_value");
         // Accept should be overridden
         assert_eq!(headers.get("Accept").unwrap(), "text/xml");
-    }
-
-    // --- ensure_refresh ---
-
-    #[tokio::test]
-    async fn test_ensure_refresh_no_token() {
-        let mut client = Client::new();
-        // Should return Ok without doing anything
-        let result = client.ensure_refresh().await;
-        assert!(result.is_ok());
-    }
-
-    #[tokio::test]
-    async fn test_ensure_refresh_token_not_expired() {
-        let mut client = Client::new();
-        // Set a token with issued_at far in the future
-        client.set_access_token(
-            "token".to_string(),
-            "9999999999000".to_string(),
-            "Bearer".to_string(),
-        );
-        let result = client.ensure_refresh().await;
-        assert!(result.is_ok());
-        assert_eq!(client.access_token_value(), Some("token"));
-    }
-
-    // --- login_with_credential ---
-
-    #[tokio::test]
-    async fn test_login_with_credential_success() {
-        let mut server = Server::new_async().await;
-        let mock = server
-            .mock("POST", "/services/oauth2/token")
-            .with_status(200)
-            .with_header("content-type", "application/json")
-            .with_body(
-                json!({
-                    "access_token": "PowerLevel9000",
-                    "issued_at": "1234567890000",
-                    "id": "https://login.salesforce.com/id/00Dxx/005xx",
-                    "instance_url": server.url(),
-                    "signature": "sig",
-                    "token_type": "Bearer",
-                })
-                    .to_string(),
-            )
-            .create_async()
-            .await;
-
-        let mut client = Client::new();
-        client.set_client_id("cid");
-        client.set_client_secret("csecret");
-        client.set_login_endpoint(&server.url());
-
-        let result = client.login_with_credential("user", "pass").await;
-
-        assert!(result.is_ok());
-        assert_eq!(client.access_token_value(), Some("PowerLevel9000"));
-        assert_eq!(client.instance_url.unwrap(), server.url());
-        mock.assert_async().await;
-    }
-
-    // --- refresh ---
-
-    #[tokio::test]
-    async fn test_refresh_success() {
-        let mut server = Server::new_async().await;
-        let mock = server
-            .mock("POST", "/services/oauth2/token")
-            .with_status(200)
-            .with_header("content-type", "application/json")
-            .with_body(
-                json!({
-                    "access_token": "new_token",
-                    "issued_at": "1234567890000",
-                    "id": "https://login.salesforce.com/id/00Dxx/005xx",
-                    "instance_url": server.url(),
-                    "signature": "sig",
-                    "token_type": "Bearer",
-                })
-                    .to_string(),
-            )
-            .create_async()
-            .await;
-
-        let mut client = Client::new();
-        client.set_client_id("cid");
-        client.set_client_secret("csecret");
-        client.set_refresh_token("rtoken");
-        client.set_login_endpoint(&server.url());
-
-        let result = client.refresh().await;
-        assert!(result.is_ok());
-        assert_eq!(client.access_token_value(), Some("new_token"));
-        mock.assert_async().await;
-    }
-
-    #[tokio::test]
-    async fn test_refresh_failure() {
-        let mut server = Server::new_async().await;
-        let mock = server
-            .mock("POST", "/services/oauth2/token")
-            .with_status(400)
-            .with_header("content-type", "application/json")
-            .with_body(
-                json!({
-                    "error": "invalid_grant",
-                    "error_description": "expired refresh token"
-                })
-                    .to_string(),
-            )
-            .create_async()
-            .await;
-
-        let mut client = Client::new();
-        client.set_login_endpoint(&server.url());
-
-        let result = client.refresh().await;
-        assert!(result.is_err());
-        mock.assert_async().await;
-    }
-
-    // --- login_by_soap ---
-
-    #[tokio::test]
-    async fn test_login_by_soap_success() {
-        let mut server = Server::new_async().await;
-        let soap_response = r#"<?xml version="1.0" encoding="UTF-8"?>
-            <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
-                <soapenv:Body>
-                    <loginResponse>
-                        <result>
-                            <sessionId>soap_token_123</sessionId>
-                            <serverUrl>https://na1.salesforce.com/services/Soap/u/60.0/00Dxx</serverUrl>
-                            <serverTimestamp>2024-01-01T00:00:00.000Z</serverTimestamp>
-                        </result>
-                    </loginResponse>
-                </soapenv:Body>
-            </soapenv:Envelope>"#;
-
-        let mock = server
-            .mock("POST", "/services/Soap/u/v60.0")
-            .with_status(200)
-            .with_header("content-type", "text/xml")
-            .with_body(soap_response)
-            .create_async()
-            .await;
-
-        let mut client = Client::new();
-        client.set_login_endpoint(&server.url());
-
-        #[allow(deprecated)]
-        let result = client.login_with_soap("user", "pass").await;
-
-        assert!(result.is_ok());
-        let token = client.access_token.unwrap();
-        assert_eq!(token.value, "soap_token_123");
-        assert_eq!(token.token_type, "Bearer");
-        mock.assert_async().await;
     }
 
     // --- HTTP methods with mock server ---
@@ -2785,7 +1632,7 @@ mod tests {
             .create_async()
             .await;
 
-        let mut client = create_test_client(&server.url());
+        let mut client = create_test_client(&server.url()).await;
         let res = client
             .get(format!("{}/test", server.url()), vec![], vec![])
             .await;
@@ -2804,7 +1651,7 @@ mod tests {
             .create_async()
             .await;
 
-        let mut client = create_test_client(&server.url());
+        let mut client = create_test_client(&server.url()).await;
         let mut params = std::collections::HashMap::new();
         params.insert("Name", "Test");
         let res = client
@@ -2824,7 +1671,7 @@ mod tests {
             .create_async()
             .await;
 
-        let mut client = create_test_client(&server.url());
+        let mut client = create_test_client(&server.url()).await;
         let mut params = std::collections::HashMap::new();
         params.insert("Name", "Updated");
         let res = client.patch(format!("{}/test", server.url()), params).await;
@@ -2842,7 +1689,7 @@ mod tests {
             .create_async()
             .await;
 
-        let mut client = create_test_client(&server.url());
+        let mut client = create_test_client(&server.url()).await;
         let res = client.delete(format!("{}/test", server.url())).await;
         assert!(res.is_ok());
         assert_eq!(res.unwrap().status(), 204);
@@ -2858,7 +1705,7 @@ mod tests {
             .create_async()
             .await;
 
-        let mut client = create_test_client(&server.url());
+        let mut client = create_test_client(&server.url()).await;
         let res = client
             .put(format!("{}/test", server.url()), b"csv,data".to_vec())
             .await;
@@ -2876,7 +1723,7 @@ mod tests {
             .create_async()
             .await;
 
-        let mut client = create_test_client(&server.url());
+        let mut client = create_test_client(&server.url()).await;
         let res = client
             .post_raw_buffer(
                 format!("{}/test", server.url()),
@@ -2898,7 +1745,7 @@ mod tests {
             .create_async()
             .await;
 
-        let mut client = create_test_client(&server.url());
+        let mut client = create_test_client(&server.url()).await;
         let res = client
             .get_raw(&format!("{}/test", server.url()), vec![])
             .await;
@@ -2918,7 +1765,7 @@ mod tests {
             .create_async()
             .await;
 
-        let mut client = create_test_client(&server.url());
+        let mut client = create_test_client(&server.url()).await;
         let res = client.rest_get("/some/path".to_string(), vec![]).await;
         assert!(res.is_ok());
         mock.assert_async().await;
@@ -2933,7 +1780,7 @@ mod tests {
             .create_async()
             .await;
 
-        let mut client = create_test_client(&server.url());
+        let mut client = create_test_client(&server.url()).await;
         let mut params = std::collections::HashMap::new();
         params.insert("key", "value");
         let res = client.rest_post("/some/path".to_string(), params).await;
@@ -2950,7 +1797,7 @@ mod tests {
             .create_async()
             .await;
 
-        let mut client = create_test_client(&server.url());
+        let mut client = create_test_client(&server.url()).await;
         let mut params = std::collections::HashMap::new();
         params.insert("key", "value");
         let res = client.rest_patch("/some/path".to_string(), params).await;
@@ -2967,7 +1814,7 @@ mod tests {
             .create_async()
             .await;
 
-        let mut client = create_test_client(&server.url());
+        let mut client = create_test_client(&server.url()).await;
         let mut params = std::collections::HashMap::new();
         params.insert("key", "value");
         let res = client.rest_put("/some/path".to_string(), params).await;
@@ -2984,55 +1831,9 @@ mod tests {
             .create_async()
             .await;
 
-        let mut client = create_test_client(&server.url());
+        let mut client = create_test_client(&server.url()).await;
         let res = client.rest_delete("/some/path".to_string()).await;
         assert!(res.is_ok());
-        mock.assert_async().await;
-    }
-
-    // --- get_identity ---
-
-    #[tokio::test]
-    async fn test_get_identity_success() {
-        let mut server = Server::new_async().await;
-        let mock = server
-            .mock("GET", "/id/info")
-            .with_status(200)
-            .with_body(r#"{"user_id":"005xx","username":"test@test.com"}"#)
-            .create_async()
-            .await;
-
-        let mut client = create_test_client(&server.url());
-        let result = client
-            .get_identity(format!("{}/id/info", server.url()))
-            .await;
-        assert!(result.is_ok());
-        assert!(result.unwrap().contains("test@test.com"));
-        mock.assert_async().await;
-    }
-
-    #[tokio::test]
-    async fn test_get_identity_failure() {
-        let mut server = Server::new_async().await;
-        let mock = server
-            .mock("GET", "/id/info")
-            .with_status(400)
-            .with_header("content-type", "application/json")
-            .with_body(
-                json!({
-                    "message": "Session expired",
-                    "errorCode": "INVALID_SESSION_ID"
-                })
-                    .to_string(),
-            )
-            .create_async()
-            .await;
-
-        let mut client = create_test_client(&server.url());
-        let result = client
-            .get_identity(format!("{}/id/info", server.url()))
-            .await;
-        assert!(result.is_err());
         mock.assert_async().await;
     }
 
@@ -3049,7 +1850,7 @@ mod tests {
             .create_async()
             .await;
 
-        let mut client = create_test_client(&server.url());
+        let mut client = create_test_client(&server.url()).await;
         let res = client.rest_get_fulluri("MyEndpoint?param=value").await;
         assert!(res.is_ok());
         mock.assert_async().await;
@@ -3078,21 +1879,23 @@ mod tests {
             .create_async()
             .await;
 
-        let mut client = Client::new();
-        client.set_login_endpoint(&server.url());
-        client.set_client_id("cid");
-        client.set_client_secret("csecret");
-        client.set_refresh_token("rtoken");
-        // Set a token with issued_at far in the past (expired > 2 hours ago)
-        client.set_access_token(
+        let mut credentials = Credentials::new();
+        credentials.set_login_endpoint(&server.url())
+            .set_client_id("cid")
+            .set_client_secret("csecret")
+            .set_refresh_token("rtoken")
+        .set_access_token(
+            Some(AccessToken::new(
             "old_token".to_string(),
             "1000000000000".to_string(), // ~2001, well past 2 hours
-            "Bearer".to_string(),
+            "Bearer".to_string())),
         );
+        let mut client = Client::new(credentials).await.unwrap();
+        // Set a token with issued_at far in the past (expired > 2 hours ago)
 
         let result = client.ensure_refresh().await;
         assert!(result.is_ok());
-        assert_eq!(client.access_token_value(), Some("refreshed_token"));
+        assert_eq!(client.credentials.access_token_value(), Some("refreshed_token"));
         mock.assert_async().await;
     }
 }

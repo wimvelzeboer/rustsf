@@ -23,7 +23,7 @@
 
 use crate::metadata_api::responses::deploy_response::DeployResponse;
 use crate::rest_api::responses::error_response::ErrorResponse;
-use crate::{Client, Error};
+use crate::{Client};
 use reqwest::{Response, multipart};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
@@ -71,10 +71,10 @@ impl MetadataApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, MetadataApi, Error};
+    /// use rustsf::{Client, MetadataApi};
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let client = Client::new();
     ///     // Authentication logic...
     ///
@@ -105,10 +105,10 @@ impl MetadataApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, MetadataApi, Error};
+    /// use rustsf::{Client, MetadataApi};
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let client = Client::new();
     ///     // Authentication logic...
     ///
@@ -124,7 +124,7 @@ impl MetadataApi {
     ///     Ok(())
     /// }
     /// ```
-    pub async fn cancel(&mut self, deploy_request_id: &str) -> Result<DeployResponse, Error> {
+    pub async fn cancel(&mut self, deploy_request_id: &str) -> Result<DeployResponse> {
         let response = self
             .client
             .patch(
@@ -152,10 +152,10 @@ impl MetadataApi {
     ///
     /// # Examples
     /// ```rust
-    /// use rustsf::{Client, MetadataApi, Error};
+    /// use rustsf::{Client, MetadataApi};
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let client = Client::new();
     ///     // Authentication logic...
     ///
@@ -174,7 +174,7 @@ impl MetadataApi {
     ///
     /// # See
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_rest_deploy.htm>
-    pub async fn deploy(&mut self, request: MetadataDeployer) -> Result<DeployResponse, Error> {
+    pub async fn deploy(&mut self, request: MetadataDeployer) -> Result<DeployResponse> {
         // create the form
         let form = multipart::Form::new()
             .part(
@@ -213,10 +213,10 @@ impl MetadataApi {
     ///
     /// # Examples
     /// ```rust
-    /// use rustsf::{Client, MetadataApi, Error};
+    /// use rustsf::{Client, MetadataApi};
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let client = Client::new();
     ///     // Authentication logic...
     ///
@@ -240,7 +240,7 @@ impl MetadataApi {
         MetadataRetriever::new()
     }
 
-    pub async fn retrieve(&mut self, request: MetadataRetriever) -> Result<AsyncResult, Error> {
+    pub async fn retrieve(&mut self, request: MetadataRetriever) -> Result<AsyncResult> {
 
         let body = format!(
             r#"<?xml version="1.0" encoding="UTF-8"?>
@@ -270,7 +270,7 @@ impl MetadataApi {
         Ok(AsyncResult::from_xml(&xml)?)
     }
 
-    pub async fn retrieve_status(&mut self, id: &str) -> Result<CheckRetrieveStatusResponse, Error> {
+    pub async fn retrieve_status(&mut self, id: &str) -> Result<CheckRetrieveStatusResponse> {
 
         let body = format!(
             r#"<?xml version="1.0" encoding="UTF-8"?>
@@ -318,10 +318,10 @@ impl MetadataApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, MetadataApi, Error};
+    /// use rustsf::{Client, MetadataApi};
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let client = Client::new();
     ///     // Authentication logic...
     ///
@@ -356,8 +356,8 @@ impl MetadataApi {
         &mut self,
         deploy_request_id: &str,
         include_details: bool,
-        // ) -> Result<Value, Error> {
-    ) -> Result<DeployResponse, Error> {
+        // ) -> Result<Value> {
+    ) -> Result<DeployResponse> {
         let mut params: Vec<(String, String)> = vec![];
         if include_details {
             params.push(("includeDetails".to_string(), "true".to_string()));
@@ -379,12 +379,12 @@ impl MetadataApi {
         handle_json_response(response).await
     }
 
-    fn session_id(&self) -> Result<&str, Error> {
+    fn session_id(&self) -> Result<&str> {
         self.client.access_token_value().ok_or(Error::NotLoggedIn)
     }
 }
 
-async fn handle_json_response<T: DeserializeOwned>(response: Response) -> Result<T, Error> {
+async fn handle_json_response<T: DeserializeOwned>(response: Response) -> Result<T> {
     if response.status().is_success() {
         Ok(response.json().await?)
     } else {
@@ -393,7 +393,7 @@ async fn handle_json_response<T: DeserializeOwned>(response: Response) -> Result
     }
 }
 
-async fn handle_raw_response(response: Response) -> Result<String, Error> {
+async fn handle_raw_response(response: Response) -> Result<String> {
     if response.status().is_success() {
         Ok(response.text().await?)
     } else {

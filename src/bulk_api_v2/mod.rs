@@ -26,12 +26,13 @@
 //! # Example
 //!
 //! ```rust,no_run
-//! use rustsf::{Client, BulkApiV2, Error};
+//! use rustsf::{Client, BulkApiV2};
 //! use serde_json::json;
 //! use std::collections::HashMap;
+//! use anyhow::Result;
 //!
 //! #[tokio::main]
-//! async fn main() -> Result<(), Error> {
+//! async fn main() -> Result<()> {
 //!     // Initialize client and authenticate
 //!     let mut client = Client::new();
 //!     // ... authentication logic ...
@@ -89,11 +90,11 @@
 //! - [Bulk API v2 Limits](https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_concepts_limits.htm)
 
 use crate::client::client::Client;
-use crate::errors::Error;
 use reqwest::Response;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::fmt::Debug;
+use anyhow::{anyhow, Result};
 
 /// Represents the Bulk API v2 interface for interacting with a Salesforce Bulk API.
 ///
@@ -102,10 +103,11 @@ use std::fmt::Debug;
 ///
 /// ### Example
 /// ```
-/// use rustsf::{Client, BulkApiV2, Error};
+/// use rustsf::{Client, BulkApiV2};
+/// use anyhow::Result;
 ///
 /// #[tokio::main]
-/// async fn main() -> Result<(), Error> {
+/// async fn main() -> Result<()> {
 ///     let mut client = Client::new();
 ///     // Authentication logic...
 ///     let bulk_api_v2 = BulkApiV2::new(client);
@@ -140,10 +142,11 @@ impl BulkApiV2 {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, BulkApiV2, Error};
+    /// use rustsf::{Client, BulkApiV2};
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///
@@ -176,10 +179,11 @@ impl BulkApiV2 {
     /// # Example
     /// ```rust
     /// use serde_json::json;
-    /// use rustsf::{Client, BulkApiV2, Error};
+    /// use rustsf::{Client, BulkApiV2};
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///     let params = json!({
@@ -202,7 +206,7 @@ impl BulkApiV2 {
     ///
     /// # See
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/create_job.htm>
-    pub async fn create_job<T: Serialize + Debug>(&mut self, params: T) -> Result<Response, Error> {
+    pub async fn create_job<T: Serialize + Debug>(&mut self, params: T) -> Result<Response> {
         let resource_url = format!("{}/jobs/ingest", self.client.base_version_path()?);
         self.client.post(resource_url, params, vec![]).await
     }
@@ -226,10 +230,11 @@ impl BulkApiV2 {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, BulkApiV2, Error};
+    /// use rustsf::{Client, BulkApiV2};
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///
@@ -250,14 +255,14 @@ impl BulkApiV2 {
     ///
     /// # See
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/upload_job_data.htm>
-    pub async fn upload_job_data(&mut self, job_id: &str, csv: Vec<u8>) -> Result<String, Error> {
+    pub async fn upload_job_data(&mut self, job_id: &str, csv: Vec<u8>) -> Result<String> {
         let resource_url = format!("{}/jobs/ingest/{}/batches", self.client.base_version_path()?, job_id);
         let res = self.client.put(resource_url, csv).await?;
 
         if res.status().is_success() {
             Ok("Created".to_string())
         } else {
-            Err(Error::DescribeError(res.json().await?))
+            Err(anyhow!("Describe error: {:?}", res.text().await?))
         }
     }
 
@@ -283,10 +288,11 @@ impl BulkApiV2 {
     /// # Examples
     ///
     /// ```rust
-    /// use rustsf::{Client, BulkApiV2, Error};
+    /// use rustsf::{Client, BulkApiV2};
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///
@@ -311,7 +317,7 @@ impl BulkApiV2 {
     ///
     /// # See
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/get_all_jobs.htm>
-    pub async fn get_all_jobs(&mut self) -> Result<Response, Error> {
+    pub async fn get_all_jobs(&mut self) -> Result<Response> {
         let resource_url = format!("{}/jobs/ingest/", self.client.base_version_path()?);
         self.client.get(resource_url, vec![], vec![]).await
     }
@@ -331,10 +337,11 @@ impl BulkApiV2 {
     ///
     /// # Examples
     /// ```
-    /// use rustsf::{Client, BulkApiV2, Error};
+    /// use rustsf::{Client, BulkApiV2};
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///
@@ -354,7 +361,7 @@ impl BulkApiV2 {
     ///
     ///  # See
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/get_job_info.htm>
-    pub async fn get_job_info(&mut self, job_id: &str) -> Result<Response, Error> {
+    pub async fn get_job_info(&mut self, job_id: &str) -> Result<Response> {
         let resource_url = format!("{}/jobs/ingest/{}", self.client.base_version_path()?, job_id);
         self.client.get(resource_url, vec![], vec![]).await
     }
@@ -389,10 +396,11 @@ impl BulkApiV2 {
     /// # Examples
     ///
     /// ```rust
-    /// use rustsf::{Client, BulkApiV2, Error};
+    /// use rustsf::{Client, BulkApiV2};
+    /// use anyhow::Result;
     /// 
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     /// 
@@ -427,7 +435,7 @@ impl BulkApiV2 {
         &mut self,
         job_id: &str,
         result_set: &str,
-    ) -> Result<Response, Error> {
+    ) -> Result<Response> {
         // NOTE: RESULT_SET IS ONE OF successfulResults, failedResults, unprocessedrecords
         let resource_url = format!(
             "{}/jobs/ingest/{}/{}",
@@ -453,10 +461,11 @@ impl BulkApiV2 {
     ///
     /// # Examples
     /// ```rust
-    /// use rustsf::{Client, BulkApiV2, Error};
+    /// use rustsf::{Client, BulkApiV2};
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     /// 
@@ -472,7 +481,7 @@ impl BulkApiV2 {
     ///
     /// # See
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/abort_job.htm>
-    pub async fn abort_job(&mut self, job_id: &str) -> Result<Response, Error> {
+    pub async fn abort_job(&mut self, job_id: &str) -> Result<Response> {
         let resource_url = format!("{}/jobs/ingest/{}", self.client.base_version_path()?, job_id);
         let mut params = HashMap::new();
         params.insert("state", "Aborted");
@@ -506,11 +515,12 @@ impl BulkApiV2 {
     ///
     /// # Example
     /// ```
-    /// use rustsf::{Client, BulkApiV2, Error};
+    /// use rustsf::{Client, BulkApiV2};
     /// use serde_json::json;
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     /// 
@@ -534,7 +544,7 @@ impl BulkApiV2 {
         &mut self,
         job_id: &str,
         params: T,
-    ) -> Result<Response, Error> {
+    ) -> Result<Response> {
         let resource_url = format!("{}/jobs/ingest/{}", self.client.base_version_path()?, job_id);
         self.client.patch(resource_url, params).await
     }
@@ -560,10 +570,11 @@ impl BulkApiV2 {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, BulkApiV2, Error};
+    /// use rustsf::{Client, BulkApiV2};
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     /// 
@@ -585,7 +596,7 @@ impl BulkApiV2 {
     ///
     /// # See
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/get_job_info.htm>
-    pub async fn check_job_status(&mut self, job_id: &str) -> Result<Response, Error> {
+    pub async fn check_job_status(&mut self, job_id: &str) -> Result<Response> {
         let resource_url = format!("{}/jobs/ingest/{}/", self.client.base_version_path()?, job_id);
         self.client.get(resource_url, vec![], vec![]).await
     }

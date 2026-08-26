@@ -13,8 +13,8 @@
 //!
 
 use super::{RestApi, handle_json_response};
-use crate::Error;
 use crate::rest_api::responses::search_response::SearchResponse;
+use anyhow::Result;
 
 impl RestApi {
     /// Executes a SOSL (Salesforce Object Search Language) query and returns the search results.
@@ -35,11 +35,12 @@ impl RestApi {
     ///
     /// # Examples
     /// ```rust
-    /// use rustsf::{Client, RestApi, Error};
+    /// use rustsf::{Client, RestApi};
     /// use serde::{Deserialize, Serialize};
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let client = Client::new();
     ///     // Authentication logic...
     ///
@@ -57,7 +58,7 @@ impl RestApi {
     /// # Notes
     /// - Before executing this function, ensure that the `SalesforceClient` is properly authenticated.
     /// - This function utilizes the Salesforce REST API `/search/` endpoint.
-    pub async fn search_sosl(&mut self, query: &str) -> Result<SearchResponse, Error> {
+    pub async fn search_sosl(&mut self, query: &str) -> Result<SearchResponse> {
         let query_url = format!("{}/search/", self.client.base_version_path()?);
         let params = vec![("q".to_string(), query.to_string())];
         let response = self.client.get(query_url, params, vec![]).await?;

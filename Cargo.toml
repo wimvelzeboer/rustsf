@@ -21,6 +21,7 @@ metadata-api = ["reqwest/multipart"]
 default = ["rest-api"]
 
 [dependencies]
+anyhow = "1.0.104"
 base64 = "0.23.1"
 zip = "8.6.0"
 s-zip = "0.11.3"

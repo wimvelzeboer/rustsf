@@ -23,22 +23,22 @@
 //! # See
 //! <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_sobject_basic_info.htm>
 
-use std::collections::HashMap;
-use super::{RestApi, handle_empty_response, handle_json_response};
-use crate::Error;
+use anyhow::{Result};
+use crate::primary_types::{SObject, SObjectOwner};
 use crate::rest_api::responses::create_response::CreateResponse;
 use crate::rest_api::responses::deleted_sobjects_response::DeletedSObjectsResponse;
 use crate::rest_api::responses::describe_global_response::DescribeGlobalResponse;
 use crate::rest_api::responses::describe_sobject_result::DescribeSObjectResult;
+use crate::rest_api::responses::sobject_attribute::SObjectAttribute;
 use crate::rest_api::responses::sobject_info::SObjectInfo;
 use crate::rest_api::responses::updated_sobjects_response::UpdatedSObjectsResponse;
 use reqwest::Response;
-use serde::{Serialize};
 use serde::de::DeserializeOwned;
-use std::fmt::Debug;
+use serde::{Serialize};
 use serde_json::Value;
-use crate::primary_types::{SObject, SObjectOwner};
-use crate::rest_api::responses::sobject_attribute::SObjectAttribute;
+use std::collections::HashMap;
+use std::fmt::Debug;
+use super::{RestApi, handle_empty_response, handle_json_response};
 
 impl RestApi {
     /// Creates a single new record in a Salesforce with the provided values.
@@ -63,13 +63,14 @@ impl RestApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, RestApi, Error, DefSObject};
+    /// use rustsf::{Client, RestApi, DefSObject};
+    /// use anyhow::Result;
     ///
     /// #[DefSObject(sobject_type = "Account", fields="system,type,name,owner")]
     /// struct Account { }
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///
@@ -97,7 +98,7 @@ impl RestApi {
     pub async fn create_sobject<T: Serialize + Debug + SObject + Clone>(
         &mut self,
         mut record: T,
-    ) -> Result<T, Error> {
+    ) -> Result<T> {
 
         let resource_url = format!(
             "{}/sobjects/{}",
@@ -136,13 +137,14 @@ impl RestApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, RestApi, Error, DefSObject};
+    /// use rustsf::{Client, RestApi, DefSObject};
+    /// use anyhow::Result;
     ///
     /// #[DefSObject(sobject_type = "Account", fields="system,type,name,owner")]
     /// struct Account { }
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///
@@ -170,7 +172,7 @@ impl RestApi {
     pub async fn create_owned_sobject<T: Serialize + Debug + SObject + SObjectOwner + Clone>(
         &mut self,
         mut record: T,
-    ) -> Result<T, Error> {
+    ) -> Result<T> {
 
         // Set the owner_id attribute to the authenticated user's ID if its None
         if record.get_owner_id().is_none() {
@@ -197,10 +199,11 @@ impl RestApi {
     ///
     /// # Examples
     /// ```rust
-    /// use rustsf::{Client, RestApi, Error};
+    /// use rustsf::{Client, RestApi};
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///
@@ -218,7 +221,7 @@ impl RestApi {
     ///
     /// # See
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_sobject_basic_info_get.htm>
-    pub async fn describe(&mut self, object_name: &str) -> Result<SObjectInfo, Error> {
+    pub async fn describe(&mut self, object_name: &str) -> Result<SObjectInfo> {
         let resource_url = format!(
             "{}/sobjects/{}",
             self.client.base_version_path()?,
@@ -251,10 +254,11 @@ impl RestApi {
     /// # Examples
     ///
     /// ```rust
-    /// use rustsf::{Client, RestApi, Error};
+    /// use rustsf::{Client, RestApi};
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///
@@ -274,7 +278,7 @@ impl RestApi {
     pub async fn describe_sobject(
         &mut self,
         object_name: &str,
-    ) -> Result<DescribeSObjectResult, Error> {
+    ) -> Result<DescribeSObjectResult> {
         let resource_url = format!(
             "{}/sobjects/{}/describe",
             self.client.base_version_path()?,
@@ -308,10 +312,11 @@ impl RestApi {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, RestApi, Error};
+    /// use rustsf::{Client, RestApi};
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     use rustsf::RestApi;
     ///     let client = Client::new();
     ///     // Authentication logic...
@@ -332,7 +337,7 @@ impl RestApi {
     ///
     /// # See
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/dome_describeGlobal.htm>
-    pub async fn describe_global(&mut self) -> Result<DescribeGlobalResponse, Error> {
+    pub async fn describe_global(&mut self) -> Result<DescribeGlobalResponse> {
         let resource_url = format!("{}/sobjects", self.client.base_version_path()?);
         let response = self.client.get(resource_url, vec![], vec![]).await?;
         handle_json_response(response).await
@@ -363,10 +368,11 @@ impl RestApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, RestApi, Error};
+    /// use rustsf::{Client, RestApi};
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     use rustsf::RestApi;
     ///     let client = Client::new();
     ///     // Authentication logic...
@@ -386,7 +392,7 @@ impl RestApi {
     pub async fn describe_global_modified(
         &mut self,
         since: String,
-    ) -> Result<DescribeGlobalResponse, Error> {
+    ) -> Result<DescribeGlobalResponse> {
         let resource_url = format!("{}/sobjects", self.client.base_version_path()?);
         let response = self
             .client
@@ -424,10 +430,11 @@ impl RestApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, RestApi, Error};
+    /// use rustsf::{Client, RestApi};
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     use rustsf::RestApi;
     ///     let client = Client::new();
     ///     // Authentication logic...
@@ -446,7 +453,7 @@ impl RestApi {
     pub async fn describe_global_unmodified(
         &mut self,
         since: String,
-    ) -> Result<DescribeGlobalResponse, Error> {
+    ) -> Result<DescribeGlobalResponse> {
         let resource_url = format!("{}/sobjects", self.client.base_version_path()?);
         let response = self
             .client
@@ -484,10 +491,11 @@ impl RestApi {
     /// # Examples
     ///
     /// ```rust
-    /// use rustsf::{Client, RestApi, Error};
+    /// use rustsf::{Client, RestApi};
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///
@@ -511,7 +519,7 @@ impl RestApi {
     ///
     /// Ensure that the authenticated Salesforce client (`self.client`) has the necessary permissions
     /// to perform delete operations in the Salesforce org.
-    pub async fn delete_sobject(&mut self, sobject_name: &str, id: &str) -> Result<(), Error> {
+    pub async fn delete_sobject(&mut self, sobject_name: &str, id: &str) -> Result<()> {
         let resource_url = format!(
             "{}/sobjects/{}/{}",
             self.client.base_version_path()?,
@@ -543,13 +551,14 @@ impl RestApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, RestApi, Error, DefSObject};
+    /// use rustsf::{Client, RestApi, DefSObject};
+    /// use anyhow::Result;
     ///
     /// #[DefSObject(sobject_type = "Account", fields="system,type,name")]
     /// struct Account { }
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let client = Client::new();
     ///     // Authentication logic...
     ///
@@ -574,7 +583,7 @@ impl RestApi {
         &mut self,
         sobject_name: &str,
         id: &str,
-    ) -> Result<T, Error> {
+    ) -> Result<T> {
         let resource_url = format!(
             "{}/sobjects/{}/{}",
             self.client.base_version_path()?,
@@ -586,12 +595,12 @@ impl RestApi {
         // Adds the Attribute attribute to the response
         let mut attr = SObjectAttribute::new(sobject_name);
         attr.set_id(Some(id));
-        let json = serde_json::to_value(attr).map_err(Error::from)?;
+        let json = serde_json::to_value(attr)?;
 
         let mut hm: HashMap<String, Value> = handle_json_response(response).await?;
         hm.insert("attributes".to_string(), json);
-        let json = serde_json::to_value(hm).map_err(Error::from)?;
-        serde_json::from_value(json).map_err(Error::from)
+        let json = serde_json::to_value(hm)?;
+        Ok(serde_json::from_value::<T>(json)?)
     }
 
     /// sObject Get Deleted
@@ -633,10 +642,11 @@ impl RestApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, RestApi, Error};
+    /// use rustsf::{Client, RestApi};
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     use rustsf::RestApi;
     ///     let client = Client::new();
     ///     // Authentication logic...
@@ -665,7 +675,7 @@ impl RestApi {
         sobject_name: &str,
         start_date: &str,
         end_date: &str,
-    ) -> Result<DeletedSObjectsResponse, Error> {
+    ) -> Result<DeletedSObjectsResponse> {
         let resource_url = format!(
             "{}/sobjects/{}/deleted/",
             self.client.base_version_path()?,
@@ -718,10 +728,11 @@ impl RestApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, RestApi, Error};
+    /// use rustsf::{Client, RestApi};
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     use rustsf::RestApi;
     ///     let client = Client::new();
     ///     // Authentication logic...
@@ -750,7 +761,7 @@ impl RestApi {
         sobject_name: &str,
         start_date: &str,
         end_date: &str,
-    ) -> Result<UpdatedSObjectsResponse, Error> {
+    ) -> Result<UpdatedSObjectsResponse> {
         let resource_url = format!(
             "{}/sobjects/{}/updated/",
             self.client.base_version_path()?,
@@ -787,14 +798,15 @@ impl RestApi {
     ///
     /// # Example
     /// ```
-    /// use rustsf::{Client, RestApi, Error, DefSObject};
+    /// use rustsf::{Client, RestApi, DefSObject};
     /// use serde::{Deserialize, Serialize};
+    /// use anyhow::Result;
     ///
     /// #[DefSObject(sobject_type = "Account", fields="system,type,name")]
     /// struct Account { }
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///
@@ -820,7 +832,7 @@ impl RestApi {
         object_name: &str,
         id: &str, // Fixme get this from the object itself
         params: T,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         let resource_url = format!(
             "{}/sobjects/{}/{}",
             self.client.base_version_path()?,
@@ -859,11 +871,12 @@ impl RestApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, RestApi, Error};
+    /// use rustsf::{Client, RestApi};
     /// use serde_json::json;
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let client = Client::new();
     ///     // Authentication logic...
     ///
@@ -894,7 +907,7 @@ impl RestApi {
         key_name: &str,
         key: &str,
         params: T,
-    ) -> Result<Response, Error> {
+    ) -> Result<Response> {
         let resource_url = format!(
             "{}/sobjects/{}/{}/{}",
             self.client.base_version_path()?,

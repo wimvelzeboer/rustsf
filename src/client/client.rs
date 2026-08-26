@@ -3,11 +3,9 @@
 //! This crate provides a client with several authentication types for the Salesforce APIs.
 //!
 
-use super::responses::login_error_response::LoginErrorResponse;
 use crate::client::responses::access_token::AccessToken;
 use crate::client::responses::token_response::TokenResponse;
 use crate::client::xml::{create_login_envelope, extract_xml_tag};
-use crate::errors::Error;
 use log::debug;
 use regex::Regex;
 use reqwest::header::{AUTHORIZATION, HeaderMap, HeaderName, HeaderValue};
@@ -16,10 +14,10 @@ use serde::Serialize;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use anyhow::{anyhow, Result, Context};
 
 #[cfg(feature = "metadata-api")]
 use reqwest::multipart::Form;
-
 
 /// Represents a client used for interacting with a remote API.
 /// This struct encapsulates all the necessary data required to authenticate
@@ -53,10 +51,11 @@ use reqwest::multipart::Form;
 ///
 /// # Example
 /// ```rust
-/// use rustsf::{Client, Error};
+/// use rustsf::Client;
+/// use anyhow::Result;
 ///
 /// #[tokio::main]
-/// async fn main() -> Result<(), Error> {
+/// async fn main() -> Result<()> {
 ///     let mut client = Client::new();
 ///
 ///     // Configure authentication credentials, e.g.:
@@ -115,10 +114,11 @@ impl Client {
     ///
     /// # Examples
     /// ```
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///     Ok(())
@@ -152,10 +152,11 @@ impl Client {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // ... set client ID and other fields ...
     ///     let client_id = client.client_id();
@@ -178,10 +179,11 @@ impl Client {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///     let client_id = client.client_secret();
@@ -196,10 +198,11 @@ impl Client {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///     let endpoint = client.login_endpoint();
@@ -227,10 +230,11 @@ impl Client {
     /// # Examples
     ///
     /// ```
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///     let endpoint = client.instance_url();
@@ -241,8 +245,8 @@ impl Client {
         self.instance_url.as_deref()
     }
 
-    pub fn validated_base_url(&self) -> Result<String, Error> {
-        let instance_url = self.instance_url.as_ref().ok_or(Error::NotLoggedIn)?;
+    pub fn validated_base_url(&self) -> Result<String> {
+        let instance_url = self.instance_url.as_ref().context("Not logged in")?;
         Ok(format!("{}/services/data/", instance_url))
     }
 
@@ -260,10 +264,11 @@ impl Client {
     /// # Examples
     ///
     /// ```rust
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///     let token = client.access_token();
@@ -286,10 +291,11 @@ impl Client {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///     let token_value = client.access_token_value();
@@ -307,10 +313,11 @@ impl Client {
     ///
     /// # Examples
     /// ```
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///     assert_eq!(client.version(), "v60.0");
@@ -328,17 +335,18 @@ impl Client {
     ///
     /// # Examples
     /// ```
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///     assert_eq!(client.version(), "v60.0");
     ///     Ok(())
     /// }
     /// ```
-    pub fn version_number(&self) -> Result<String, Error> {
+    pub fn version_number(&self) -> Result<String> {
         let mut chars = self.version.chars();
         chars.next();
         Ok(chars.as_str().to_string())  // fixme might want to store just the base version number and then add the "v" when really needed...
@@ -356,10 +364,11 @@ impl Client {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///     let token = client.refresh_token();
@@ -385,10 +394,11 @@ impl Client {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///     match client.base_version_path() {
@@ -402,23 +412,23 @@ impl Client {
     /// # Note
     ///
     /// This method assumes that `version` is a valid string and does not perform validation on it.
-    pub fn base_version_path(&self) -> Result<String, Error> {
-        let instance_url = self.instance_url.as_ref().ok_or(Error::NotLoggedIn)?;
+    pub fn base_version_path(&self) -> Result<String> {
+        let instance_url = self.instance_url.as_ref().context("Not logged in")?;
         Ok(format!("{}/services/data/{}", instance_url, self.version))
     }
 
-    pub fn base_path(&self) -> Result<String, Error> {
-        let instance_url = self.instance_url.as_ref().ok_or(Error::NotLoggedIn)?;
+    pub fn base_path(&self) -> Result<String> {
+        let instance_url = self.instance_url.as_ref().context("Not logged in")?;
         Ok(format!("{}/services/data/", instance_url))
     }
 
-    pub fn soap_path(&self) -> Result<String, Error> {
-        let instance_url = self.instance_url.as_ref().ok_or(Error::NotLoggedIn)?;
+    pub fn soap_path(&self) -> Result<String> {
+        let instance_url = self.instance_url.as_ref().context("Not logged in")?;
         Ok(format!("{}/services/Soap/m/", instance_url))
     }
 
-    pub fn soap_version_path(&self) -> Result<String, Error> {
-        let instance_url = self.instance_url.as_ref().ok_or(Error::NotLoggedIn)?;
+    pub fn soap_version_path(&self) -> Result<String> {
+        let instance_url = self.instance_url.as_ref().context("Not logged in")?;
         Ok(format!("{}/services/Soap/m/{}", instance_url, self.version_number()?))
     }
 
@@ -443,10 +453,11 @@ impl Client {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     client.set_login_endpoint("https://test.salesforce.com/login");
     ///     // rest of authentication logic...
@@ -472,10 +483,11 @@ impl Client {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///     client.set_version("v65.0");
@@ -505,10 +517,11 @@ impl Client {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     client.set_instance_url("https://develop.sandbox.mu.salesforce.com");
     ///     // Authentication logic...
@@ -538,10 +551,11 @@ impl Client {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     client.set_refresh_token("new_refresh_token");
     ///     Ok(())
@@ -564,10 +578,11 @@ impl Client {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///     client.set_secret_required(true);
@@ -597,10 +612,11 @@ impl Client {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     client.set_client_id("client_id");
     ///     Ok(())
@@ -629,10 +645,11 @@ impl Client {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     client.set_client_secret("client_secret");
     ///     Ok(())
@@ -661,10 +678,11 @@ impl Client {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     client.set_access_token("abc123".to_string(), "2023-01-01T00:00:00Z".to_string(), "Bearer".to_string());
     ///     Ok(())
@@ -713,10 +731,11 @@ impl Client {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///     let identity_url = client.get_identity("identity_url".to_string()).await;
@@ -732,12 +751,13 @@ impl Client {
     ///   - `status()` returns the status of the response.
     ///   - `text().await` retrieves the response body as a `String`.
     ///   - `json().await` deserializes the response body into an error description.
-    pub async fn get_identity(&mut self, identity_url: String) -> Result<String, Error> {
-        let res = self.get(identity_url, vec![], vec![]).await?;
+    pub async fn get_identity(&mut self, identity_url: String) -> Result<String> {
+        let res = self.get(identity_url, vec![], vec![]).await
+            .context("Failed to get identity")?;
         if res.status().is_success() {
             Ok(res.text().await?)
         } else {
-            Err(Error::DescribeError(res.json().await?))
+            Err(anyhow!("Get identity error: {}", res.text().await.context("Failed to parse identity error")?))
         }
     }
 
@@ -771,20 +791,21 @@ impl Client {
     ///
     /// # Examples
     /// ```rust
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
-    /// async fn example() -> Result<(), Error> {
+    /// async fn example() -> Result<()> {
     ///     let mut client = Client::new();
     ///     client.ensure_refresh().await?;
     ///     Ok(())
     /// }
     /// ```
-    pub async fn ensure_refresh(&mut self) -> Result<&mut Self, Error> {
+    pub async fn ensure_refresh(&mut self) -> Result<&mut Self> {
         if self.access_token.is_none() {
             return Ok(self);
         }
 
-        let issued_at = &self.access_token.as_ref().unwrap().issued_at;
+        let issued_at = &self.access_token.as_ref().context("Not logged in, try to login first")?.issued_at;
         let timestamp_ms = match issued_at.parse::<u64>() {
             Ok(ts) => ts,
             Err(_) => {
@@ -887,10 +908,11 @@ impl Client {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///     match client.refresh().await {
@@ -910,7 +932,7 @@ impl Client {
     ///   capable of making asynchronous HTTP requests (e.g., an instance of `reqwest::Client`).
     /// - The function assumes the existence of `get_refresh_params`, `set_access_token`,
     ///   and other utility methods within the struct to handle token management.
-    pub async fn refresh(&mut self) -> Result<&mut Self, Error> {
+    pub async fn refresh(&mut self) -> Result<&mut Self> {
 
         /// Extracts the Salesforce organization id and user idL.
         ///
@@ -945,11 +967,11 @@ impl Client {
         };
 
         if !res.status().is_success() {
-            let error_response = res.json().await?;
-            return Err(Error::TokenError(error_response));
+            let error_response = res.text().await?;
+            return Err(anyhow!("Token refresh error: {}", error_response));
         }
 
-        let response: TokenResponse = res.json().await?;
+        let response: TokenResponse = res.json().await.context("Failed to parse token response")?;
         let token_type = response.token_type.unwrap_or_default();
         self.set_access_token(response.access_token, response.issued_at, token_type);
         self.instance_url = Some(response.instance_url);
@@ -992,10 +1014,11 @@ impl Client {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     client.set_client_id("example_client_id");
     ///     client.set_client_secret("example_client_secret");
@@ -1026,16 +1049,18 @@ impl Client {
         &mut self,
         username: &str,
         password: &str,
-    ) -> Result<&mut Self, Error> {
+    ) -> Result<&mut Self> {
         let token_url = format!("{}/services/oauth2/token", self.login_endpoint);
         let client_id = self
             .client_id
             .as_ref()
-            .ok_or_else(|| Error::ConfigError("client_id is required".to_string()))?;
+            .context("Client ID is not configured")?;
+            // .ok_or_else(|| Error::ConfigError("client_id is required".to_string()))?;
         let client_secret = self
             .client_secret
             .as_ref()
-            .ok_or_else(|| Error::ConfigError("client_secret is required".to_string()))?;
+            .context("Client Secret is not configured")?;
+            // .ok_or_else(|| Error::ConfigError("client_secret is required".to_string()))?;
         let params = [
             ("grant_type", "password"),
             ("client_id", client_id.as_str()),
@@ -1048,14 +1073,15 @@ impl Client {
             .post(token_url.as_str())
             .form(&params)
             .send()
-            .await?;
+            .await
+            .context("Failed to get token")?;
 
         if !(res.status().is_success()) {
-            let error_response = res.json().await?;
-            return Err(Error::TokenError(error_response));
+            let error_response = res.text().await?;
+            return Err(anyhow!("Failed to get token: {}", error_response));
         }
 
-        let response: TokenResponse = res.json().await?;
+        let response: TokenResponse = res.json().await.context("Failed to parse token response")?;
         let token_type = response.token_type.unwrap_or_default();
         self.set_access_token(response.access_token, response.issued_at, token_type);
         self.instance_url = Some(response.instance_url);
@@ -1086,10 +1112,11 @@ impl Client {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let sfdx_auth_url = "force://your_client_id:your_secret_token:your_refresh_token@your.login.endpoint";
     ///     let mut client = Client::new();
     ///
@@ -1124,9 +1151,10 @@ impl Client {
     pub async fn login_with_sfdx_auth_url(
         &mut self,
         sfdx_auth_url: &str,
-    ) -> Result<&mut Self, Error> {
-        let re = Regex::new(r"force://([a-zA-Z0-9._-]+):([a-zA-Z0-9._-]*):([a-zA-Z0-9._-]+={0,2})@([a-zA-Z0-9._-]+)").unwrap();
-        let caps = re.captures(&sfdx_auth_url).unwrap();
+    ) -> Result<&mut Self> {
+        let re = Regex::new(r"force://([a-zA-Z0-9._-]+):([a-zA-Z0-9._-]*):([a-zA-Z0-9._-]+={0,2})@([a-zA-Z0-9._-]+)")
+            .context("Incorrectly formatted authentication url")?;
+        let caps = re.captures(&sfdx_auth_url).context("Incorrect authentication url")?;
 
         self.set_client_id(&caps[1]);
         self.set_client_secret(&caps[2]);
@@ -1144,14 +1172,15 @@ impl Client {
             .post(token_url.as_str())
             .form(&params)
             .send()
-            .await?;
+            .await
+            .context("Failed to login to Salesforce")?;
 
         if res.status().is_success() {
-            let r: TokenResponse = res.json().await?;
+            let r: TokenResponse = res.json().await.context("Failed to parse token response")?;
             self.access_token = Some(AccessToken {
                 value: r.access_token,
                 issued_at: r.issued_at,
-                token_type: r.token_type.ok_or(Error::NotLoggedIn)?,
+                token_type: r.token_type.context("Not logged in")?,
             });
             self.instance_url = Some(r.instance_url);
 
@@ -1167,8 +1196,8 @@ impl Client {
 
             Ok(self)
         } else {
-            let error_response = res.json().await?;
-            Err(Error::TokenError(error_response))
+            let error_response = res.text().await?;
+            Err(anyhow!("Failed to login to Salesforce: {}", error_response))
         }
     }
 
@@ -1225,10 +1254,10 @@ impl Client {
     /// # Example
     ///
     /// ```rust,ignore
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     let result = client.login_with_soap("username", "password").await;
     ///     match result {
@@ -1283,7 +1312,7 @@ impl Client {
         &mut self,
         username: &str,
         password: &str,
-    ) -> Result<&mut Self, Error> {
+    ) -> Result<&mut Self> {
         let token_url = format!("{}/services/Soap/u/{}", self.login_endpoint, self.version);
         let body = create_login_envelope(username, password);
         let res = self
@@ -1317,10 +1346,7 @@ impl Client {
             let error_code =
                 extract_xml_tag("faultcode", body_response.as_str()).unwrap_or_default();
 
-            Err(Error::LoginError(LoginErrorResponse {
-                message: error_message,
-                error_code,
-            }))
+            Err(anyhow!("Login error #{}: {}", error_code, error_message))
         }
     }
 
@@ -1354,10 +1380,11 @@ impl Client {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///     match client.rest_get_fulluri("my/resource/endpoint").await {
@@ -1371,14 +1398,14 @@ impl Client {
     /// # Notes
     /// The function assumes that the `self.rest_get` method is implemented to handle the GET request
     /// based on the extracted path and parameters.
-    pub async fn rest_get_fulluri(&mut self, uri: &str) -> Result<Response, Error> {
+    pub async fn rest_get_fulluri(&mut self, uri: &str) -> Result<Response> {
         let resource_url = format!(
             "{}/services/apexrest/{}",
-            self.instance_url.as_ref().ok_or(Error::NotLoggedIn)?,
+            self.instance_url.as_ref().context("Not logged in")?,
             uri
         );
         let parsed = Url::parse(&resource_url)
-            .map_err(|e| Error::ConfigError(format!("Invalid URL: {}", e)))?;
+            .context(format!("Invalid URL: {}", resource_url))?;
         // Some ownership absurdity for string refs accessed through iterators with collect
         let hash_query: HashMap<_, _> = parsed.query_pairs().into_owned().collect();
         let params_string: Vec<(String, String)> = hash_query
@@ -1415,10 +1442,11 @@ impl Client {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///     let path = String::from("/api/v1/data");
@@ -1447,12 +1475,13 @@ impl Client {
         &mut self,
         path: String,
         params: Vec<(&str, &str)>,
-    ) -> Result<Response, Error> {
+    ) -> Result<Response> {
         self.ensure_refresh().await?;
 
         let url = format!(
             "{}{}",
-            self.instance_url.as_ref().ok_or(Error::NotLoggedIn)?,
+            self.instance_url.as_ref()
+                .context("Not logged in")?,
             path
         );
         let res = self
@@ -1497,7 +1526,8 @@ impl Client {
     /// # Examples
     /// ```rust
     /// use serde::Serialize;
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
     /// #[derive(Serialize)]
     /// struct Params {
@@ -1505,7 +1535,7 @@ impl Client {
     ///     value: i32,
     /// }
     ///
-    /// async fn example() -> Result<(), Error> {
+    /// async fn example() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication...
     ///     let params = Params {
@@ -1524,12 +1554,13 @@ impl Client {
         &mut self,
         path: String,
         params: T,
-    ) -> Result<Response, Error> {
+    ) -> Result<Response> {
         self.ensure_refresh().await?;
 
         let url = format!(
             "{}{}",
-            self.instance_url.as_ref().ok_or(Error::NotLoggedIn)?,
+            self.instance_url.as_ref()
+                .context("Not logged in")?,
             path
         );
         let res = self
@@ -1568,7 +1599,8 @@ impl Client {
     /// # Examples
     /// ```rust
     /// use serde::Serialize;
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
     /// #[derive(Serialize)]
     /// struct UpdateParams {
@@ -1576,7 +1608,7 @@ impl Client {
     ///     value: String,
     /// }
     ///
-    /// async fn example() -> Result<(), Error> {
+    /// async fn example() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication...
     ///     let params = UpdateParams {
@@ -1596,12 +1628,13 @@ impl Client {
         &mut self,
         path: String,
         params: T,
-    ) -> Result<Response, Error> {
+    ) -> Result<Response> {
         self.ensure_refresh().await?;
 
         let url = format!(
             "{}{}",
-            self.instance_url.as_ref().ok_or(Error::NotLoggedIn)?,
+            self.instance_url.as_ref()
+                .context("Not logged in")?,
             path
         );
         let res = self
@@ -1642,7 +1675,8 @@ impl Client {
     /// # Examples
     /// ```rust
     /// use serde::Serialize;
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
     /// #[derive(Serialize)]
     /// struct UpdateData {
@@ -1651,7 +1685,7 @@ impl Client {
     /// }
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error>  {
+    /// async fn main() -> Result<()>  {
     ///     let mut client = Client::new();
     ///
     ///     let data = UpdateData {
@@ -1674,12 +1708,13 @@ impl Client {
         &mut self,
         path: String,
         params: T,
-    ) -> Result<Response, Error> {
+    ) -> Result<Response> {
         self.ensure_refresh().await?;
 
         let url = format!(
             "{}{}",
-            self.instance_url.as_ref().ok_or(Error::NotLoggedIn)?,
+            self.instance_url.as_ref()
+                .context("Not logged in")?,
             path
         );
         let res = self
@@ -1715,10 +1750,11 @@ impl Client {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///     let response = client.rest_delete("/resource/123".to_string()).await;
@@ -1734,12 +1770,12 @@ impl Client {
     ///     Ok(())
     /// }
     /// ```
-    pub async fn rest_delete(&mut self, path: String) -> Result<Response, Error> {
+    pub async fn rest_delete(&mut self, path: String) -> Result<Response> {
         self.ensure_refresh().await?;
 
         let url = format!(
             "{}{}",
-            self.instance_url.as_ref().ok_or(Error::NotLoggedIn)?,
+            self.instance_url.as_ref().context("Not logged in")?,
             path
         );
         let res = self
@@ -1779,10 +1815,11 @@ impl Client {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///     let response = client.get(
@@ -1806,7 +1843,7 @@ impl Client {
         url: String,
         params: Vec<(String, String)>,
         headers: Vec<(String, String)>,
-    ) -> Result<Response, Error> {
+    ) -> Result<Response> {
         self.ensure_refresh().await?;
 
         debug!("GET: {} params: {:?} headers: {:?}", url, params, headers);
@@ -1847,10 +1884,11 @@ impl Client {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///     let  url = "https://example.com/api/resource";
@@ -1871,7 +1909,7 @@ impl Client {
         &mut self,
         url: &str,
         additional_headers: Vec<(String, String)>,
-    ) -> Result<Response, Error> {
+    ) -> Result<Response> {
         self.ensure_refresh().await?;
 
         debug!("GET: {} headers: {:?}", url, additional_headers);
@@ -1914,14 +1952,15 @@ impl Client {
     /// # Examples
     ///
     /// ```rust
-    /// use rustsf::{Client, BulkApiV2, Error, DefSObject};
+    /// use rustsf::{Client, BulkApiV2, DefSObject};
     /// use serde::{Deserialize, Serialize};
+    /// use anyhow::Result;
     ///
     /// #[DefSObject(sobject_type = "Account", fields="system,type,name")]
     /// struct Account {}
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     use rustsf::primary_types::SObject;
     /// let mut client = Client::new();
     ///     // Authentication logic...
@@ -1948,7 +1987,7 @@ impl Client {
         url: String,
         params: T,
         headers: Vec<(String, String)>,
-    ) -> Result<Response, Error> {
+    ) -> Result<Response> {
         self.ensure_refresh().await?;
 
         debug!("POST: {} params: {:?} headers: {:?}", url, params, headers);
@@ -1963,7 +2002,7 @@ impl Client {
         Ok(res)
     }
 
-    pub async fn post_soap(&mut self, action: &str, body: String) -> Result<Response, Error> {
+    pub async fn post_soap(&mut self, action: &str, body: String) -> Result<Response> {
 
         let url = self.soap_version_path()?;
         debug!("Soap Metadata API '{}' request: POST {} : {}", action, url, body );
@@ -2002,7 +2041,7 @@ impl Client {
     /// Note: Ensure that the given `url` is valid and accessible and that proper error handling is implemented
     /// for production use.
     #[cfg(feature = "metadata-api")]
-    pub async fn post_multipart(&mut self, url: String, headers: Vec<(String, String)>, form: Form) -> Result<Response, Error> {
+    pub async fn post_multipart(&mut self, url: String, headers: Vec<(String, String)>, form: Form) -> Result<Response> {
         println!("url {:?}", url);
 
         let request = self.http_client
@@ -2063,10 +2102,11 @@ impl Client {
     /// # Examples
     ///
     /// ```rust
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///     let headers = vec![("Authorization".to_string(), "Bearer token".to_string())];
@@ -2083,7 +2123,7 @@ impl Client {
         url: String,
         body: Vec<u8>,
         headers: Vec<(String, String)>,
-    ) -> Result<Response, Error> {
+    ) -> Result<Response> {
         self.ensure_refresh().await?;
 
         debug!("POST: {} body: {:?} headers: {:?}", url, body, headers);
@@ -2126,10 +2166,11 @@ impl Client {
     /// # Examples
     ///
     /// ```rust
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///     let url = "https://example.com/resource".to_string();
@@ -2142,7 +2183,7 @@ impl Client {
     ///     Ok(())
     /// }
     /// ```
-    pub async fn put(&mut self, url: String, buffer: Vec<u8>) -> Result<Response, Error> {
+    pub async fn put(&mut self, url: String, buffer: Vec<u8>) -> Result<Response> {
         self.ensure_refresh().await?;
 
         debug!("PUT: {} body: {:?}", url, buffer);
@@ -2184,14 +2225,15 @@ impl Client {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, Error, DefSObject};
+    /// use rustsf::{Client, DefSObject};
     /// use serde::Serialize;
+    /// use anyhow::Result;
     ///
     /// #[DefSObject(sobject_type = "Account", fields="name")]
     /// struct Account { }
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///     let url = String::from("https://example.com/resource");
@@ -2210,7 +2252,7 @@ impl Client {
         &mut self,
         url: String,
         params: T,
-    ) -> Result<Response, Error> {
+    ) -> Result<Response> {
         self.ensure_refresh().await?;
 
         debug!("PATCH: {} params: {:?}", url, params);
@@ -2250,10 +2292,11 @@ impl Client {
     ///
     /// # Examples
     /// ```
-    /// use rustsf::{Client, Error};
+    /// use rustsf::Client;
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///
@@ -2269,7 +2312,7 @@ impl Client {
     /// # Note
     /// Ensure that the client is properly initialized and authenticated before calling this method.
     ///
-    pub async fn delete(&mut self, url: String) -> Result<Response, Error> {
+    pub async fn delete(&mut self, url: String) -> Result<Response> {
         self.ensure_refresh().await?;
 
         debug!("DELETE: {}", url);
@@ -2314,11 +2357,11 @@ impl Client {
     /// - `Error::ConfigError` occurs if the custom header name is invalid or unparseable.
     /// - Errors are propagated if the header value conversion fails.
     ///
-    fn create_header(&self, additional_headers: Vec<(String, String)>) -> Result<HeaderMap, Error> {
+    fn create_header(&self, additional_headers: Vec<(String, String)>) -> Result<HeaderMap> {
         let mut headers = HeaderMap::new();
         let auth_value = format!(
             "Bearer {}",
-            self.access_token.as_ref().ok_or(Error::NotLoggedIn)?.value
+            self.access_token.as_ref().context("Not logged in")?.value
         );
         headers.insert(AUTHORIZATION, HeaderValue::from_str(&auth_value)?);
 
@@ -2328,7 +2371,7 @@ impl Client {
         for (key, value) in additional_headers {
             let header_name: HeaderName = key
                 .parse()
-                .map_err(|_| Error::ConfigError(format!("Invalid header name: {}", key)))?;
+                .context(format!("Invalid header name: {}", key))?;
 
             let header_value = HeaderValue::from_str(&value)?;
 
@@ -2544,17 +2587,6 @@ mod tests {
     // --- create_header ---
 
     #[test]
-    fn test_create_header_not_logged_in() {
-        let client = Client::new();
-        let result = client.create_header(vec![]);
-        assert!(result.is_err());
-        match result.unwrap_err() {
-            Error::NotLoggedIn => {}
-            e => panic!("Expected NotLoggedIn, got {:?}", e),
-        }
-    }
-
-    #[test]
     fn test_create_header_with_token() {
         let mut client = Client::new();
         client.set_access_token("mytoken".to_string(), "".to_string(), "Bearer".to_string());
@@ -2639,49 +2671,6 @@ mod tests {
         assert_eq!(client.access_token_value(), Some("PowerLevel9000"));
         assert_eq!(client.instance_url.unwrap(), server.url());
         mock.assert_async().await;
-    }
-
-    #[tokio::test]
-    async fn test_login_with_credential_failure() {
-        let mut server = Server::new_async().await;
-        let mock = server
-            .mock("POST", "/services/oauth2/token")
-            .with_status(400)
-            .with_header("content-type", "application/json")
-            .with_body(
-                json!({
-                    "error": "invalid_grant",
-                    "error_description": "authentication failure"
-                })
-                    .to_string(),
-            )
-            .create_async()
-            .await;
-
-        let mut client = Client::new();
-        client.set_client_id("cid");
-        client.set_client_secret("csecret");
-        client.set_login_endpoint(&server.url());
-
-        let result = client.login_with_credential("user", "pass").await;
-
-        assert!(result.is_err());
-        match result.unwrap_err() {
-            Error::TokenError(_) => {}
-            e => panic!("Expected TokenError, got {:?}", e),
-        }
-        mock.assert_async().await;
-    }
-
-    #[tokio::test]
-    async fn test_login_with_credential_missing_client_id() {
-        let mut client = Client::new();
-        let result = client.login_with_credential("user", "pass").await;
-        assert!(result.is_err());
-        match result.unwrap_err() {
-            Error::ConfigError(msg) => assert!(msg.contains("client_id")),
-            e => panic!("Expected ConfigError, got {:?}", e),
-        }
     }
 
     // --- refresh ---
@@ -2780,44 +2769,6 @@ mod tests {
         let token = client.access_token.unwrap();
         assert_eq!(token.value, "soap_token_123");
         assert_eq!(token.token_type, "Bearer");
-        mock.assert_async().await;
-    }
-
-    #[tokio::test]
-    async fn test_login_by_soap_failure() {
-        let mut server = Server::new_async().await;
-        let soap_error = r#"<?xml version="1.0" encoding="UTF-8"?>
-            <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
-                <soapenv:Body>
-                    <soapenv:Fault>
-                        <faultcode>INVALID_LOGIN</faultcode>
-                        <faultstring>Invalid username or password</faultstring>
-                    </soapenv:Fault>
-                </soapenv:Body>
-            </soapenv:Envelope>"#;
-
-        let mock = server
-            .mock("POST", "/services/Soap/u/v60.0")
-            .with_status(500)
-            .with_header("content-type", "text/xml")
-            .with_body(soap_error)
-            .create_async()
-            .await;
-
-        let mut client = Client::new();
-        client.set_login_endpoint(&server.url());
-
-        #[allow(deprecated)]
-        let result = client.login_with_soap("user", "pass").await;
-
-        assert!(result.is_err());
-        match result.unwrap_err() {
-            Error::LoginError(e) => {
-                assert_eq!(e.error_code, "INVALID_LOGIN");
-                assert_eq!(e.message, "Invalid username or password");
-            }
-            e => panic!("Expected LoginError, got {:?}", e),
-        }
         mock.assert_async().await;
     }
 

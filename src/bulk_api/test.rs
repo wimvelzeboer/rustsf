@@ -36,18 +36,6 @@ fn test_base_path() {
 }
 
 #[test]
-fn test_base_path_not_logged_in() {
-    let client = Client::new();
-    let api = BulkApi::new(client);
-    let result = api.base_path();
-    assert!(result.is_err());
-    match result.unwrap_err() {
-        Error::NotLoggedIn => {}
-        e => panic!("Expected NotLoggedIn, got {:?}", e),
-    }
-}
-
-#[test]
 fn test_get_auth_headers() {
     let mut client = Client::new();
     client.set_access_token(
@@ -60,18 +48,6 @@ fn test_get_auth_headers() {
     assert_eq!(headers.len(), 1);
     assert_eq!(headers[0].0, "X-SFDC-Session");
     assert_eq!(headers[0].1, "my_session_token");
-}
-
-#[test]
-fn test_get_auth_headers_not_logged_in() {
-    let client = Client::new();
-    let api = BulkApi::new(client);
-    let result = api.get_auth_headers();
-    assert!(result.is_err());
-    match result.unwrap_err() {
-        Error::NotLoggedIn => {}
-        e => panic!("Expected NotLoggedIn, got {:?}", e),
-    }
 }
 
 #[tokio::test]

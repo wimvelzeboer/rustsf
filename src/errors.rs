@@ -8,17 +8,7 @@
 //! - Configuration errors
 //! - API-specific error responses
 
-use crate::client::responses::login_error_response::LoginErrorResponse;
-use crate::client::responses::token_error_response::TokenErrorResponse;
-use crate::rest_api::responses::error_response::ErrorResponse;
-use reqwest::header::InvalidHeaderValue;
-use std::fmt;
-#[cfg(feature = "metadata-api")]
-use zip::result::ZipError;
-use crate::client::responses::response_error::ResponseError;
 
-#[cfg(feature = "metadata-api")]
-use crate::metadata_api::errors::XmlParseError;
 
 /// An enumeration representing various errors that can occur in the application.
 ///
@@ -84,6 +74,7 @@ use crate::metadata_api::errors::XmlParseError;
 ///     }
 /// }
 /// ```
+/*
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum Error {
@@ -93,7 +84,11 @@ pub enum Error {
     HttpError(reqwest::Error),
     HeaderError(InvalidHeaderValue),
     DeserializeError(serde_json::Error),
+
+    #[cfg(feature = "rest-api")]
     ErrorResponses(Vec<ErrorResponse>),
+
+    #[cfg(feature = "rest-api")]
     DescribeError(ErrorResponse),
     LoginError(LoginErrorResponse),
     ResponseError(ResponseError),
@@ -166,6 +161,8 @@ impl From<XmlParseError> for Error {
         Self::MetadataError(value.to_string())
     }
 }
+
+*/
 
 #[cfg(test)]
 mod tests {

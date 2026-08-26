@@ -141,7 +141,7 @@ impl MetadataRetriever {
 
 
 
-/*    fn session_id(&self) -> Result<&str, Error> {
+/*    fn session_id(&self) -> Result<&str> {
         self.client.access_token_value().ok_or(Error::NotLoggedIn)
     }*/
 }

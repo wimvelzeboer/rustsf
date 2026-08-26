@@ -1,5 +1,4 @@
 use crate::Client;
-use crate::errors::Error;
 use crate::rest_api::responses::error_response::ErrorResponse;
 use crate::rest_api::responses::query_response::QueryResponse;
 use crate::tooling_api::responses::execute_anonymous_result::ExecuteAnonymousResult;
@@ -9,6 +8,7 @@ use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use crate::primary_types::SObject;
+use anyhow::{anyhow, Result};
 
 pub mod responses;
 pub mod schema;
@@ -43,10 +43,10 @@ impl ToolingApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, ToolingApi, Error, DefSObject};
+    /// use rustsf::{Client, ToolingApi, DefSObject};
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let client = Client::new();
     ///     // Authentication logic...
     ///
@@ -65,7 +65,7 @@ impl ToolingApi {
     pub async fn execute_anonymous(
         &mut self,
         apex_code: &str,
-    ) -> Result<ExecuteAnonymousResult, Error> {
+    ) -> Result<ExecuteAnonymousResult> {
         let url = format!("{}/executeAnonymous/", self.base_path()?);
         let params = vec![("anonymousBody".to_string(), apex_code.to_string())];
         let response = self.client.get(url, params, vec![]).await?;
@@ -74,7 +74,7 @@ impl ToolingApi {
             Ok(response.json::<ExecuteAnonymousResult>().await?)
         } else {
             let errors: Vec<ErrorResponse> = response.json().await?;
-            Err(Error::ErrorResponses(errors))
+            Err(anyhow!("Errors: {:?}", errors))
         }
     }
 
@@ -84,11 +84,11 @@ impl ToolingApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, ToolingApi, Error, DefSObject};
+    /// use rustsf::{Client, ToolingApi, DefSObject};
     /// use rustsf::tooling_api::schema::apex_log::ApexLog;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let client = Client::new();
     ///     // Authentication logic...
     ///
@@ -102,7 +102,7 @@ impl ToolingApi {
     pub async fn get_latest_apex_logs(
         &mut self,
         limit: u32,
-    ) -> Result<Vec<schema::apex_log::ApexLog>, Error> {
+    ) -> Result<Vec<schema::apex_log::ApexLog>> {
         match self
             .query(&format!(
                 "SELECT {} FROM {} ORDER BY StartTime DESC LIMIT {}",
@@ -130,11 +130,11 @@ impl ToolingApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, ToolingApi, Error, DefSObject};
+    /// use rustsf::{Client, ToolingApi, DefSObject};
     /// use rustsf::tooling_api::schema::apex_log::ApexLog;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let client = Client::new();
     ///     // Authentication logic...
     ///
@@ -147,7 +147,7 @@ impl ToolingApi {
     ///     Ok(())
     /// }
     /// ```
-    pub async fn get_apex_log_body(&mut self, log_id: &str) -> Result<String, Error> {
+    pub async fn get_apex_log_body(&mut self, log_id: &str) -> Result<String> {
         let url = format!(
             "{}/sobjects/ApexLog/{}/Body",
             self.client.base_version_path()?,
@@ -156,10 +156,10 @@ impl ToolingApi {
         let response = self.client.get(url, vec![], vec![]).await?;
 
         if response.status().is_success() {
-            Ok(response.text().await.map_err(Error::HttpError)?)
+            Ok(response.text().await?)
         } else {
             let errors: Vec<ErrorResponse> = response.json().await?;
-            Err(Error::ErrorResponses(errors))
+            Err(anyhow!("Errors: {:?}", errors))
         }
     }
 
@@ -170,11 +170,11 @@ impl ToolingApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, ToolingApi, Error, DefSObject};
+    /// use rustsf::{Client, ToolingApi, DefSObject};
     /// use rustsf::tooling_api::schema::trace_flag::TraceFlag;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let client = Client::new();
     ///     // Authentication logic...
     ///
@@ -185,7 +185,7 @@ impl ToolingApi {
     ///     Ok(())
     /// }
     /// ```
-    pub async fn get_trace_flags(&mut self, user_id: &str) -> Result<Vec<schema::trace_flag::TraceFlag>, Error> {
+    pub async fn get_trace_flags(&mut self, user_id: &str) -> Result<Vec<schema::trace_flag::TraceFlag>> {
         match self.query(&format!(
             "SELECT {} FROM {} WHERE TracedEntityId = '{}' AND LogType = 'DEVELOPER_LOG'",
             schema::trace_flag::FIELD_NAMES.join(","),
@@ -210,11 +210,11 @@ impl ToolingApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, ToolingApi, Error, DefSObject};
+    /// use rustsf::{Client, ToolingApi, DefSObject};
     /// use rustsf::tooling_api::schema::trace_flag::TraceFlag;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let client = Client::new();
     ///     // Authentication logic...
     ///
@@ -236,7 +236,7 @@ impl ToolingApi {
     pub async fn create_trace_flag<T: Serialize + std::fmt::Debug + SObject + Clone>(
         &mut self,
         mut record: T,
-    ) -> Result<T, Error> {
+    ) -> Result<T> {
         match self.create("TraceFlag", record.clone()).await {
             Ok(response) => {
                 let result = serde_json::from_value::<CreateResult>(response)?;
@@ -256,7 +256,7 @@ impl ToolingApi {
         &mut self,
         id: &str, // fixme get this from the object itself
         params: T,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         self.update("TraceFlag", id, params).await
     }
 
@@ -266,11 +266,11 @@ impl ToolingApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, ToolingApi, Error, DefSObject};
+    /// use rustsf::{Client, ToolingApi, DefSObject};
     /// use rustsf::tooling_api::schema::debug_level::DebugLevel;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let client = Client::new();
     ///     // Authentication logic...
     ///
@@ -280,7 +280,7 @@ impl ToolingApi {
     ///     Ok(())
     /// }
     /// ```
-    pub async fn get_debug_level(&mut self, developer_name: &str) -> Result<Vec<schema::debug_level::DebugLevel>, Error> {
+    pub async fn get_debug_level(&mut self, developer_name: &str) -> Result<Vec<schema::debug_level::DebugLevel>> {
         match self.query(&format!(
             "SELECT {} FROM {} WHERE DeveloperName = '{}'",
             schema::debug_level::FIELD_NAMES.join(","),
@@ -305,11 +305,11 @@ impl ToolingApi {
     ///
     /// # Examples
     /// ```rust
-    /// use rustsf::{Client, ToolingApi, Error, DefSObject};
+    /// use rustsf::{Client, ToolingApi, DefSObject};
     /// use std::collections::HashMap;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let client = Client::new();
     ///     // Authentication logic...
     ///
@@ -328,7 +328,7 @@ impl ToolingApi {
     pub async fn create_debug_level<T: Serialize + std::fmt::Debug>(
         &mut self,
         params: T,
-    ) -> Result<Value, Error> {
+    ) -> Result<Value> {
         self.create("DebugLevel", params).await
     }
 
@@ -341,7 +341,7 @@ impl ToolingApi {
     pub async fn query<T: DeserializeOwned>(
         &mut self,
         query: &str,
-    ) -> Result<QueryResponse<T>, Error> {
+    ) -> Result<QueryResponse<T>> {
         let query_url = format!("{}/query/", self.base_path()?);
         let params = vec![("q".to_string(), query.to_string())];
         let response = self.client.get(query_url, params, vec![]).await?;
@@ -349,7 +349,7 @@ impl ToolingApi {
     }
 
     /// Retrieve a Tooling API SObject by ID.
-    pub async fn find_by_id(&mut self, sobject_name: &str, id: &str) -> Result<Value, Error> {
+    pub async fn find_by_id(&mut self, sobject_name: &str, id: &str) -> Result<Value> {
         let url = format!("{}/sobjects/{}/{}", self.base_path()?, sobject_name, id);
         let response = self.client.get(url, vec![], vec![]).await?;
         handle_json_response(response).await
@@ -360,7 +360,7 @@ impl ToolingApi {
         &mut self,
         object_name: &str,
         params: T,
-    ) -> Result<Value, Error> {
+    ) -> Result<Value> {
         let url = format!("{}/sobjects/{}", self.base_path()?, object_name);
         let response = self.client.post(url, params, vec![]).await?;
         handle_json_response(response).await
@@ -372,40 +372,40 @@ impl ToolingApi {
         object_name: &str,
         id: &str,
         params: T,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         let url = format!("{}/sobjects/{}/{}", self.base_path()?, object_name, id);
         let response = self.client.patch(url, params).await?;
         handle_empty_response(response).await
     }
 
     /// Delete a Tooling API SObject.
-    pub async fn destroy(&mut self, sobject_name: &str, id: &str) -> Result<(), Error> {
+    pub async fn destroy(&mut self, sobject_name: &str, id: &str) -> Result<()> {
         let url = format!("{}/sobjects/{}/{}", self.base_path()?, sobject_name, id);
         let response = self.client.delete(url).await?;
         handle_empty_response(response).await
     }
 
     /// Returns the Tooling API base path: `{instance_url}/services/data/{version}/tooling`
-    fn base_path(&self) -> Result<String, Error> {
+    fn base_path(&self) -> Result<String> {
         Ok(format!("{}/tooling", self.client.base_version_path()?))
     }
 }
 
-async fn handle_json_response<T: DeserializeOwned>(response: Response) -> Result<T, Error> {
+async fn handle_json_response<T: DeserializeOwned>(response: Response) -> Result<T> {
     if response.status().is_success() {
         Ok(response.json().await?)
     } else {
         let errors: Vec<ErrorResponse> = response.json().await?;
-        Err(Error::ErrorResponses(errors))
+        Err(anyhow!("Errors: {:?}", errors))
     }
 }
 
-async fn handle_empty_response(response: reqwest::Response) -> Result<(), Error> {
+async fn handle_empty_response(response: reqwest::Response) -> Result<()> {
     if response.status().is_success() {
         Ok(())
     } else {
         let errors: Vec<ErrorResponse> = response.json().await?;
-        Err(Error::ErrorResponses(errors))
+        Err(anyhow!("Errors: {:?}", errors))
     }
 }
 

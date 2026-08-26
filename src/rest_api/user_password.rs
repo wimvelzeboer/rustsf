@@ -11,9 +11,8 @@
 //! - [user_password_set](crate::rest_api::RestApi#method.user_password_reset), Sets the password for a user.
 //!
 use std::collections::HashMap;
-use crate::client::responses::response_error::ResponseError;
-use crate::Error;
 use crate::rest_api::{handle_json_response, RestApi};
+use anyhow::{anyhow, Result};
 
 impl RestApi {
 
@@ -30,10 +29,11 @@ impl RestApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, RestApi, Error};
+    /// use rustsf::{Client, RestApi};
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///     let mut api = RestApi::new(client);
@@ -47,7 +47,7 @@ impl RestApi {
     ///
     /// # See
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/dome_sobject_user_password.htm>
-    pub async fn user_password_expired(&mut self, user_id: &str) -> Result<bool, Error> {
+    pub async fn user_password_expired(&mut self, user_id: &str) -> Result<bool> {
         let url = format!(
             "{}/sobjects/User/{}/password",
             self.client.base_version_path()?,
@@ -57,7 +57,7 @@ impl RestApi {
         let response: HashMap<String, bool> = handle_json_response(response).await?;
         match response.get("isExpired") {
             Some(is_expired) => Ok(*is_expired),
-            None => Err(Error::ResponseError(ResponseError::new("Expected 'isExpired' property".to_string()))),
+            None => Err(anyhow!("Expected 'isExpired' property".to_string())),
         }
     }
 
@@ -81,10 +81,11 @@ impl RestApi {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, RestApi, Error};
+    /// use rustsf::{Client, RestApi};
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///     let mut api = RestApi::new(client);
@@ -98,7 +99,7 @@ impl RestApi {
     ///
     /// # See
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/dome_sobject_user_password.htm>
-    pub async fn user_password_reset(&mut self, user_id: &str)-> Result<String, Error> {
+    pub async fn user_password_reset(&mut self, user_id: &str)-> Result<String> {
         let url = format!(
             "{}/sobjects/User/{}/password",
             self.client.base_version_path()?,
@@ -108,7 +109,7 @@ impl RestApi {
         let response: HashMap<String, String> = handle_json_response(response).await?;
         match response.get("NewPassword") {
             Some(new_password) => Ok(new_password.to_string()),
-            None => Err(Error::ResponseError(ResponseError::new("Expected 'NewPassword' property".to_string())))
+            None => Err(anyhow!("Expected 'NewPassword' property".to_string()))
         }
     }
 
@@ -129,10 +130,11 @@ impl RestApi {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, RestApi, Error};
+    /// use rustsf::{Client, RestApi};
+    /// use anyhow::Result;
     ///
     /// #[tokio::main]
-    /// async fn main() -> Result<(), Error> {
+    /// async fn main() -> Result<()> {
     ///     let mut client = Client::new();
     ///     // Authentication logic...
     ///     let mut api = RestApi::new(client);
@@ -153,7 +155,7 @@ impl RestApi {
     ///
     /// # See
     /// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/dome_sobject_user_password.htm>
-    pub async fn user_password_set(&mut self, user_id: &str, password: &str) -> Result<(), Error> {
+    pub async fn user_password_set(&mut self, user_id: &str, password: &str) -> Result<()> {
         let url = format!(
             "{}/sobjects/User/{}/password",
             self.client.base_version_path()?,

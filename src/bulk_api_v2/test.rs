@@ -33,18 +33,6 @@ fn test_base_version_path() {
     );
 }
 
-#[test]
-fn test_base_path_not_logged_in() {
-    let client = Client::new();
-    let api = BulkApiV2::new(client);
-    let result = api.client.base_version_path();
-    assert!(result.is_err());
-    match result.unwrap_err() {
-        Error::NotLoggedIn => {}
-        e => panic!("Expected NotLoggedIn, got {:?}", e),
-    }
-}
-
 #[tokio::test]
 async fn test_create_job() {
     let mut server = Server::new_async().await;

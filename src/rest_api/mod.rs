@@ -39,7 +39,8 @@ pub struct RestApi {
     pub(crate) client: Client,
 }
 
-async fn handle_json_response<T: DeserializeOwned>(response: Response) -> Result<T> {    if response.status().is_success() {
+async fn handle_json_response<T: DeserializeOwned>(response: Response) -> Result<T> {
+    if response.status().is_success() {
         Ok(response.json().await?)
     } else {
         let errors: Vec<ErrorResponse> = response.json().await?;

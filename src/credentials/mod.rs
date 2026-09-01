@@ -99,11 +99,11 @@ impl Credentials {
     pub fn get_flow_type(&self) -> Option<CredentialsType> {
         if self.username.is_some() && self.password.is_some() {
             Some(CredentialsType::Password)
-        } else if self.client_id.is_some() && self.client_secret.is_some() {
-            Some(CredentialsType::ClientCredentials)
         } else if self.refresh_token.is_some() {
             Some(CredentialsType::AuthUrl)
-        } else {
+        }else if self.client_id.is_some() && self.client_secret.is_some() {
+            Some(CredentialsType::ClientCredentials)
+        }  else {
             None
         }
     }
@@ -230,6 +230,7 @@ impl Credentials {
     }
 }
 
+#[derive(Debug)]
 pub enum CredentialsType {
     AuthUrl,
     ClientCredentials,

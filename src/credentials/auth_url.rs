@@ -16,7 +16,7 @@ impl AuthUrl {
             client_id: Some(caps[1].to_string()),
             client_secret: Some(caps[2].to_string()),
             instance_url: None,
-            login_endpoint: caps[4].to_string(),
+            login_endpoint: format!("https://{}", caps[4].to_string()),
             organisation_id: None,
             password: None,
             refresh_token: Some(caps[3].to_string()),

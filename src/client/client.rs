@@ -1496,6 +1496,7 @@ async fn login_with_sfdx_auth_url(mut credentials: Credentials) -> Result<Creden
         }
     }
 
+    credentials.set_instance_url(&response.instance_url);
     credentials.access_token = Some(AccessToken::from_token_response(response));
     Ok(credentials)
 }
@@ -1503,21 +1504,19 @@ async fn login_with_sfdx_auth_url(mut credentials: Credentials) -> Result<Creden
 
 async fn get_refresh_token_response(credentials: &Credentials) -> Result<TokenResponse> {
     let url = format!("{}/services/oauth2/token", credentials.login_endpoint());
-    let params = vec![
-        ("grant_type".to_string(), "refresh_token".to_string()),
+    let params = [
+        ("grant_type", "refresh_token"),
         (
-            "refresh_token".to_string(),
-            credentials
-                .refresh_token()
-                .context("Missing refresh token")?
-                .to_string(),
-        ),
-        (
-            "client_id".to_string(),
+            "client_id",
             credentials
                 .client_id()
-                .context("Missing client id")?
-                .to_string(),
+                .context("Missing client id")?,
+        ),
+        (
+            "refresh_token",
+            credentials
+                .refresh_token()
+                .context("Missing refresh token")?,
         ),
     ];
 

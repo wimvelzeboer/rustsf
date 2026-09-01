@@ -8,6 +8,6 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SObjectInfo {
-    pub object_describe: DescribeSObjectResult,
-    pub recent_items: Vec<SObjectRecord>,
+	pub object_describe: DescribeSObjectResult,
+	pub recent_items: Vec<SObjectRecord>,
 }

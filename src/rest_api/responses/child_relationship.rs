@@ -21,23 +21,21 @@ use serde::{Deserialize, Serialize};
 #[derive(Deserialize, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ChildRelationship {
+	/// Indicates whether deleting the parent object will cause the child objects to delete as well.
+	pub cascade_delete: bool,
 
-    /// Indicates whether deleting the parent object will cause the child objects to delete as well.
-    pub cascade_delete: bool,
+	/// The name of the child SObject in the relationship.
+	#[serde(rename = "childSObject")]
+	pub child_sobject: Option<String>,
 
-    /// The name of the child SObject in the relationship.
-    #[serde(rename = "childSObject")]
-    pub child_sobject: Option<String>,
+	/// Indicates whether the relationship is deprecated and hidden from standard usage.
+	pub deprecated_and_hidden: bool,
 
-    /// Indicates whether the relationship is deprecated and hidden from standard usage.
-    pub deprecated_and_hidden: bool,
+	/// The name of the field used to reference the relationship.
+	pub field: String,
 
-    /// The name of the field used to reference the relationship.
-    pub field: String,
-
-    //    pub junction_id_list_names: [],
-    //    pub junction_reference_to: [],
-
-    pub relationship_name: Option<String>,
-    pub restricted_delete: bool,
+	//    pub junction_id_list_names: [],
+	//    pub junction_reference_to: [],
+	pub relationship_name: Option<String>,
+	pub restricted_delete: bool,
 }

@@ -17,13 +17,12 @@ use serde::Deserialize;
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct VersionResponse {
-    
-    /// A human-readable label for the version
-    pub label: String,
-    
-    /// The URL associated with this version, which could point to documentation, a changelog, or a download link
-    pub url: String,
-    
-    /// The actual version string (e.g., "67.0").
-    pub version: String,
+	/// A human-readable label for the version
+	pub label: String,
+
+	/// The URL associated with this version, which could point to documentation, a changelog, or a download link
+	pub url: String,
+
+	/// The actual version string (e.g., "67.0").
+	pub version: String,
 }

@@ -36,8 +36,6 @@ pub mod bulk_api;
 pub mod bulk_api_v2;
 pub mod primary_types;
 
-
-
 pub use client::client::Client;
 pub use credentials::Credentials;
 pub use credentials::auth_url::AuthUrl;

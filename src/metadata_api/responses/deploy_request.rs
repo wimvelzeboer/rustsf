@@ -12,10 +12,9 @@ use super::deploy_options::DeployOptions;
 ///
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub struct DeployRequest {
-
-    /// A `DeployOptions` structure that contains the specific parameters and configurations
-    /// needed for the deployment process. This field is serialized/deserialized with the
-    /// name "deployOptions".
-    #[serde(rename = "deployOptions")]
-    pub options: DeployOptions,
+	/// A `DeployOptions` structure that contains the specific parameters and configurations
+	/// needed for the deployment process. This field is serialized/deserialized with the
+	/// name "deployOptions".
+	#[serde(rename = "deployOptions")]
+	pub options: DeployOptions,
 }

@@ -13,11 +13,10 @@
 //! - [**/services/data/vXX.X/userPassword**](crate::rest_api::user_password), user password authentication
 
 use crate::client::client::Client;
-use responses::error_response::ErrorResponse;
+use anyhow::{Result, anyhow};
 use reqwest::Response;
+use responses::error_response::ErrorResponse;
 use serde::de::DeserializeOwned;
-use anyhow::{anyhow, Result};
-
 
 pub mod responses;
 
@@ -36,65 +35,65 @@ pub mod responses;
 /// Note: To use the `RestApi` struct effectively, ensure all required components
 /// of the `Client` type are configured appropriately.
 pub struct RestApi {
-    pub(crate) client: Client,
+	pub(crate) client: Client,
 }
 
 async fn handle_json_response<T: DeserializeOwned>(response: Response) -> Result<T> {
-    if response.status().is_success() {
-        Ok(response.json().await?)
-    } else {
-        let errors: Vec<ErrorResponse> = response.json().await?;
-        Err(anyhow!("Response error {:?}", errors))
-    }
+	if response.status().is_success() {
+		Ok(response.json().await?)
+	} else {
+		let errors: Vec<ErrorResponse> = response.json().await?;
+		Err(anyhow!("Response error {:?}", errors))
+	}
 }
 
 async fn handle_empty_response(response: Response) -> Result<()> {
-    if response.status().is_success() {
-        Ok(())
-    } else {
-        let errors: Vec<ErrorResponse> = response.json().await?;
-        Err(anyhow!("Response error {:?}", errors))
-    }
+	if response.status().is_success() {
+		Ok(())
+	} else {
+		let errors: Vec<ErrorResponse> = response.json().await?;
+		Err(anyhow!("Response error {:?}", errors))
+	}
 }
 
 impl RestApi {
-    /// Creates a new instance of the `RestApi` struct with the provided `Client`.
-    ///
-    /// # Arguments
-    ///
-    /// * `client` - An instance of the `Client` that this `RestApi` will use to perform API requests.
-    ///
-    /// # Returns
-    ///
-    /// A new `RestApi` instance initialized with the given `Client`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use rustsf::{Client, Credentials, RestApi};
-    /// use anyhow::Result;
-    ///
-    /// #[tokio::main]
-    /// async fn main() -> Result<()> {
-    ///     let client= Client::new(Credentials::new()).await?;
-    ///     // Authentication logic...
-    ///
-    ///     let mut api = RestApi::new(client);
-    ///     // you call the api here..
-    ///
-    ///     Ok(())
-    /// }
-    /// ```
-    pub fn new(client: Client) -> Self {
-        RestApi { client }
-    }
+	/// Creates a new instance of the `RestApi` struct with the provided `Client`.
+	///
+	/// # Arguments
+	///
+	/// * `client` - An instance of the `Client` that this `RestApi` will use to perform API requests.
+	///
+	/// # Returns
+	///
+	/// A new `RestApi` instance initialized with the given `Client`.
+	///
+	/// # Examples
+	///
+	/// ```
+	/// use rustsf::{Client, Credentials, RestApi};
+	/// use anyhow::Result;
+	///
+	/// #[tokio::main]
+	/// async fn main() -> Result<()> {
+	///     let client= Client::new(Credentials::new()).await?;
+	///     // Authentication logic...
+	///
+	///     let mut api = RestApi::new(client);
+	///     // you call the api here..
+	///
+	///     Ok(())
+	/// }
+	/// ```
+	pub fn new(client: Client) -> Self {
+		RestApi { client }
+	}
 }
 
-#[cfg(test)]
-mod test;
-pub mod sobjects;
 pub mod composite;
 pub mod query;
 pub mod search;
 pub mod services;
+pub mod sobjects;
+#[cfg(test)]
+mod test;
 pub mod user_password;

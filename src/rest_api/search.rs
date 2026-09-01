@@ -17,51 +17,51 @@ use crate::rest_api::responses::search_response::SearchResponse;
 use anyhow::Result;
 
 impl RestApi {
-    /// Executes a SOSL (Salesforce Object Search Language) query and returns the search results.
-    ///
-    /// # Parameters
-    /// - `query`: A string slice containing the SOSL query to be executed.
-    ///
-    /// # Returns
-    /// - `Result<SearchResponse, Error>`:
-    ///   - On success: A `SearchResponse` object containing the results of the SOSL query.
-    ///   - On failure: An `Error` indicating the cause of the failure.
-    ///
-    /// # Errors
-    /// This function may return an error if:
-    /// - There is an issue with constructing the query URL.
-    /// - The HTTP GET request to the Salesforce API fails.
-    /// - The response from the server cannot be properly parsed or contains an error.
-    ///
-    /// # Examples
-    /// ```rust
-    /// use rustsf::{Client, Credentials, RestApi};
-    /// use serde::{Deserialize, Serialize};
-    /// use anyhow::Result;
-    ///
-    /// #[tokio::main]
-    /// async fn main() -> Result<()> {
-    ///     let client= Client::new(Credentials::new()).await?;
-    ///     // Authentication logic...
-    ///
-    ///     let mut api = RestApi::new(client);
-    ///     let query = "FIND {test} RETURNING Account(Name)";
-    ///     let result = api.search_sosl(query).await;
-    ///     match result {
-    ///         Ok(response) => println!("Search results: {:?}", response),
-    ///         Err(error) => println!("Error executing SOSL query: {:?}", error),
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// # Notes
-    /// - Before executing this function, ensure that the `SalesforceClient` is properly authenticated.
-    /// - This function utilizes the Salesforce REST API `/search/` endpoint.
-    pub async fn search_sosl(&mut self, query: &str) -> Result<SearchResponse> {
-        let query_url = format!("{}/search/", self.client.base_version_path()?);
-        let params = vec![("q".to_string(), query.to_string())];
-        let response = self.client.get(query_url, params, vec![]).await?;
-        handle_json_response(response).await
-    }
+	/// Executes a SOSL (Salesforce Object Search Language) query and returns the search results.
+	///
+	/// # Parameters
+	/// - `query`: A string slice containing the SOSL query to be executed.
+	///
+	/// # Returns
+	/// - `Result<SearchResponse, Error>`:
+	///   - On success: A `SearchResponse` object containing the results of the SOSL query.
+	///   - On failure: An `Error` indicating the cause of the failure.
+	///
+	/// # Errors
+	/// This function may return an error if:
+	/// - There is an issue with constructing the query URL.
+	/// - The HTTP GET request to the Salesforce API fails.
+	/// - The response from the server cannot be properly parsed or contains an error.
+	///
+	/// # Examples
+	/// ```rust
+	/// use rustsf::{Client, Credentials, RestApi};
+	/// use serde::{Deserialize, Serialize};
+	/// use anyhow::Result;
+	///
+	/// #[tokio::main]
+	/// async fn main() -> Result<()> {
+	///     let client= Client::new(Credentials::new()).await?;
+	///     // Authentication logic...
+	///
+	///     let mut api = RestApi::new(client);
+	///     let query = "FIND {test} RETURNING Account(Name)";
+	///     let result = api.search_sosl(query).await;
+	///     match result {
+	///         Ok(response) => println!("Search results: {:?}", response),
+	///         Err(error) => println!("Error executing SOSL query: {:?}", error),
+	///     }
+	///     Ok(())
+	/// }
+	/// ```
+	///
+	/// # Notes
+	/// - Before executing this function, ensure that the `SalesforceClient` is properly authenticated.
+	/// - This function utilizes the Salesforce REST API `/search/` endpoint.
+	pub async fn search_sosl(&mut self, query: &str) -> Result<SearchResponse> {
+		let query_url = format!("{}/search/", self.client.base_version_path()?);
+		let params = vec![("q".to_string(), query.to_string())];
+		let response = self.client.get(query_url, params, vec![]).await?;
+		handle_json_response(response).await
+	}
 }

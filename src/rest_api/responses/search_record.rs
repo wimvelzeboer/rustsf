@@ -1,10 +1,10 @@
-use serde::Deserialize;
 use crate::rest_api::responses::sobject_attribute::SObjectAttribute;
+use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SearchRecord {
-    #[serde(rename = "Id")]
-    pub id: String,
-    pub attributes: SObjectAttribute,
+	#[serde(rename = "Id")]
+	pub id: String,
+	pub attributes: SObjectAttribute,
 }

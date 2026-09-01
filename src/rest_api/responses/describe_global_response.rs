@@ -1,5 +1,5 @@
-use serde::Deserialize;
 use super::describe_global_sobject_response::DescribeSObjectResult;
+use serde::Deserialize;
 
 /// Represents the response structure for the "Describe Global" API call.
 ///
@@ -20,7 +20,7 @@ use super::describe_global_sobject_response::DescribeSObjectResult;
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct DescribeGlobalResponse {
-    pub encoding: String,
-    pub max_batch_size: u16,
-    pub sobjects: Vec<DescribeSObjectResult>,
+	pub encoding: String,
+	pub max_batch_size: u16,
+	pub sobjects: Vec<DescribeSObjectResult>,
 }

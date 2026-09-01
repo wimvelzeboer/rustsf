@@ -19,7 +19,6 @@ pub mod primary_types;
 /// Provides access to developer tooling functionality including executing
 /// anonymous Apex, managing debug logs and trace flags, and querying
 /// metadata objects.
-#[derive(Default)]
 pub struct ToolingApi {
     pub(crate) client: Client,
 }
@@ -43,11 +42,11 @@ impl ToolingApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, ToolingApi, DefSObject};
+    /// use rustsf::{Client, Credentials, ToolingApi, DefSObject};
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let client = Client::new();
+    ///     let client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut api = ToolingApi::new(client);
@@ -84,12 +83,12 @@ impl ToolingApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, ToolingApi, DefSObject};
+    /// use rustsf::{Client, Credentials, ToolingApi, DefSObject};
     /// use rustsf::tooling_api::schema::apex_log::ApexLog;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let client = Client::new();
+    ///     let client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut api = ToolingApi::new(client);
@@ -130,12 +129,12 @@ impl ToolingApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, ToolingApi, DefSObject};
+    /// use rustsf::{Client, Credentials, ToolingApi, DefSObject};
     /// use rustsf::tooling_api::schema::apex_log::ApexLog;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let client = Client::new();
+    ///     let client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut api = ToolingApi::new(client);
@@ -170,12 +169,12 @@ impl ToolingApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, ToolingApi, DefSObject};
+    /// use rustsf::{Client, Credentials, ToolingApi, DefSObject};
     /// use rustsf::tooling_api::schema::trace_flag::TraceFlag;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let client = Client::new();
+    ///     let client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let user_id = client.get_user_id().unwrap().to_string();
@@ -210,12 +209,12 @@ impl ToolingApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, ToolingApi, DefSObject};
+    /// use rustsf::{Client, Credentials, ToolingApi, DefSObject};
     /// use rustsf::tooling_api::schema::trace_flag::TraceFlag;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let client = Client::new();
+    ///     let client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut api = ToolingApi::new(client);
@@ -266,12 +265,12 @@ impl ToolingApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, ToolingApi, DefSObject};
+    /// use rustsf::{Client, Credentials, ToolingApi, DefSObject};
     /// use rustsf::tooling_api::schema::debug_level::DebugLevel;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let client = Client::new();
+    ///     let client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut api = ToolingApi::new(client);
@@ -305,12 +304,12 @@ impl ToolingApi {
     ///
     /// # Examples
     /// ```rust
-    /// use rustsf::{Client, ToolingApi, DefSObject};
+    /// use rustsf::{Client, Credentials, ToolingApi, DefSObject};
     /// use std::collections::HashMap;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let client = Client::new();
+    ///     let client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut api = ToolingApi::new(client);

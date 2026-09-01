@@ -27,7 +27,7 @@
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<()> {
-//!     let mut client = Client::new();
+//!     let mut client= Client::new(Credentials::new()).await?;
 //!     // Perform authentication...
 //!     
 //!     let mut bulk_api = BulkApi::new(client);
@@ -63,7 +63,6 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use anyhow::{Context, Result};
 
-#[derive(Default)]
 pub struct BulkApi {
     pub(crate) client: Client,
 }
@@ -84,12 +83,12 @@ impl BulkApi {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, BulkApi};
+    /// use rustsf::{Client, Credentials, BulkApi};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///     let bulk_api = BulkApi::new(client);
     ///     Ok(())
@@ -122,8 +121,7 @@ impl BulkApi {
     fn base_path(&self) -> Result<String> {
         let instance_url = self
             .client
-            .instance_url
-            .as_ref()
+            .instance_url()
             .context("Not logged in")?;
 
         let version = &self.client.version[1..];
@@ -154,7 +152,7 @@ impl BulkApi {
     /// # Example
     /// ```rust
     /// use serde::Serialize;
-    /// use rustsf::{Client, BulkApi};
+    /// use rustsf::{Client, Credentials, BulkApi};
     /// use anyhow::Result;
     ///
     /// #[derive(Serialize, Debug)]
@@ -165,7 +163,7 @@ impl BulkApi {
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let client = Client::new();
+    ///     let client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let params = JobParams {
@@ -218,12 +216,12 @@ impl BulkApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, BulkApi};
+    /// use rustsf::{Client, Credentials, BulkApi};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut bulk_api = BulkApi::new(client);
@@ -282,12 +280,12 @@ impl BulkApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, BulkApi};
+    /// use rustsf::{Client, Credentials, BulkApi};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut bulk_api = BulkApi::new(client);
@@ -326,12 +324,12 @@ impl BulkApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, BulkApi};
+    /// use rustsf::{Client, Credentials, BulkApi};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut bulk_api = BulkApi::new(client);
@@ -376,12 +374,12 @@ impl BulkApi {
     /// # Examples
     ///
     /// ```rust
-    /// use rustsf::{Client, BulkApi};
+    /// use rustsf::{Client, Credentials, BulkApi};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut bulk_api = BulkApi::new(client);
@@ -427,12 +425,12 @@ impl BulkApi {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, BulkApi};
+    /// use rustsf::{Client, Credentials, BulkApi};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut bulk_api = BulkApi::new(client);
@@ -483,12 +481,12 @@ impl BulkApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, BulkApi};
+    /// use rustsf::{Client, Credentials, BulkApi};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut bulk_api = BulkApi::new(client);
@@ -564,12 +562,12 @@ impl BulkApi {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, BulkApi};
+    /// use rustsf::{Client, Credentials, BulkApi};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut bulk_api = BulkApi::new(client);
@@ -633,12 +631,12 @@ impl BulkApi {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, BulkApi};
+    /// use rustsf::{Client, Credentials, BulkApi};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut bulk_api = BulkApi::new(client);
@@ -678,9 +676,10 @@ impl BulkApi {
     /// # Notes
     /// * The `X-SFDC-Session` header is specifically required for API version 1 requests.
     fn get_auth_headers(&self) -> Result<Vec<(String, String)>> {
-        let token = self
+        let binding = self
             .client
-            .access_token
+            .credentials.access_token();
+        let token = binding
             .as_ref()
             .context("Not logged in")?;
         Ok(vec![

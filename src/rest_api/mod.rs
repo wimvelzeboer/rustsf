@@ -35,12 +35,12 @@ pub mod responses;
 ///
 /// Note: To use the `RestApi` struct effectively, ensure all required components
 /// of the `Client` type are configured appropriately.
-#[derive(Default)]
 pub struct RestApi {
     pub(crate) client: Client,
 }
 
-async fn handle_json_response<T: DeserializeOwned>(response: Response) -> Result<T> {    if response.status().is_success() {
+async fn handle_json_response<T: DeserializeOwned>(response: Response) -> Result<T> {
+    if response.status().is_success() {
         Ok(response.json().await?)
     } else {
         let errors: Vec<ErrorResponse> = response.json().await?;
@@ -71,12 +71,12 @@ impl RestApi {
     /// # Examples
     ///
     /// ```
-    /// use rustsf::{Client, RestApi};
+    /// use rustsf::{Client, Credentials, RestApi};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let client = Client::new();
+    ///     let client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut api = RestApi::new(client);

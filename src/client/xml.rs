@@ -1,11 +1,14 @@
+#[cfg(test)]
 use roxmltree::Document;
 
+#[cfg(test)]
 pub(crate) fn extract_xml_tag(tag_name: &str, body: &str) -> Option<String> {
     let doc = Document::parse(body).ok()?;
     let node = doc.descendants().find(|n| n.has_tag_name(tag_name))?;
     Some(node.text()?.to_string())
 }
 
+#[cfg(test)]
 pub(crate) fn create_login_envelope(username: &str, password: &str) -> String {
     [
         "<se:Envelope xmlns:se='http://schemas.xmlsoap.org/soap/envelope/'>",

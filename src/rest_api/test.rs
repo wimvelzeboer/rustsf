@@ -4,38 +4,43 @@ use super::*;
 
 use crate as rustsf;
 use serde_json::json;
-use crate::DefSObject;
+use crate::{Credentials, DefSObject};
+use crate::client::responses::access_token::AccessToken;
 use crate::rest_api::responses::query_response::QueryResponse;
 
-fn create_test_rest_api(server_url: &str) -> RestApi {
-    let mut client = Client::new();
-    client.set_instance_url(server_url);
-    client.set_access_token(
+async fn create_test_rest_api(server_url: &str) -> Result<RestApi> {
+    let mut credentials = Credentials::new();
+    credentials.set_instance_url(server_url);
+    credentials.set_access_token(Some(AccessToken::new(
         "test_token".to_string(),
         "9999999999000".to_string(),
         "Bearer".to_string(),
-    );
+    )));
+
+    let mut client = Client::new(credentials).await?;
     client.set_version("v60.0");
-    RestApi::new(client)
+    Ok(RestApi::new(client))
 }
 
 #[tokio::test]
-async fn test_new() {
-    let client = Client::new();
+async fn test_new() -> Result<()>{
+    let client = Client::new(Credentials::new()).await?;
     let api = RestApi::new(client);
-    assert!(api.client.instance_url.is_none());
+    assert!(api.client.credentials.instance_url().is_some());
+    Ok(())
 }
 
 #[tokio::test]
-async fn test_base_path() {
-    let mut client = Client::new();
-    client.set_instance_url("https://na1.salesforce.com");
+async fn test_base_path() -> Result<()>{
+    let mut client = Client::new(Credentials::new()).await?;
+    client.credentials.set_instance_url("https://na1.salesforce.com");
     client.set_version("v60.0");
     let api = RestApi::new(client);
     assert_eq!(
         api.client.base_version_path().unwrap(),
         "https://na1.salesforce.com/services/data/v60.0"
     );
+    Ok(())
 }
 
 #[DefSObject(sobject_type = "Account", fields="name,owner")]
@@ -73,7 +78,7 @@ async fn test_query() {
         .create_async()
         .await;
 
-    let mut api = create_test_rest_api(&server.url());
+    let mut api = create_test_rest_api(&server.url()).await.unwrap();
     let res : QueryResponse<Account> = api.query("SELECT Id FROM Account").await.unwrap();
     assert_eq!(res.total_size, 1);
     assert_eq!(res.done, true);
@@ -103,7 +108,7 @@ async fn test_query_all() {
         .create_async()
         .await;
 
-    let mut api = create_test_rest_api(&server.url());
+    let mut api = create_test_rest_api(&server.url()).await.unwrap();
     let res = api.query_all::<Account>("SELECT Id FROM Account").await.unwrap();
     assert_eq!(res.done, true);
     mock.assert_async().await;
@@ -127,7 +132,7 @@ async fn test_query_more() {
         .create_async()
         .await;
 
-    let mut api = create_test_rest_api(&server.url());
+    let mut api = create_test_rest_api(&server.url()).await.unwrap();
     let res = api
         .query_more::<Account>("services/data/v60.0/query/01gxx-2000")
         .await
@@ -151,7 +156,7 @@ async fn test_search_sosl() {
         .create_async()
         .await;
 
-    let mut api = create_test_rest_api(&server.url());
+    let mut api = create_test_rest_api(&server.url()).await.unwrap();
     let res = api.search_sosl("FIND {test}").await.unwrap();
     assert!(res.search_records.is_empty());
     mock.assert_async().await;
@@ -175,7 +180,7 @@ async fn test_versions() {
         .create_async()
         .await;
 
-    let mut api = create_test_rest_api(&server.url());
+    let mut api = create_test_rest_api(&server.url()).await.unwrap();
     let res = api.api_versions().await.unwrap();
     assert_eq!(res.len(), 1);
     assert_eq!(res.iter().nth(0).unwrap().version, "60.0");
@@ -193,7 +198,7 @@ async fn test_find_by_id() {
         .create_async()
         .await;
 
-    let mut api = create_test_rest_api(&server.url());
+    let mut api = create_test_rest_api(&server.url()).await.unwrap();
     let account = api.fetch_by_id::<Account>("Account", "001xx000003DGbX").await.unwrap();
     assert_eq!(account.id, Some("001xx000003DGbX".to_string()));
     assert_eq!(account.get_name(), Some("Acme"));
@@ -211,7 +216,7 @@ async fn test_create() {
         .create_async()
         .await;
 
-    let mut api = create_test_rest_api(&server.url());
+    let mut api = create_test_rest_api(&server.url()).await.unwrap();
     let account = Account::new().set_name("Test Account".to_string());
 
     let account = api.create_sobject(account).await.unwrap();
@@ -228,7 +233,7 @@ async fn test_update() {
         .create_async()
         .await;
 
-    let mut api = create_test_rest_api(&server.url());
+    let mut api = create_test_rest_api(&server.url()).await.unwrap();
     let mut params = std::collections::HashMap::new();
     params.insert("Name", "Updated");
     let res = api.update_sobject("Account", "001xx", params).await;
@@ -250,7 +255,7 @@ async fn test_upsert() {
         .create_async()
         .await;
 
-    let mut api = create_test_rest_api(&server.url());
+    let mut api = create_test_rest_api(&server.url()).await.unwrap();
     let mut params = std::collections::HashMap::new();
     params.insert("Name", "Upserted");
     let res = api
@@ -269,7 +274,7 @@ async fn test_destroy() {
         .create_async()
         .await;
 
-    let mut api = create_test_rest_api(&server.url());
+    let mut api = create_test_rest_api(&server.url()).await.unwrap();
     let res = api.delete_sobject("Account", "001xx").await;
     assert!(res.is_ok());
     mock.assert_async().await;
@@ -293,7 +298,7 @@ async fn test_describe_global() {
         .create_async()
         .await;
 
-    let mut api = create_test_rest_api(&server.url());
+    let mut api = create_test_rest_api(&server.url()).await.unwrap();
     let res = api.describe_global().await.unwrap();
     assert_eq!(res.encoding, "UTF-8");
     assert_eq!(res.max_batch_size, 200);
@@ -334,7 +339,7 @@ async fn test_describe() {
         .create_async()
         .await;
 
-    let mut api = create_test_rest_api(&server.url());
+    let mut api = create_test_rest_api(&server.url()).await.unwrap();
     let res = api.describe_sobject("Account").await.unwrap();
     assert_eq!(res.name, "Account");
     assert_eq!(res.createable, true);

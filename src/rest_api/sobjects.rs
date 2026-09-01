@@ -63,7 +63,7 @@ impl RestApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, RestApi, DefSObject};
+    /// use rustsf::{Client, Credentials, RestApi, DefSObject};
     /// use anyhow::Result;
     ///
     /// #[DefSObject(sobject_type = "Account", fields="system,type,name,owner")]
@@ -71,7 +71,7 @@ impl RestApi {
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut api = RestApi::new(client);
@@ -137,7 +137,7 @@ impl RestApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, RestApi, DefSObject};
+    /// use rustsf::{Client, Credentials, RestApi, DefSObject};
     /// use anyhow::Result;
     ///
     /// #[DefSObject(sobject_type = "Account", fields="system,type,name,owner")]
@@ -145,7 +145,7 @@ impl RestApi {
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut api = RestApi::new(client);
@@ -199,12 +199,12 @@ impl RestApi {
     ///
     /// # Examples
     /// ```rust
-    /// use rustsf::{Client, RestApi};
+    /// use rustsf::{Client, Credentials, RestApi};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut api = RestApi::new(client);
@@ -254,12 +254,12 @@ impl RestApi {
     /// # Examples
     ///
     /// ```rust
-    /// use rustsf::{Client, RestApi};
+    /// use rustsf::{Client, Credentials, RestApi};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut api = RestApi::new(client);
@@ -312,13 +312,13 @@ impl RestApi {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, RestApi};
+    /// use rustsf::{Client, Credentials, RestApi};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
     ///     use rustsf::RestApi;
-    ///     let client = Client::new();
+    ///     let client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut api = RestApi::new(client);
@@ -368,13 +368,13 @@ impl RestApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, RestApi};
+    /// use rustsf::{Client, Credentials, RestApi};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
     ///     use rustsf::RestApi;
-    ///     let client = Client::new();
+    ///     let client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut api = RestApi::new(client);
@@ -430,13 +430,13 @@ impl RestApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, RestApi};
+    /// use rustsf::{Client, Credentials, RestApi};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
     ///     use rustsf::RestApi;
-    ///     let client = Client::new();
+    ///     let client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut api = RestApi::new(client);
@@ -491,12 +491,12 @@ impl RestApi {
     /// # Examples
     ///
     /// ```rust
-    /// use rustsf::{Client, RestApi};
+    /// use rustsf::{Client, Credentials, RestApi};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut api = RestApi::new(client);
@@ -551,7 +551,7 @@ impl RestApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, RestApi, DefSObject};
+    /// use rustsf::{Client, Credentials, RestApi, DefSObject};
     /// use anyhow::Result;
     ///
     /// #[DefSObject(sobject_type = "Account", fields="system,type,name")]
@@ -559,7 +559,7 @@ impl RestApi {
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let client = Client::new();
+    ///     let client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut api = RestApi::new(client);
@@ -642,13 +642,13 @@ impl RestApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, RestApi};
+    /// use rustsf::{Client, Credentials, RestApi};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
     ///     use rustsf::RestApi;
-    ///     let client = Client::new();
+    ///     let client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut api = RestApi::new(client);
@@ -728,13 +728,13 @@ impl RestApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, RestApi};
+    /// use rustsf::{Client, Credentials, RestApi};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
     ///     use rustsf::RestApi;
-    ///     let client = Client::new();
+    ///     let client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut api = RestApi::new(client);
@@ -798,7 +798,7 @@ impl RestApi {
     ///
     /// # Example
     /// ```
-    /// use rustsf::{Client, RestApi, DefSObject};
+    /// use rustsf::{Client, Credentials, RestApi, DefSObject};
     /// use serde::{Deserialize, Serialize};
     /// use anyhow::Result;
     ///
@@ -807,7 +807,7 @@ impl RestApi {
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut api = RestApi::new(client);
@@ -871,13 +871,13 @@ impl RestApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, RestApi};
+    /// use rustsf::{Client, Credentials, RestApi};
     /// use serde_json::json;
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let client = Client::new();
+    ///     let client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut api = RestApi::new(client);

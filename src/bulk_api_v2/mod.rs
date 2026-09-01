@@ -26,7 +26,7 @@
 //! # Example
 //!
 //! ```rust,no_run
-//! use rustsf::{Client, BulkApiV2};
+//! use rustsf::{Client, Credentials, BulkApiV2};
 //! use serde_json::json;
 //! use std::collections::HashMap;
 //! use anyhow::Result;
@@ -34,7 +34,7 @@
 //! #[tokio::main]
 //! async fn main() -> Result<()> {
 //!     // Initialize client and authenticate
-//!     let mut client = Client::new();
+//!     let mut client= Client::new(Credentials::new()).await?;
 //!     // ... authentication logic ...
 //!
 //!     let mut bulk_api = BulkApiV2::new(client);
@@ -103,12 +103,12 @@ use anyhow::{anyhow, Result};
 ///
 /// ### Example
 /// ```
-/// use rustsf::{Client, BulkApiV2};
+/// use rustsf::{Client, Credentials, BulkApiV2};
 /// use anyhow::Result;
 ///
 /// #[tokio::main]
 /// async fn main() -> Result<()> {
-///     let mut client = Client::new();
+///     let mut client= Client::new(Credentials::new()).await?;
 ///     // Authentication logic...
 ///     let bulk_api_v2 = BulkApiV2::new(client);
 ///     Ok(())
@@ -123,7 +123,6 @@ use anyhow::{anyhow, Result};
 /// This struct implements the `Default` trait, enabling the creation of a `BulkApiV2` instance with
 /// default field values as necessary. You can override these default values after instantiation
 /// if needed.
-#[derive(Default)]
 pub struct BulkApiV2 {
     pub(crate) client: Client,
 }
@@ -142,12 +141,12 @@ impl BulkApiV2 {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, BulkApiV2};
+    /// use rustsf::{Client, Credentials, BulkApiV2};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut bulk_api = BulkApiV2::new(client);
@@ -179,12 +178,12 @@ impl BulkApiV2 {
     /// # Example
     /// ```rust
     /// use serde_json::json;
-    /// use rustsf::{Client, BulkApiV2};
+    /// use rustsf::{Client, Credentials, BulkApiV2};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///     let params = json!({
     ///         "job_name": "example_job",
@@ -230,12 +229,12 @@ impl BulkApiV2 {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, BulkApiV2};
+    /// use rustsf::{Client, Credentials, BulkApiV2};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut bulk_api = BulkApiV2::new(client);
@@ -288,12 +287,12 @@ impl BulkApiV2 {
     /// # Examples
     ///
     /// ```rust
-    /// use rustsf::{Client, BulkApiV2};
+    /// use rustsf::{Client, Credentials, BulkApiV2};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut bulk_api = BulkApiV2::new(client);
@@ -337,12 +336,12 @@ impl BulkApiV2 {
     ///
     /// # Examples
     /// ```
-    /// use rustsf::{Client, BulkApiV2};
+    /// use rustsf::{Client, Credentials, BulkApiV2};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut bulk_api = BulkApiV2::new(client);
@@ -396,12 +395,12 @@ impl BulkApiV2 {
     /// # Examples
     ///
     /// ```rust
-    /// use rustsf::{Client, BulkApiV2};
+    /// use rustsf::{Client, Credentials, BulkApiV2};
     /// use anyhow::Result;
     /// 
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     /// 
     ///     let mut api = BulkApiV2::new(client);
@@ -461,12 +460,12 @@ impl BulkApiV2 {
     ///
     /// # Examples
     /// ```rust
-    /// use rustsf::{Client, BulkApiV2};
+    /// use rustsf::{Client, Credentials, BulkApiV2};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     /// 
     ///     let mut api = BulkApiV2::new(client);
@@ -515,13 +514,13 @@ impl BulkApiV2 {
     ///
     /// # Example
     /// ```
-    /// use rustsf::{Client, BulkApiV2};
+    /// use rustsf::{Client, Credentials, BulkApiV2};
     /// use serde_json::json;
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     /// 
     ///     let mut api = BulkApiV2::new(client);
@@ -570,12 +569,12 @@ impl BulkApiV2 {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, BulkApiV2};
+    /// use rustsf::{Client, Credentials, BulkApiV2};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     /// 
     ///     let mut api = BulkApiV2::new(client);

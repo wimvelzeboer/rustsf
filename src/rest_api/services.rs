@@ -46,13 +46,13 @@ impl RestApi {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, RestApi};
+    /// use rustsf::{Client, Credentials, RestApi};
     /// use serde::{Deserialize, Serialize};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut api = RestApi::new(client);
@@ -90,13 +90,13 @@ impl RestApi {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, RestApi};
+    /// use rustsf::{Client, Credentials, RestApi};
     /// use serde::{Deserialize, Serialize};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut api = RestApi::new(client);
@@ -138,13 +138,13 @@ impl RestApi {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, RestApi};
+    /// use rustsf::{Client, Credentials, RestApi};
     ///use std::collections::HashMap;
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut api = RestApi::new(client);

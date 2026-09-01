@@ -35,13 +35,13 @@ impl RestApi {
     ///
     /// # Examples
     /// ```rust
-    /// use rustsf::{Client, RestApi};
+    /// use rustsf::{Client, Credentials, RestApi};
     /// use serde::{Deserialize, Serialize};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let client = Client::new();
+    ///     let client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///
     ///     let mut api = RestApi::new(client);

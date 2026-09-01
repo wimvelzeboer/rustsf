@@ -29,12 +29,12 @@ impl RestApi {
     ///
     /// # Example
     /// ```rust
-    /// use rustsf::{Client, RestApi};
+    /// use rustsf::{Client, Credentials, RestApi};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///     let mut api = RestApi::new(client);
     ///     match api.user_password_expired("user_id").await {
@@ -81,12 +81,12 @@ impl RestApi {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, RestApi};
+    /// use rustsf::{Client, Credentials, RestApi};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///     let mut api = RestApi::new(client);
     ///     match api.user_password_reset("user_id").await {
@@ -130,12 +130,12 @@ impl RestApi {
     /// # Example
     ///
     /// ```rust
-    /// use rustsf::{Client, RestApi};
+    /// use rustsf::{Client, Credentials, RestApi};
     /// use anyhow::Result;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let mut client = Client::new();
+    ///     let mut client= Client::new(Credentials::new()).await?;
     ///     // Authentication logic...
     ///     let mut api = RestApi::new(client);
     ///     match api.user_password_set("user_id", "password").await {

@@ -41,6 +41,7 @@ pub use credentials::Credentials;
 pub use credentials::auth_url::AuthUrl;
 pub use credentials::client_credentials::ClientCredentials;
 pub use credentials::credential_file::CredentialFile;
+pub use rest_api::responses::error_response::ErrorResponse;
 
 #[cfg(feature = "rest-api")]
 pub use rest_api::RestApi;

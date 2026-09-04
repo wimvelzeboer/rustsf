@@ -16,6 +16,15 @@ pub struct ErrorResponse {
 	pub fields: Option<Vec<String>>,
 }
 
+impl std::fmt::Display for ErrorResponse {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		match &self.fields {
+			Some(fields) => write!(f, "{} ({}): {:?}", self.error_code, self.message, fields),
+			None => write!(f, "{}, {}", self.error_code, self.message),
+		}
+	}
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;

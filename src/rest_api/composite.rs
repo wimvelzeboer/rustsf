@@ -20,7 +20,8 @@ use crate::primary_types::{SObject, SObjectOwner};
 use crate::rest_api::responses::sobject_create_request::SObjectCreateRequest;
 use crate::rest_api::responses::sobject_create_response::SObjectCreateResponse;
 use crate::rest_api::{RestApi, handle_json_response};
-use anyhow::{Result, anyhow};
+use anyhow::{Context, Result, anyhow};
+use log::debug;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use std::fmt::Debug;
@@ -118,7 +119,14 @@ impl RestApi {
 		let resource_url = format!("{}/composite/sobjects", self.client.base_version_path()?);
 		let body = SObjectCreateRequest::new(records.clone(), all_or_none);
 		let response = self.client.post(resource_url, body, vec![]).await?;
-		let responses: Vec<SObjectCreateResponse> = handle_json_response(response).await?;
+
+		if !response.status().is_success() {
+			return Err(anyhow!("Failed to create records: {}", response.text().await?));
+		}
+
+		let responses: Vec<SObjectCreateResponse> = handle_json_response(response).await
+			.context("Failed to parse create records response")?;
+		debug!("response: {:?}", responses);
 
 		if responses.len() != records.len() {
 			return Err(anyhow!(
@@ -128,10 +136,26 @@ impl RestApi {
 			));
 		};
 
+		let mut has_failures = false;
 		for i in 0..responses.len() {
-			let id = &responses.get(i).unwrap().id;
+			let response = responses.get(i).ok_or(anyhow!("Failed to get response at index {}", i))?;
+			let id = response.id();
 			let record = records.iter_mut().nth(i).unwrap();
-			record.set_id(Some(id));
+			record.set_id(id);
+			if !response.is_success() {
+				has_failures = true;
+			}
+		}
+
+		if has_failures && all_or_none {
+			return Err(anyhow!(
+				"{}",
+				responses
+					.iter()
+					.map(|r| r.to_string())
+					.collect::<Vec<String>>()
+					.join(", ")
+			));
 		}
 
 		Ok(responses)

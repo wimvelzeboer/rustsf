@@ -10,7 +10,7 @@ pub mod client_credentials;
 pub mod credential_file;
 
 /// Salesforce OAuth2 credentials
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Credentials {
 	pub(crate) access_token: Option<AccessToken>,
 	client_id: Option<String>,
@@ -94,7 +94,7 @@ impl Credentials {
 		self.client_secret.as_deref()
 	}
 
-	pub fn get_flow_type(&self) -> Option<CredentialsType> {
+	pub(crate) fn get_flow_type(&self) -> Option<CredentialsType> {
 		if self.username.is_some() && self.password.is_some() {
 			Some(CredentialsType::Password)
 		} else if self.refresh_token.is_some() {
@@ -225,7 +225,7 @@ impl Credentials {
 }
 
 #[derive(Debug)]
-pub enum CredentialsType {
+pub(crate) enum CredentialsType {
 	AuthUrl,
 	ClientCredentials,
 	Password,

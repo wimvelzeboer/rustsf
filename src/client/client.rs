@@ -75,7 +75,7 @@ use reqwest::multipart::Form;
 ///
 /// Ensure that sensitive fields like `client_secret` and `access_token` are handled securely
 /// to avoid unintended exposure of confidential data.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Client {
 	pub http_client: reqwest::Client,
 	pub(crate) credentials: Credentials,
@@ -129,7 +129,7 @@ impl Client {
 		Ok(Client {
 			http_client,
 			credentials,
-			version: "v60.0".to_string(),
+			version: "v67.0".to_string(),
 		})
 	}
 

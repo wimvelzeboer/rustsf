@@ -87,6 +87,10 @@ impl RestApi {
 	pub fn new(client: Client) -> Self {
 		RestApi { client }
 	}
+
+	pub fn client(&mut self) -> &mut Client {
+		&mut self.client
+	}
 }
 
 pub mod composite;

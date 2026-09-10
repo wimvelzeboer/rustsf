@@ -1,4 +1,4 @@
-use crate::credentials::Credentials;
+use crate::credentials::{Credentials, CredentialsType};
 use anyhow::{Context, Result};
 use regex::Regex;
 
@@ -23,6 +23,7 @@ impl AuthUrl {
 			refresh_token: Some(caps[3].to_string()),
 			user_id: None,
 			username: None,
+			credential_type: CredentialsType::AuthUrl,
 		})
 	}
 }

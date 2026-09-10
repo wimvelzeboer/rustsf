@@ -13,7 +13,7 @@ pub mod credential_file;
 /// Salesforce OAuth2 credentials
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Credentials {
-	pub(crate) access_token: Option<RwLock<AccessToken>>,
+	pub(crate) access_token: Option<AccessToken>,
 	client_id: Option<String>,
 	client_secret: Option<String>,
 	instance_url: Option<String>,
@@ -23,6 +23,7 @@ pub struct Credentials {
 	pub user_id: Option<String>,
 	username: Option<String>,
 	password: Option<String>,
+	credential_type: CredentialsType,
 }
 
 impl Credentials {
@@ -38,6 +39,7 @@ impl Credentials {
 			user_id: None,
 			username: None,
 			password: None,
+			credential_type: CredentialsType::ClientCredentials,
 		}
 	}
 
@@ -95,16 +97,8 @@ impl Credentials {
 		self.client_secret.as_deref()
 	}
 
-	pub(crate) fn get_flow_type(&self) -> Option<CredentialsType> {
-		if self.username.is_some() && self.password.is_some() {
-			Some(CredentialsType::Password)
-		} else if self.refresh_token.is_some() {
-			Some(CredentialsType::AuthUrl)
-		} else if self.client_id.is_some() && self.client_secret.is_some() {
-			Some(CredentialsType::ClientCredentials)
-		} else {
-			None
-		}
+	pub(crate) fn credentials_type(&self) -> &CredentialsType {
+		&self.credential_type
 	}
 
 	pub fn get_instance_url(&self) -> Option<&str> {
@@ -113,13 +107,6 @@ impl Credentials {
 
 	pub fn has_access_token(&self) -> bool {
 		self.access_token.is_some()
-	}
-
-	pub fn is_access_token_expired(&self) -> bool {
-		match &self.access_token {
-			Some(access_token) => access_token.is_expired(),
-			None => true,
-		}
 	}
 
 	/// Returns the login endpoint URL as a string slice.
@@ -145,7 +132,7 @@ impl Credentials {
 		self.instance_url.as_deref()
 	}
 
-	pub fn password(&mut self) -> Option<&str> {
+	pub fn password(& self) -> Option<&str> {
 		self.password.as_deref()
 	}
 
@@ -163,74 +150,15 @@ impl Credentials {
 		self.refresh_token.as_deref()
 	}
 
-	/// Sets the access token for the current instance.
-	///
-	/// This function updates the access token along with its type and issuance time.
-	/// It allows method chaining by returning a mutable reference to the instance.
-	///
-	/// # Arguments
-	///
-	/// * `access_token` - A `String` containing the access token value.
-	/// * `issued_at` - A `String` representing the time at which the token was issued.
-	/// * `token_type` - A `String` denoting the type of the token, e.g., "Bearer".
-	///
-	/// # Returns
-	///
-	/// A mutable reference to the current instance (`&mut Self`), enabling method chaining.
-	///
-	///
-	/// This sets the access token, token type, and issuance time for the client.
-	pub fn set_access_token(&mut self, access_token: Option<AccessToken>) -> &mut Self {
-		self.access_token = access_token;
-		self
-	}
-
-	pub fn set_client_id(&mut self, id: &str) -> &mut Self {
-		self.client_id = Some(id.to_string());
-		self
-	}
-
-	pub fn set_client_secret(&mut self, secret: &str) -> &mut Self {
-		self.client_secret = Some(secret.to_string());
-		self
-	}
-
-	pub fn set_instance_url(&mut self, url: &str) -> &mut Self {
-		self.instance_url = Some(url.to_string());
-		self
-	}
-
-	pub fn set_login_endpoint(&mut self, endpoint: &str) -> &mut Self {
-		self.login_endpoint = endpoint.to_string();
-		self
-	}
-
-	pub fn set_organisation_id(&mut self, id: &str) -> &mut Self {
-		self.organisation_id = Some(id.to_string());
-		self
-	}
-
-	pub fn set_refresh_token(&mut self, token: &str) -> &mut Self {
-		self.refresh_token = Some(token.to_string());
-		self
-	}
-
-	pub fn set_user_id(&mut self, id: &str) -> &mut Self {
-		self.user_id = Some(id.to_string());
-		self
-	}
-
-	pub fn username(&mut self) -> Option<&str> {
+	pub fn username(&self) -> Option<&str> {
 		self.username.as_deref()
 	}
 }
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub(crate) enum CredentialsType {
 	AuthUrl,
 	ClientCredentials,
-	Password,
-	None,
 }
 
 #[cfg(test)]

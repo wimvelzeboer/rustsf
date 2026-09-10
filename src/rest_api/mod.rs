@@ -12,14 +12,15 @@
 //! - [**/services/data/vXX.X/query**](crate::rest_api::query), retrieving up to 2,000 records
 //! - [**/services/data/vXX.X/userPassword**](crate::rest_api::user_password), user password authentication
 
-use crate::client::Client;
 use anyhow::{Result, anyhow};
+use crate::authentication::{Client, Credentials};
 use reqwest::Response;
 use responses::error_response::ErrorResponse;
 use serde::de::DeserializeOwned;
-use crate::Credentials;
 use crate::rest_api::query::RestApiQueryBuilder;
 
+pub mod client;
+pub mod sobjects;
 pub mod responses;
 
 pub struct RestApiBuilder<'a > {
@@ -54,7 +55,7 @@ impl<'a> RestApiBuilder<'a> {
 /// Note: To use the `RestApi` struct effectively, ensure all required components
 /// of the `Client` type are configured appropriately.
 pub struct RestApi {
-	pub(crate) credentials: Credentials,
+	pub(crate) client: Client,
 }
 
 impl RestApi {
@@ -86,19 +87,19 @@ impl RestApi {
 	/// }
 	/// ```
 	pub fn new(credentials: Credentials) -> Self {
-		RestApi { client }
+		Self {
+			client: Client::connect(credentials)
+		}
 	}
 
-	pub fn client(&mut self) -> &mut Client {
-		&mut self.client
-	}
+	// todo Header function
 }
 
 pub mod composite;
 pub mod query;
 pub mod search;
 pub mod services;
-pub mod sobjects;
+
 #[cfg(test)]
 mod test;
 pub mod user_password;

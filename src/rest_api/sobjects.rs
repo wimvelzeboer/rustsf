@@ -40,7 +40,24 @@ use serde_json::Value;
 use std::collections::HashMap;
 use std::fmt::Debug;
 
+
+pub struct SObjectsBuilder<'a> {
+	client: &'a crate::authentication::Client,
+}
+
+impl<'a> SObjectsBuilder<'a> {
+	pub fn new(client: &'a crate::authentication::Client) -> Self {
+		SObjectsBuilder { client }
+	}
+}
+
+
 impl RestApi {
+
+	pub fn sobjects(&self) -> SObjectsBuilder {
+		SObjectsBuilder::new(self.client)
+	}
+
 	/// Creates a single new record in a Salesforce with the provided values.
 	///
 	/// # Generic

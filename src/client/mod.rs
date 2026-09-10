@@ -119,7 +119,7 @@ impl Client {
 	pub async fn new(credentials: Credentials) -> Result<Client> {
 		let http_client = reqwest::Client::new();
 
-		let credentials = match credentials.get_flow_type() {
+		let credentials = match credentials.credentials_type() {
 			Some(flow_type) => match flow_type {
 				CredentialsType::AuthUrl => login_with_sfdx_auth_url(credentials)
 					.await

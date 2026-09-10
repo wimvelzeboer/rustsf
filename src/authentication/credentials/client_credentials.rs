@@ -1,4 +1,4 @@
-use crate::credentials::Credentials;
+use crate::credentials::{Credentials, CredentialsType};
 use anyhow::Result;
 
 pub struct ClientCredentials;
@@ -16,6 +16,7 @@ impl ClientCredentials {
 			user_id: None,
 			username: None,
 			password: None,
+			credential_type: CredentialsType::ClientCredentials,
 		})
 	}
 }

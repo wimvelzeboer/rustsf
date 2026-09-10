@@ -19,6 +19,7 @@
 //! [dependencies]
 //! rustsf = { version = "0.0.2", features = ["rest-api", "tooling-api", "metadata_api""] }
 //!```
+mod authentication;
 pub mod client;
 
 pub mod credentials;

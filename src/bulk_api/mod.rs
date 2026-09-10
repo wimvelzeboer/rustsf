@@ -56,7 +56,7 @@
 //! For more information about Salesforce Bulk API, see:
 //! <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/>
 
-use crate::client::client::Client;
+use crate::client::Client;
 use anyhow::{Context, Result};
 use reqwest::Response;
 use serde::Serialize;

@@ -97,7 +97,7 @@ impl RestApi {
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_composite_sobjects_collections_create.htm>
-	pub async fn create<T: Serialize + Debug + SObject + SObjectOwner + Clone>(
+	pub async fn create<T: Serialize + Debug + SObject + Clone>(
 		&mut self,
 		records: &mut Vec<T>,
 		all_or_none: bool,
@@ -108,13 +108,13 @@ impl RestApi {
 		} else if records.len() == 0 {
 			return Ok(Vec::new());
 		}
-
+/*
 		// make sure the owner id field is set
 		for record in records.iter_mut() {
 			if record.get_owner_id().is_none() {
 				record.set_owner_id(self.client.get_user_id().as_deref().map(str::to_string).as_deref());
 			}
-		}
+		}*/
 
 		let resource_url = format!("{}/composite/sobjects", self.client.base_version_path()?);
 		let body = SObjectCreateRequest::new(records.clone(), all_or_none);

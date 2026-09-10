@@ -36,11 +36,13 @@ pub mod bulk_api;
 pub mod bulk_api_v2;
 pub mod primary_types;
 
-pub use client::client::Client;
+
+pub use client::Client;
 pub use credentials::Credentials;
 pub use credentials::auth_url::AuthUrl;
 pub use credentials::client_credentials::ClientCredentials;
 pub use credentials::credential_file::CredentialFile;
+pub use primary_types::{SObject, SObjectOwner};
 pub use rest_api::responses::error_response::ErrorResponse;
 
 #[cfg(feature = "rest-api")]

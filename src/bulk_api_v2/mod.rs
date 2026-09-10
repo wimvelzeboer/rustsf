@@ -89,7 +89,7 @@
 //! - [Bulk API v2 Developer Guide](https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_intro.htm)
 //! - [Bulk API v2 Limits](https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_concepts_limits.htm)
 
-use crate::client::client::Client;
+use crate::client::Client;
 use anyhow::{Result, anyhow};
 use reqwest::Response;
 use serde::Serialize;

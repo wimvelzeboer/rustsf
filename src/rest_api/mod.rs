@@ -12,13 +12,31 @@
 //! - [**/services/data/vXX.X/query**](crate::rest_api::query), retrieving up to 2,000 records
 //! - [**/services/data/vXX.X/userPassword**](crate::rest_api::user_password), user password authentication
 
-use crate::client::client::Client;
+use crate::client::Client;
 use anyhow::{Result, anyhow};
 use reqwest::Response;
 use responses::error_response::ErrorResponse;
 use serde::de::DeserializeOwned;
+use crate::rest_api::query::RestApiQueryBuilder;
 
 pub mod responses;
+
+pub struct RestApiBuilder<'a > {
+	client: &'a Client,
+}
+
+impl<'a> RestApiBuilder<'a> {
+
+	pub fn query<'b>(&self, query: &'b str) -> RestApiQueryBuilder<'a, 'b> {
+		RestApiQueryBuilder::new(self, query)
+	}
+
+	pub fn new(client: &'a Client) -> Self {
+		Self {
+			client,
+		}
+	}
+}
 
 /// A `RestApi` struct that represents the core component for interacting with a RESTful API.
 ///

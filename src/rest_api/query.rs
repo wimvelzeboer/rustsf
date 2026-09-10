@@ -15,10 +15,63 @@
 //! # See
 //! <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_query.htm>
 
-use super::{RestApi, handle_json_response};
+use super::{RestApi, RestApiBuilder, handle_json_response};
 use crate::rest_api::responses::query_response::QueryResponse;
 use anyhow::{Context, Result};
 use serde::de::DeserializeOwned;
+use serde::Deserialize;
+use serde_json::Value;
+
+pub struct RestApiQueryBuilder<'a, 'b> {
+	rest_api_builder: &'a RestApiBuilder<'a>,
+	query: &'b str,
+}
+
+impl<'a, 'b> RestApiQueryBuilder<'a, 'b> {
+	pub fn new(rest_api_builder: &'a RestApiBuilder, query: &'b str) -> RestApiQueryBuilder<'a, 'b> {
+		RestApiQueryBuilder {
+			rest_api_builder,
+			query,
+		}
+	}
+
+	pub async fn send(&self) -> Result<RestApiQueryResponse> {
+		let query_url = format!(
+			"{}/query/",
+			self.rest_api_builder
+				.client
+				.base_version_path()
+				.context("Failed to get Salesforce instance url")?
+		);
+		let params = vec![("q".to_string(), self.query.to_string())];
+		let response = self.rest_api_builder.client.get(query_url, params, vec![]).await?;
+		Ok(RestApiQueryResponse::new(handle_json_response(response).await?))
+	}
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct SalesforceQueryResponse {
+	pub total_size: i32,
+	pub done: bool,
+	pub records: Value,
+}
+
+pub struct RestApiQueryResponse {
+	pub response: SalesforceQueryResponse,
+}
+
+impl RestApiQueryResponse {
+	pub fn new(response: SalesforceQueryResponse) -> Self {
+		Self { response }
+	}
+
+	pub fn to_sobjects<R: DeserializeOwned>(self) -> Result<Vec<R>> {
+		let records = self.response.records;
+		let sobjects: Vec<R> = serde_json::from_value(records).context("Failed to deserialize records")?;
+		Ok(sobjects)
+	}
+}
 
 impl RestApi {
 	/// Executes an asynchronous query against the client's configured base path and returns the parsed response.

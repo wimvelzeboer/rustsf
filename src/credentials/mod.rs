@@ -1,6 +1,7 @@
 //! # Credential builders
 //!
 
+use std::sync::RwLock;
 use crate::client::responses::access_token::AccessToken;
 use serde::{Deserialize, Serialize};
 
@@ -10,9 +11,9 @@ pub mod client_credentials;
 pub mod credential_file;
 
 /// Salesforce OAuth2 credentials
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Credentials {
-	pub(crate) access_token: Option<AccessToken>,
+	pub(crate) access_token: Option<RwLock<AccessToken>>,
 	client_id: Option<String>,
 	client_secret: Option<String>,
 	instance_url: Option<String>,

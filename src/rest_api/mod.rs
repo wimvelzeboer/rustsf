@@ -17,6 +17,7 @@ use anyhow::{Result, anyhow};
 use reqwest::Response;
 use responses::error_response::ErrorResponse;
 use serde::de::DeserializeOwned;
+use crate::Credentials;
 use crate::rest_api::query::RestApiQueryBuilder;
 
 pub mod responses;
@@ -53,25 +54,7 @@ impl<'a> RestApiBuilder<'a> {
 /// Note: To use the `RestApi` struct effectively, ensure all required components
 /// of the `Client` type are configured appropriately.
 pub struct RestApi {
-	pub(crate) client: Client,
-}
-
-async fn handle_json_response<T: DeserializeOwned>(response: Response) -> Result<T> {
-	if response.status().is_success() {
-		Ok(response.json().await?)
-	} else {
-		let errors: Vec<ErrorResponse> = response.json().await?;
-		Err(anyhow!("Response error {:?}", errors))
-	}
-}
-
-async fn handle_empty_response(response: Response) -> Result<()> {
-	if response.status().is_success() {
-		Ok(())
-	} else {
-		let errors: Vec<ErrorResponse> = response.json().await?;
-		Err(anyhow!("Response error {:?}", errors))
-	}
+	pub(crate) credentials: Credentials,
 }
 
 impl RestApi {
@@ -102,7 +85,7 @@ impl RestApi {
 	///     Ok(())
 	/// }
 	/// ```
-	pub fn new(client: Client) -> Self {
+	pub fn new(credentials: Credentials) -> Self {
 		RestApi { client }
 	}
 
@@ -119,3 +102,21 @@ pub mod sobjects;
 #[cfg(test)]
 mod test;
 pub mod user_password;
+
+async fn handle_json_response<T: DeserializeOwned>(response: Response) -> Result<T> {
+	if response.status().is_success() {
+		Ok(response.json().await?)
+	} else {
+		let errors: Vec<ErrorResponse> = response.json().await?;
+		Err(anyhow!("Response error {:?}", errors))
+	}
+}
+
+async fn handle_empty_response(response: Response) -> Result<()> {
+	if response.status().is_success() {
+		Ok(())
+	} else {
+		let errors: Vec<ErrorResponse> = response.json().await?;
+		Err(anyhow!("Response error {:?}", errors))
+	}
+}

@@ -2,44 +2,36 @@ use self::salesforce_create_response::SalesforceCreateResponse;
 use self::sobject_create_result::SObjectsCreateResult;
 use super::SObjectsBuilder;
 use crate::RestApi;
-use crate::authentication::Client;
 use anyhow::Result;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use std::fmt::Debug;
-use crate::rest_api::builder::RestApiBuilder;
+use crate::rest_api::HTTPMethod;
 
 mod salesforce_create_response;
 mod sobject_create_result;
 
 impl<'a> SObjectsBuilder<'a> {
 
-	pub fn create<T: Debug + DeserializeOwned +  Serialize>(&'a self, sobject_type: String, record: T) -> SObjectCreateBuilder<'a, T> {
-		SObjectCreateBuilder::new(sobject_type, record, self)
-	}
-}
-
-impl RestApi {
-	/// Asynchronously creates a new record in Salesforce for the given SObject type and record data.
+	/// Creates a single new record in a Salesforce with the provided values.
 	///
-	/// This function builds a request to the Salesforce API to create a new record for the specified
-	/// SObject type (`sobject_type`) with the provided record data (`record`).
+	/// # Generic
+	/// - `T`: A type that implements the `Serialize` trait, representing the parameters for the new record.
 	///
-	/// # Type Parameters
-	/// * `T` - The type of the record to be created. This type must implement the `Debug`,
-	///   `DeserializeOwned`, and `Serialize` traits.
-	///
-	/// # Arguments
-	/// * `sobject_type` - The Salesforce SObject type (e.g., "Account", "Contact") of the given record.
-	/// * `record` - The record data to be created in Salesforce, this type must implement the `Debug`,
-	///     `DeserializeOwned`, and `Serialize` traits. of the specified type `T`.
+	/// # Parameters
+	/// - `sobject_type`: A string slice that holds the API name of the Salesforce object (e.g., "Account", "Contact").
+	/// - `record`: An instance of type `T` containing the details of the record to be created.
 	///
 	/// # Returns
-	/// A `SalesforceCreateResponse` which contains the response details from the Salesforce API, including
-	/// the ID of the newly created record and any other metadata.
+	/// - `Result<T, Error>`:
+	///     - On success, returns the updated instance of type 'T' containing the Salesforce record id.
+	///     - On failure, returns an `Error` detailing what went wrong during the request.
 	///
 	/// # Errors
-	/// This function may return an error if the request to Salesforce fails or the response cannot be processed.
+	/// This function returns an `Error` in the following cases:
+	/// - If the Salesforce client fails to resolve the base path.
+	/// - If the HTTP POST request to the Salesforce API fails.
+	/// - If the response contains invalid JSON or an error from Salesforce.
 	///
 	/// # Example
 	/// ```rust
@@ -48,9 +40,66 @@ impl RestApi {
 	///
 	/// #[tokio::main]
 	/// async fn main() {
-	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::.....@....my.salesforce.com")?).await?;
+	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
 	///
-	///     match client.create("Account", json!({"Name": "Smith and Co 2"})).await {
+	///     match client.build()
+	/// 			.most_recently_used_header(false)
+	/// 			.sobjects()
+	/// 			.create("Account", json!({"Name": "Acme"})
+	/// 			.send()
+	/// 			.await {
+	///         Ok(response) => println!("Record ID: {:?}", response.id),
+	///         Err(error) => println!("Error creating account: {:?}", error),
+	///     }
+	///     Ok(())
+	/// }
+	/// ```
+	///
+	/// # Notes
+	/// - Ensure that the `sobject_type` matches the correct API name of the Salesforce object.
+	/// - The `record` object should conform to the structure expected by the Salesforce API for the specified object.
+	///
+	/// # Dependencies
+	/// - Ensure the `T` type implements the `Serialize` trait (usually through a derived implementation).
+	///
+	/// # See
+	/// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_sobject_basic_info_post.htm>
+	pub fn create<T: Debug + DeserializeOwned +  Serialize>(&'a self, sobject_type: &str, record: T) -> SObjectCreateBuilder<'a, T> {
+		SObjectCreateBuilder::new(sobject_type.to_string(), record, self)
+	}
+}
+
+impl RestApi {
+	/// Creates a single new record in a Salesforce with the provided values.
+	///
+	/// # Generic
+	/// - `T`: A type that implements the `Serialize` trait, representing the parameters for the new record.
+	///
+	/// # Parameters
+	/// - `sobject_type`: A string slice that holds the API name of the Salesforce object (e.g., "Account", "Contact").
+	/// - `record`: An instance of type `T` containing the details of the record to be created.
+	///
+	/// # Returns
+	/// - `Result<T, Error>`:
+	///     - On success, returns the updated instance of type 'T' containing the Salesforce record id.
+	///     - On failure, returns an `Error` detailing what went wrong during the request.
+	///
+	/// # Errors
+	/// This function returns an `Error` in the following cases:
+	/// - If the Salesforce client fails to resolve the base path.
+	/// - If the HTTP POST request to the Salesforce API fails.
+	/// - If the response contains invalid JSON or an error from Salesforce.
+	///
+	/// # Example
+	/// ```rust
+	/// use serde::{Serialize, Deserialize};
+	/// use serde_json::json;
+	///
+	/// #[tokio::main]
+	/// async fn main() {
+	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	///
+	///     match client.create("Account", json!({"Name": "Acme"})).await {
 	///         Ok(response) => println!("Created record with ID: {}", response.id),
 	///         Err(err) => eprintln!("Failed to create record: {}", err),
 	///     }
@@ -58,12 +107,14 @@ impl RestApi {
 	/// ```
 	///
 	/// # Notes
-	/// For more complex use cases, consider using the `create` method of the `RestApiBuilder`
-	/// directly. e.g. `client.build().sobjects().create("Account", json!({"Name": "Smith and Co 2"})).send().await`.
+	/// - Ensure that the `sobject_type` matches the correct API name of the Salesforce object.
+	/// - The `record` object should conform to the structure expected by the Salesforce API for the specified object.
+	///
+	/// # Dependencies
+	/// - Ensure the `T` type implements the `Serialize` trait (usually through a derived implementation).
 	///
 	/// # See
-	/// - `SalesforceCreateResponse`
-	///
+	/// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_sobject_basic_info_post.htm>
 	pub async fn create<T: Debug + DeserializeOwned + Serialize>(
 		&self,
 		sobject_type: &str,
@@ -73,13 +124,12 @@ impl RestApi {
 			.build()
 			.most_recently_used_header(false)
 			.sobjects()
-			.create(sobject_type.to_string(), record)
+			.create(sobject_type, record)
 			.send()
 			.await?
 			.take_response())
 	}
 }
-
 
 
 
@@ -90,7 +140,7 @@ pub struct SObjectCreateBuilder<'a, T: Debug + DeserializeOwned + Serialize> {
 }
 
 impl<'a, T: Debug + DeserializeOwned + Serialize> SObjectCreateBuilder<'a, T> {
-	pub fn new(sobject_type: String, record: T, builder: &'a SObjectsBuilder) -> SObjectCreateBuilder<'a, T>
+	pub(crate) fn new(sobject_type: String, record: T, builder: &'a SObjectsBuilder) -> SObjectCreateBuilder<'a, T>
 	where
 		T: Debug + Serialize,
 	{
@@ -101,10 +151,37 @@ impl<'a, T: Debug + DeserializeOwned + Serialize> SObjectCreateBuilder<'a, T> {
 		}
 	}
 
+	/// Sends the creation request to the Salesforce REST API
+	///
+	/// This asynchronous method sends an HTTP POST request to create a new Salesforce
+	/// sObject of the specified type. The `record` provided in the request payload
+	/// contains the fields and values to be sent to Salesforce. The result of the
+	/// request is processed, and a structured `SObjectsCreateResult` is returned.
+	///
+	/// # Example
+	/// ```rust
+	/// use serde::{Serialize, Deserialize};
+	/// use serde_json::json;
+	///
+	/// #[tokio::main]
+	/// async fn main() {
+	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	///
+	///     match client.build()
+	/// 			.sobjects()
+	/// 			.create("Account", json!({"Name": "Acme"})
+	/// 			.send()
+	/// 			.await {
+	///         Ok(response) => println!("Record ID: {:?}", response.id),
+	///         Err(error) => println!("Error creating account: {:?}", error),
+	///     }
+	///     Ok(())
+	/// }
+	/// ```
 	pub async fn send(self) -> Result<SObjectsCreateResult<T>> {
 		let http_response = self
 			.builder
-			.post(format!("{}", self.sobject_type), &self.record)
+			.send(HTTPMethod::POST, format!("{}", self.sobject_type), &self.record)
 			.await?;
 
 		Ok(SObjectsCreateResult::new(
@@ -113,3 +190,5 @@ impl<'a, T: Debug + DeserializeOwned + Serialize> SObjectCreateBuilder<'a, T> {
 		))
 	}
 }
+
+

@@ -1,5 +1,6 @@
 use self::sobjects::SObjectsBuilder;
 use crate::RestApi;
+use crate::rest_api::HTTPMethod;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::fmt::Debug;
@@ -26,8 +27,13 @@ impl<'a> RestApiBuilder<'a> {
 		}
 	}
 
-	pub(crate) async fn post<T: Debug + Serialize>(&self, url: String, data: &T) -> anyhow::Result<reqwest::Response> {
+	pub(crate) async fn send<T: Debug + Serialize>(
+		&self,
+		method: HTTPMethod,
+		url: String,
+		data: &T,
+	) -> anyhow::Result<reqwest::Response> {
 		let url = format!("services/data/{}/{}", self.rest_api.client.api_version(), url);
-		self.rest_api.post(url, &data, &self.headers).await
+		self.rest_api.send(method, url, &data, &self.headers).await
 	}
 }

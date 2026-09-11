@@ -37,6 +37,19 @@ impl Client {
 	pub async fn connect(credentials: Credentials) -> Result<Self> {
 		let http_client = get_http_client()?;
 
+		// Mocking
+		if credentials.login_endpoint().ends_with("example.com") {
+			return Ok(Self {
+				credentials,
+				access_token: Arc::new(RwLock::new(AccessToken::new("token".to_string(), "0".to_string(), "barrier".to_string()))),
+				http_client,
+				instance_url: "https://www.example.com".to_string(),
+				org_id: "org_id".to_string(),
+				user_id: "user_id".to_string(),
+				api_version: "v67.0".to_string(),
+			})
+		}
+
 		let token_response = match credentials.credentials_type() {
 			CredentialsType::AuthUrl => get_refresh_token_response(&http_client, &credentials)
 				.await
@@ -44,6 +57,21 @@ impl Client {
 			CredentialsType::ClientCredentials => connect_with_credential(&http_client, &credentials)
 				.await
 				.context("Authentication using client credentials failed")?,
+
+			#[cfg(test)]
+			CredentialsType::Test => {
+				let json_str = json!({
+					"access_token": "token123",
+					"issued_at": "1234567890",
+					"id": "https://login.salesforce.com/id/00Dxx/005xx",
+					"instance_url": "https://na1.salesforce.com",
+					"signature": "sig",
+					"token_type": "Bearer"
+				})
+				.to_string();
+
+				serde_json::from_str::<TokenResponse>(&json_str)?
+			}
 		};
 
 		let (org_id, user_id) = get_organisation_and_user_id(token_response.id.as_str())?;
@@ -61,12 +89,28 @@ impl Client {
 		})
 	}
 
-	pub fn instance_url(&self) -> &str {
-		&self.instance_url
+	pub async fn get<T: Debug + Serialize>(
+		&self,
+		url: &str,
+		params: &T,
+		headers: &HashMap<String, String>,
+	) -> Result<Response> {
+		debug!("GET: {} params: {:?} headers: {:?}", url, params, headers);
+
+		let response = self
+			.http_client
+			.get(url)
+			.headers(self.create_header(headers)?)
+			.query(&params)
+			.send()
+			.await?;
+
+		debug!("GET response: {:?}", response);
+		Ok(response)
 	}
 
-	pub fn services_data_version_path(&self) -> String {
-		format!("{}/services/data/{}", self.instance_url, self.api_version)
+	pub fn instance_url(&self) -> &str {
+		&self.instance_url
 	}
 
 	pub async fn post<T: Debug + Serialize>(
@@ -79,14 +123,17 @@ impl Client {
 
 		debug!("POST: {} params: {:?} headers: {:?}", url, data, headers);
 
-		let res = self
+		Ok(self
 			.http_client
 			.post(url)
 			.headers(self.create_header(headers)?)
 			.json(&data)
 			.send()
-			.await?;
-		Ok(res)
+			.await?)
+	}
+
+	pub fn services_data_version_path(&self) -> String {
+		format!("{}/services/data/{}", self.instance_url, self.api_version)
 	}
 
 	/// Generates a `HeaderMap` containing default headers, authorization, and additional custom headers.
@@ -126,7 +173,7 @@ impl Client {
 		let guard = self.access_token.read().unwrap_or_else(|e| e.into_inner());
 		let access_token = guard;
 
-		let auth_value = format!("Bearer {}",access_token.value);
+		let auth_value = format!("Bearer {}", access_token.value);
 		headers.insert(AUTHORIZATION, HeaderValue::from_str(&auth_value)?);
 
 		//Default header
@@ -161,8 +208,7 @@ impl Client {
 	async fn refresh_access_token(&self) -> Result<()> {
 		let response = get_refresh_token_response(&self.http_client, &self.credentials).await?;
 
-		let mut guard = self.access_token.write()
-			.unwrap_or_else(|e| e.into_inner());
+		let mut guard = self.access_token.write().unwrap_or_else(|e| e.into_inner());
 
 		*guard = AccessToken::from_token_response(response);
 

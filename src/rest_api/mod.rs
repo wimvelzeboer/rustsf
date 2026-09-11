@@ -12,19 +12,30 @@
 //! - [**/services/data/vXX.X/query**](crate::rest_api::query), retrieving up to 2,000 records
 //! - [**/services/data/vXX.X/userPassword**](crate::rest_api::user_password), user password authentication
 
+use crate::authentication::{Client, Credentials};
 use std::collections::HashMap;
 use std::fmt::Debug;
-use crate::authentication::{Client, Credentials};
 // use crate::rest_api::query::RestApiQueryBuilder;
+use crate::rest_api::builder::RestApiBuilder;
 use anyhow::{Context, Result, anyhow};
 use reqwest::Response;
 use responses::error_response::ErrorResponse;
-use serde::de::DeserializeOwned;
 use serde::Serialize;
-use crate::rest_api::builder::RestApiBuilder;
+use serde::de::DeserializeOwned;
 
 pub mod builder;
 pub mod responses;
+
+pub enum HTTPMethod {
+	GET,
+	POST,
+	// PUT,
+	// DELETE,
+	// PATCH,
+	// OPTIONS,
+	// HEAD,
+	// CONNECT,
+}
 
 /// A `RestApi` struct that represents the core component for interacting with a RESTful API.
 ///
@@ -78,10 +89,20 @@ impl RestApi {
 		})
 	}
 
-	pub(crate) async fn post<T: Debug + Serialize>(&self, url: String, data: &T, headers: &HashMap<String, String>) -> Result<reqwest::Response> {
+	pub(crate) async fn send<T: Debug + Serialize>(
+		&self,
+		method: HTTPMethod,
+		url: String,
+		data: &T,
+		headers: &HashMap<String, String>,
+	) -> Result<reqwest::Response> {
 		let url = format!("{}/{}", self.client.instance_url(), url);
-		self.client.post(&url, &data, &headers).await
+		match method {
+			HTTPMethod::GET => Ok(self.client.get(&url, data, &headers).await?),
+			HTTPMethod::POST => Ok(self.client.post(&url, data, &headers).await?),
+		}
 	}
+
 }
 
 // pub mod composite;

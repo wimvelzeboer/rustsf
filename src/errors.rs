@@ -46,7 +46,7 @@
 ///       encountered during an operation.
 ///
 /// - `DescribeError(ErrorResponse)`
-///     - Represents an error that occurs during a describe operation. Wraps a single
+///     - Represents an error that occurs during a sobject_describe operation. Wraps a single
 ///       `ErrorResponse` detailing the problem.
 ///
 /// - `LoginError(LoginErrorResponse)`
@@ -119,7 +119,7 @@ impl fmt::Display for Error {
             Error::HeaderError(e) => write!(f, "Invalid header value: {}", e),
             Error::DeserializeError(e) => write!(f, "Could not deserialize response: {}", e),
             Error::ErrorResponses(resp) => write!(f, "Error response from Salesforce {:?}", resp),
-            Error::DescribeError(resp) => write!(f, "Error completing describe {:?}", resp),
+            Error::DescribeError(resp) => write!(f, "Error completing sobject_describe {:?}", resp),
             Error::LoginError(resp) => write!(f, "Error logging in {:?}", resp),
             Error::ResponseError(resp) => write!(f, "Error in Salesforce response {:?}", resp),
             Error::RequestError(msg) => write!(f, "Error in Salesforce request {:?}", msg),
@@ -228,13 +228,13 @@ mod tests {
     #[test]
     fn test_display_describe_error() {
         let resp = ErrorResponse {
-            message: "Cannot describe".to_string(),
+            message: "Cannot sobject_describe".to_string(),
             error_code: "INVALID_TYPE".to_string(),
             fields: Some(vec!["Name".to_string()]),
         };
         let err = Error::DescribeError(resp);
         let display = format!("{}", err);
-        assert!(display.contains("Error completing describe"));
+        assert!(display.contains("Error completing sobject_describe"));
     }
 
     #[test]

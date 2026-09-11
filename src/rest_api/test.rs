@@ -301,7 +301,7 @@ async fn test_describe_global() {
 async fn test_describe() {
 	let mut server = Server::new_async().await;
 	let mock = server
-		.mock("GET", "/services/data/v60.0/sobjects/Account/describe")
+		.mock("GET", "/services/data/v60.0/sobjects/Account/sobject_describe")
 		.with_status(200)
 		.with_header("content-type", "application/json")
 		.with_body(
@@ -319,7 +319,7 @@ async fn test_describe() {
 					"uiEditTemplate" : "value",
 					"defaultValues" : "value",
 					"listviews" : "value",
-					"describe" : "value",
+					"sobject_describe" : "value",
 					"uiNewRecord" : "value",
 					"quickActions" : "value",
 					"layouts" : "value",

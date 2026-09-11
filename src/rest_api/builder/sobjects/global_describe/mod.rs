@@ -63,6 +63,7 @@ impl RestApi {
 }
 
 impl<'a> SObjectsBuilder<'a> {
+
 	/// Get a List of Objects Describes
 	///
 	/// Sends a request to the Salesforce API to retrieve metadata information about all
@@ -93,7 +94,12 @@ impl<'a> SObjectsBuilder<'a> {
 	/// async fn main() -> Result<()> {
 	///     let mut client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
 	///
-	///     match client.build().sobjects().describe_global().send().await {
+	///     match client.build()
+	///         .if_modified_since_header("Wed, 21 Oct 2015 07:28:00 GMT")?
+	/// 		.sobjects()
+	/// 		.describe_global()
+	/// 		.send()
+	/// 		.await {
 	///         Ok(response) => {
 	///             println!("Successfully retrieved global objects: {:?}", response);
 	///         }
@@ -106,9 +112,13 @@ impl<'a> SObjectsBuilder<'a> {
 	/// ```
 	///
 	/// # Note
-	/// To retrieve the complete metadata for an object, use the [describe_sobject](#method.describe_sobject) method
+	/// To retrieve the complete metadata for an object, use the [describe_sobject](#method.describe_sobject) method.
+	///
+	/// Use the `if_modified_since_heaer' or 'if_unmodified_since_header' methods to filter further
 	///
 	/// # See
+	/// - `if_modified_since_heaer`
+	/// - `if_unmodified_since_header`
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/dome_describeGlobal.htm>
 	pub fn describe_global(&'a self) -> GlobalDescribeBuilder<'a> {
 		GlobalDescribeBuilder::new(self)
@@ -120,6 +130,7 @@ pub struct GlobalDescribeBuilder<'a> {
 }
 
 impl<'a> GlobalDescribeBuilder<'a> {
+
 	pub(crate) fn new(builder: &'a SObjectsBuilder) -> GlobalDescribeBuilder<'a> {
 		Self { builder }
 	}

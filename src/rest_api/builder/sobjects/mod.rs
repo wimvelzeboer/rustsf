@@ -45,8 +45,8 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 
 mod create;
-mod sobject_describe;
 mod global_describe;
+mod sobject_describe;
 
 impl<'a> RestApiBuilder<'a> {
 	pub fn sobjects(&'a self) -> SObjectsBuilder<'a> {
@@ -76,114 +76,6 @@ impl<'a> SObjectsBuilder<'a> {
 
 impl RestApi {
 	/*
-	   /// Get a List of Objects
-	   ///
-	   /// Sends a request to the Salesforce API to retrieve metadata information about
-	   /// global objects (SObjects) available in the Salesforce instance,
-	   /// which are modified since the given date
-	   ///
-	   ///
-	   /// # Parameters
-	   /// - `since` (String): A string representation of the timestamp
-	   ///     (in `EEE, dd MMM yyyy HH:mm:ss z` format,  eg. `Mon, 30 Nov 2020 08:34:54 MST`).
-	   ///
-	   /// # Returns
-	   /// - `Ok(DescribeGlobalResponse)`: On success, returns a `DescribeGlobalResponse` containing the list of global
-	   ///   sObjects and their metadata.
-	   /// - `Err(Error)`: If an error occurs during the request or while processing the response, an `Error` is returned.
-	   ///
-	   /// # Errors
-	   /// - Returns an error if:
-	   ///     - The client's base version path is invalid.
-	   ///     - The HTTP request fails.
-	   ///     - The response cannot be parsed into a valid `DescribeGlobalResponse`.
-	   ///     - If there is no available object’s, a 304 Not Modified status code is returned  // todo - it should return an empty vec..
-	   ///
-	   /// # Example
-	   /// ```rust
-	   /// use rustsf::{Client, Credentials, RestApi};
-	   /// use anyhow::Result;
-	   ///
-	   /// #[tokio::main]
-	   /// async fn main() -> Result<()> {
-	   ///     use rustsf::RestApi;
-	   ///     let client= Client::new(Credentials::new()).await?;
-	   ///     // Authentication logic...
-	   ///
-	   ///     let mut api = RestApi::new(client);
-	   ///     let since = "Wed, 21 Oct 2015 07:28:00 GMT".to_string();
-	   ///     match api.describe_global_modified(since).await {
-	   ///         Ok(response) => println!("Retrieved modified sObjects: {:?}", response),
-	   ///         Err(err) => println!("Failed to retrieve modified sObjects: {:?}", err),
-	   ///     }
-	   ///     Ok(())
-	   /// }
-	   /// ```
-	   ///
-	   /// # See
-	   /// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_describeGlobal.htm>
-	   pub async fn describe_global_modified(&mut self, since: String) -> Result<DescribeGlobalResponse> {
-		   let resource_url = format!("{}/sobjects", self.client.base_version_path()?);
-		   let response = self
-			   .client
-			   .get(resource_url, vec![], vec![("If-Modified-Since".to_string(), since)])
-			   .await?;
-		   handle_json_response(response).await
-	   }
-
-	   /// Get a List of Objects
-	   ///
-	   /// Sends a request to the Salesforce API to retrieve metadata information about
-	   /// global objects (SObjects) available in the Salesforce instance,
-	   /// that haven’t been modified after that date and time.
-	   ///
-	   ///
-	   /// # Parameters
-	   /// - `since` (String): A string representation of the timestamp
-	   ///     (in `EEE, dd MMM yyyy HH:mm:ss z` format,  eg. `Mon, 30 Nov 2020 08:34:54 MST`).
-	   ///
-	   /// # Returns
-	   /// - `Ok(DescribeGlobalResponse)`: On success, returns a `DescribeGlobalResponse` containing the list of global
-	   ///   sObjects and their metadata.
-	   /// - `Err(Error)`: If an error occurs during the request or while processing the response, an `Error` is returned.
-	   ///
-	   /// # Errors
-	   /// - Returns an error if:
-	   ///     - The client's base version path is invalid.
-	   ///     - The HTTP request fails.
-	   ///     - The response cannot be parsed into a valid `DescribeGlobalResponse`.
-	   ///     - If there is no available object’s, a 304 Not Modified status code is returned  // todo - it should return an empty vec..
-	   ///
-	   /// # Example
-	   /// ```rust
-	   /// use rustsf::{Client, Credentials, RestApi};
-	   /// use anyhow::Result;
-	   ///
-	   /// #[tokio::main]
-	   /// async fn main() -> Result<()> {
-	   ///     use rustsf::RestApi;
-	   ///     let client= Client::new(Credentials::new()).await?;
-	   ///     // Authentication logic...
-	   ///
-	   ///     let mut api = RestApi::new(client);
-	   ///     let since = "Wed, 21 Oct 2015 07:28:00 GMT".to_string();
-	   ///     match api.describe_global_modified(since).await {
-	   ///         Ok(response) => println!("Retrieved modified sObjects: {:?}", response),
-	   ///         Err(err) => println!("Failed to retrieve modified sObjects: {:?}", err),
-	   ///     }
-	   ///     Ok(())
-	   /// }
-	   /// ```
-	   /// # See
-	   /// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_describeGlobal.htm>
-	   pub async fn describe_global_unmodified(&mut self, since: String) -> Result<DescribeGlobalResponse> {
-		   let resource_url = format!("{}/sobjects", self.client.base_version_path()?);
-		   let response = self
-			   .client
-			   .get(resource_url, vec![], vec![("If-Unmodified-Since".to_string(), since)])
-			   .await?;
-		   handle_json_response(response).await
-	   }
 
 	   /// Deletes a specific record of a given Salesforce object type (`sobject_name`) using its ID.
 	   ///

@@ -1,8 +1,7 @@
 //! # Credential builders
 //!
 
-use std::sync::RwLock;
-use crate::client::responses::access_token::AccessToken;
+use super::access_token::AccessToken;
 use serde::{Deserialize, Serialize};
 
 pub mod auth_url;

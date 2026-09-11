@@ -1,4 +1,4 @@
-use crate::credentials::{Credentials, CredentialsType};
+use super::{Credentials, CredentialsType};
 use anyhow::Result;
 
 pub struct ClientCredentials;

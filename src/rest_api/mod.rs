@@ -12,33 +12,19 @@
 //! - [**/services/data/vXX.X/query**](crate::rest_api::query), retrieving up to 2,000 records
 //! - [**/services/data/vXX.X/userPassword**](crate::rest_api::user_password), user password authentication
 
-use anyhow::{Result, anyhow};
+use std::collections::HashMap;
+use std::fmt::Debug;
 use crate::authentication::{Client, Credentials};
+// use crate::rest_api::query::RestApiQueryBuilder;
+use anyhow::{Context, Result, anyhow};
 use reqwest::Response;
 use responses::error_response::ErrorResponse;
 use serde::de::DeserializeOwned;
-use crate::rest_api::query::RestApiQueryBuilder;
+use serde::Serialize;
+use crate::rest_api::builder::RestApiBuilder;
 
-pub mod client;
-pub mod sobjects;
+pub mod builder;
 pub mod responses;
-
-pub struct RestApiBuilder<'a > {
-	client: &'a Client,
-}
-
-impl<'a> RestApiBuilder<'a> {
-
-	pub fn query<'b>(&self, query: &'b str) -> RestApiQueryBuilder<'a, 'b> {
-		RestApiQueryBuilder::new(self, query)
-	}
-
-	pub fn new(client: &'a Client) -> Self {
-		Self {
-			client,
-		}
-	}
-}
 
 /// A `RestApi` struct that represents the core component for interacting with a RESTful API.
 ///
@@ -72,37 +58,40 @@ impl RestApi {
 	/// # Examples
 	///
 	/// ```
-	/// use rustsf::{Client, Credentials, RestApi};
+	/// use rustsf::{AuthUrl, RestApi};
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
 	/// async fn main() -> Result<()> {
-	///     let client= Client::new(Credentials::new()).await?;
-	///     // Authentication logic...
 	///
-	///     let mut api = RestApi::new(client);
+	///     let mut api = RestApi::new(AuthUrl::new("force://......."));
 	///     // you call the api here..
 	///
 	///     Ok(())
 	/// }
 	/// ```
-	pub fn new(credentials: Credentials) -> Self {
-		Self {
+	pub async fn new(credentials: Credentials) -> Result<Self> {
+		Ok(Self {
 			client: Client::connect(credentials)
-		}
+				.await
+				.context("Failed to connect to Salesforce REST API")?,
+		})
 	}
 
-	// todo Header function
+	pub(crate) async fn post<T: Debug + Serialize>(&self, url: String, data: &T, headers: &HashMap<String, String>) -> Result<reqwest::Response> {
+		let url = format!("{}/{}", self.client.instance_url(), url);
+		self.client.post(&url, &data, &headers).await
+	}
 }
 
-pub mod composite;
-pub mod query;
-pub mod search;
-pub mod services;
+// pub mod composite;
+// pub mod query;
+// pub mod search;
+// pub mod services;
 
 #[cfg(test)]
 mod test;
-pub mod user_password;
+// pub mod user_password;
 
 async fn handle_json_response<T: DeserializeOwned>(response: Response) -> Result<T> {
 	if response.status().is_success() {

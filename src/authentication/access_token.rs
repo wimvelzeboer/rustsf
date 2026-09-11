@@ -18,7 +18,7 @@ impl AccessToken {
 		}
 	}
 
-	pub fn from_token_response(token_response: &TokenResponse) -> Self {
+	pub fn from_token_response(token_response: TokenResponse) -> Self {
 		Self {
 			token_type: token_response.token_type.unwrap_or_default(),
 			value: token_response.access_token,

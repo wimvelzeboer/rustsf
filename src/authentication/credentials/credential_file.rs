@@ -1,4 +1,4 @@
-use crate::credentials::Credentials;
+use super::Credentials;
 use anyhow::{Context, Result};
 
 pub struct CredentialFile;

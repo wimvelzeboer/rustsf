@@ -1,11 +1,11 @@
-use crate::credentials::{Credentials, CredentialsType};
+use super::{Credentials, CredentialsType};
 use anyhow::{Context, Result};
 use regex::Regex;
 
 pub struct AuthUrl;
 
 impl AuthUrl {
-	pub fn new(url: String) -> Result<Credentials> {
+	pub fn new(url: &str) -> Result<Credentials> {
 		let re = Regex::new(r"force://([a-zA-Z0-9._-]+):([a-zA-Z0-9._-]*):([a-zA-Z0-9._-]+={0,2})@([a-zA-Z0-9._-]+)")
 			.unwrap();
 		let caps = re.captures(&url)

@@ -23,7 +23,8 @@
 //! # See
 //! <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_sobject_basic_info.htm>
 
-use super::{RestApi, handle_empty_response, handle_json_response};
+// use super::{RestApi, handle_empty_response, handle_json_response};
+use super::RestApi;
 use crate::primary_types::{SObject, SObjectOwner};
 use crate::rest_api::responses::create_response::CreateResponse;
 use crate::rest_api::responses::deleted_sobjects_response::DeletedSObjectsResponse;
@@ -34,30 +35,43 @@ use crate::rest_api::responses::sobject_info::SObjectInfo;
 use crate::rest_api::responses::updated_sobjects_response::UpdatedSObjectsResponse;
 use anyhow::Result;
 use reqwest::Response;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::fmt::Debug;
+use self::create::SObjectCreateBuilder;
+use super::RestApiBuilder;
+
+mod create;
+
+impl<'a> RestApiBuilder<'a>  {
+
+	pub fn sobjects(&'a self) -> SObjectsBuilder<'a> {
+		SObjectsBuilder::new(&self)
+	}
+}
 
 
 pub struct SObjectsBuilder<'a> {
-	client: &'a crate::authentication::Client,
+	builder: &'a RestApiBuilder<'a>,
 }
 
 impl<'a> SObjectsBuilder<'a> {
-	pub fn new(client: &'a crate::authentication::Client) -> Self {
-		SObjectsBuilder { client }
+	pub fn new(builder: &'a RestApiBuilder) -> Self {
+		SObjectsBuilder { builder }
+	}
+
+	pub(crate) async fn post<T: Debug + Serialize>(&self, url: String, data: &T) -> Result<reqwest::Response> {
+		let url = format!("sobjects/{}", url);
+		self.builder.post(url, &data).await
 	}
 }
 
 
 impl RestApi {
 
-	pub fn sobjects(&self) -> SObjectsBuilder {
-		SObjectsBuilder::new(self.client)
-	}
-
+/*
 	/// Creates a single new record in a Salesforce with the provided values.
 	///
 	/// # Generic
@@ -890,4 +904,6 @@ impl RestApi {
 		);
 		self.client.patch(resource_url, params).await
 	}
+
+ */
 }

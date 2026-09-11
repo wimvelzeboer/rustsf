@@ -27,6 +27,14 @@ impl<'a> RestApiBuilder<'a> {
 		}
 	}
 
+	pub(crate) async fn send_delete(
+		&self,
+		url: String,
+	) -> anyhow::Result<reqwest::Response> {
+		let url = format!("services/data/{}/{}", self.rest_api.client.api_version(), url);
+		self.rest_api.send_delete(url, &self.headers).await
+	}
+
 	pub(crate) async fn send<T: Debug + Serialize>(
 		&self,
 		method: HTTPMethod,

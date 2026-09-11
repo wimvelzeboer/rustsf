@@ -89,12 +89,124 @@ impl Client {
 		})
 	}
 
+	/// Sends an asynchronous HTTP DELETE request to a specified path.
+	///
+	/// # Parameters
+	/// - `path` (`String`): The path to which the DELETE request will be sent. This path will be appended to the instance URL.
+	///
+	/// # Returns
+	/// - `Result<Response, Error>`:
+	///     - On success, returns an `Ok(Response)` representing the HTTP response from the server.
+	///     - On failure, returns an `Err(Error)` detailing the error encountered.
+	///
+	/// # Errors
+	/// - This function will return an error in the following scenarios:
+	///   - If the client is not logged in (`Error::NotLoggedIn`).
+	///   - If refreshing the authentication token fails.
+	///   - If there is an issue creating the HTTP headers.
+	///   - If the HTTP request fails during execution.
+	///
+	/// # Async Behavior
+	/// - This function is asynchronous and should be awaited.
+	/// - Before sending the DELETE request, it ensures that the authentication state is up-to-date by calling `self.ensure_refresh()`.
+	///
+	/// # Example
+	/// ```rust
+	/// use rustsf::{Client, Credentials};
+	/// use anyhow::Result;
+	///
+	/// #[tokio::main]
+	/// async fn main() -> Result<()> {
+	///     let mut client= Client::new(Credentials::new()).await?;
+	///     // Authentication logic...
+	///     let response = client.rest_delete("/resource/123".to_string()).await;
+	///
+	///     match response {
+	///         Ok(res) => {
+	///             println!("DELETE request successful: {}", res.status());
+	///         }
+	///         Err(err) => {
+	///             eprintln!("Error occurred: {}", err);
+	///         }
+	///     }
+	///     Ok(())
+	/// }
+	/// ```
+	pub async fn delete(&self, url: &str, headers: &HashMap<String, String>) -> Result<Response> {
+		self.ensure_connection().await?;
+
+		debug!("DELETE: {} headers: {:?}", url, headers);
+
+		let response = self
+			.http_client
+			.delete(url)
+			.headers(self.create_header(headers)?)
+			.send()
+			.await?;
+
+		debug!("DELETE response: {:?}", response);
+		Ok(response)
+	}
+
+	/// Sends an asynchronous HTTP GET request to the specified URL with the provided query parameters.
+	///
+	/// This function ensures that any necessary pre-request setup (such as refreshing tokens or credentials)
+	/// is performed before sending the request. It then constructs the request with appropriate headers and
+	/// query parameters, uses the underlying HTTP client to send the request, and returns the response or an error.
+	///
+	/// # Arguments
+	///
+	/// * `url` - A `String` representing the target URL for the GET request.
+	/// * `params` - A `Vec` of tuples where each tuple contains a key-value pair (`String`, `String`) representing
+	///              query parameters to append to the URL.
+	///
+	/// # Returns
+	///
+	/// Returns a `Result` containing:
+	/// - `Response`: The HTTP response object if the request is successful.
+	/// - `Error`: An error if an issue occurs during the process of refreshing credentials,
+	///   constructing the request, or sending it.
+	///
+	/// # Errors
+	///
+	/// This function can return an `Error` due to:
+	/// - Failure during the token/credential refresh process in `self.ensure_refresh()`.
+	/// - Issues with building headers in `self.create_header`.
+	/// - Errors originating from the underlying HTTP client's `send` function (e.g., connectivity issues).
+	///
+	/// # Example
+	/// ```rust
+	/// use rustsf::{Client, Credentials};
+	/// use anyhow::Result;
+	///
+	/// #[tokio::main]
+	/// async fn main() -> Result<()> {
+	///     let mut client= Client::new(Credentials::new()).await?;
+	///     // Authentication logic...
+	///     let response = client.get(
+	///         "https://api.example.com/items".into(),
+	///         vec![("key".into(), "value".into())],
+	///         vec![]
+	///     ).await;
+	///     match response {
+	///         Ok(res) => {
+	///             println!("Response: {:?}", res);
+	///         },
+	///         Err(err) => {
+	///             eprintln!("Error: {:?}", err);
+	///         }
+	///     }
+	///     Ok(())
+	/// }
+	/// ```
 	pub async fn get<T: Debug + Serialize>(
 		&self,
 		url: &str,
 		params: &T,
 		headers: &HashMap<String, String>,
 	) -> Result<Response> {
+		self.ensure_connection().await?;
+
 		debug!("GET: {} params: {:?} headers: {:?}", url, params, headers);
 
 		let response = self

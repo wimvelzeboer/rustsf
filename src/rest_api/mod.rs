@@ -89,6 +89,15 @@ impl RestApi {
 		})
 	}
 
+	pub(crate) async fn send_delete(
+		&self,
+		url: String,
+		headers: &HashMap<String, String>,
+	) -> Result<reqwest::Response> {
+		let url = format!("{}/{}", self.client.instance_url(), url);
+		self.client.delete(&url, &headers).await
+	}
+
 	pub(crate) async fn send<T: Debug + Serialize>(
 		&self,
 		method: HTTPMethod,
@@ -103,6 +112,7 @@ impl RestApi {
 		}
 	}
 
+	// todo add method for unsupported paths
 }
 
 // pub mod composite;

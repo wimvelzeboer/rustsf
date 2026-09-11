@@ -45,6 +45,8 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 
 mod create;
+mod delete;
+
 mod global_describe;
 mod sobject_describe;
 
@@ -61,6 +63,14 @@ pub struct SObjectsBuilder<'a> {
 impl<'a> SObjectsBuilder<'a> {
 	pub fn new(builder: &'a RestApiBuilder) -> Self {
 		SObjectsBuilder { builder }
+	}
+
+	pub(crate) async fn send_delete(
+		&self,
+		url: String,
+	) -> Result<reqwest::Response> {
+		let url = format!("sobjects/{}", url);
+		self.builder.send_delete(url).await
 	}
 
 	pub(crate) async fn send<T: Debug + Serialize>(

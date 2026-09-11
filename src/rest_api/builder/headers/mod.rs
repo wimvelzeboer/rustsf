@@ -2,6 +2,7 @@ use super::RestApiBuilder;
 
 mod assignment_rule_header;
 mod call_options_header;
+mod conditional_request_headers;
 mod duplicate_rule_header;
 mod most_recently_used_header;
 mod package_version_header;

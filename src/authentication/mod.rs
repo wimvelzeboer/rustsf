@@ -229,6 +229,77 @@ impl Client {
 		&self.org_id
 	}
 
+	/// Sends a PATCH request to the specified REST API endpoint with the given parameters.
+	///
+	/// # Type Parameters
+	/// - `T`: The type of the parameters to be serialized into the request body. It must implement the `Serialize` trait.
+	///
+	/// # Arguments
+	/// - `path`: A `String` representing the relative path of the API endpoint to send the request to.
+	/// - `params`: An object of type `T` containing the parameters to be serialized into the JSON body of the request.
+	///
+	/// # Returns
+	/// - `Ok(Response)`: On a successful request, returns the HTTP response of type `Response`.
+	/// - `Err(Error)`: Returns an error if:
+	///     - The instance is not properly set up or the user is not logged in (`Error::NotLoggedIn`).
+	///     - There is an issue with refreshing the instance or creating the request headers.
+	///     - The HTTP request fails for some other reason (e.g., a network error).
+	///
+	/// # Errors
+	/// This method may return an error in the following cases:
+	/// - The user is not logged in (`Error::NotLoggedIn`) and the `instance_url` is unavailable.
+	/// - If the `ensure_refresh` internal function fails (e.g., unable to refresh authentication tokens).
+	/// - If there is an error serializing the parameters or constructing the HTTP headers.
+	/// - If the HTTP request fails during transmission or response handling.
+	///
+	/// # Examples
+	/// ```rust
+	/// use serde::Serialize;
+	/// use rustsf::{Client, Credentials};
+	/// use anyhow::Result;
+	///
+	/// #[derive(Serialize)]
+	/// struct UpdateParams {
+	///     field: String,
+	///     value: String,
+	/// }
+	///
+	/// async fn example() -> Result<()> {
+	///     let mut client= Client::new(Credentials::new()).await?;
+	///     // Authentication...
+	///     let params = UpdateParams {
+	///         field: "example_field".to_string(),
+	///         value: "new_value".to_string(),
+	///     };
+	///
+	///     let response = client
+	///         .rest_patch("/api/endpoint".to_string(), params)
+	///         .await?;
+	///
+	///     println!("Response: {:?}", response);
+	///     Ok(())
+	/// }
+	/// ```
+	pub async fn patch<T: Debug + Serialize>(
+		&self,
+		url: &str,
+		params: T,
+		headers: &HashMap<String, String>,
+	) -> Result<Response> {
+
+		self.ensure_connection().await?;
+
+		debug!("PATCH: {} params: {:?} headers: {:?}", url, params, headers);
+
+		Ok(self
+			.http_client
+			.patch(url)
+			.headers(self.create_header(headers)?)
+			.json(&params)
+			.send()
+			.await?)
+	}
+
 	pub async fn post<T: Debug + Serialize>(
 		&self,
 		url: &str,

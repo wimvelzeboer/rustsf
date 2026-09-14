@@ -50,6 +50,7 @@ mod sobject_basic_info;
 mod sobject_by_id;
 mod sobject_describe;
 
+mod update;
 mod updated;
 
 impl<'a> RestApiBuilder<'a> {
@@ -90,77 +91,6 @@ impl RestApi {
 /*
 
 
-	   pub async fn sobject_get_updated(
-		   &mut self,
-		   sobject_name: &str,
-		   start_date: &str,
-		   end_date: &str,
-	   ) -> Result<UpdatedSObjectsResponse> {
-		   let resource_url = format!(
-			   "{}/sobjects/{}/updated/",
-			   self.client.base_version_path()?,
-			   sobject_name
-		   );
-		   let params = vec![
-			   ("start".to_string(), start_date.to_string()),
-			   ("end".to_string(), end_date.to_string()),
-		   ];
-		   let response = self.client.get(resource_url, params, vec![]).await?;
-		   handle_json_response(response).await
-	   }
-
-	   ///
-	   /// Updates an existing object in a Salesforce instance with the specified parameters.
-	   ///
-	   /// # Generic Parameters
-	   /// - `T`: A type that implements the `Serialize` trait, representing the parameters to update the object with.
-	   ///
-	   /// # Arguments
-	   /// - `object_name`: A string slice that specifies the name of the Salesforce object (e.g., "Account", "Contact").
-	   /// - `id`: A string slice representing the unique ID of the object to be updated.
-	   /// - `params`: Parameters of type `T` containing the fields and values to update on the object.
-	   ///
-	   /// # Returns
-	   /// - `Ok(())` if the object was successfully updated.
-	   /// - `Err(Error)` if an error occurs during the update process, including issues with the request or response.
-	   ///
-	   /// # Errors
-	   /// This function returns an error if:
-	   /// - The provided `object_name`, `id`, or `params` result in an invalid or malformed request.
-	   /// - The Salesforce API response indicates a failure, such as an invalid ID or insufficient permissions.
-	   /// - The internal HTTP client encounters an error while making the `PATCH` request.
-	   ///
-	   /// # Example
-	   /// ```
-	   /// use rustsf::{Client, Credentials, RestApi, DefSObject};
-	   /// use serde::{Deserialize, Serialize};
-	   /// use anyhow::Result;
-	   ///
-	   /// #[DefSObject(sobject_type = "Account", fields="system,type,name")]
-	   /// struct Account { }
-	   ///
-	   /// #[tokio::main]
-	   /// async fn main() -> Result<()> {
-	   ///     let mut client= Client::new(Credentials::new()).await?;
-	   ///     // Authentication logic...
-	   ///
-	   ///     let mut api = RestApi::new(client);
-	   ///     let mut account = Account::new();
-	   ///     account.id = Some("001D000000IqhSLIAZ".to_string());
-	   ///     account.name = Some("Updated Account Name".to_string());
-	   ///
-	   ///     match api.update_sobject("Account", "001D000000IqhSLIAZ", account).await {
-	   ///         Ok(()) => println!("Account updated successfully."),
-	   ///         Err(error) => println!("Error updating account: {:?}", error),
-	   ///     };
-	   ///     Ok(())
-	   /// }
-	   /// ```
-	   ///
-	   /// # Notes
-	   /// - This function makes an asynchronous HTTP `PATCH` request to the Salesforce API.
-	   /// - It processes the response to ensure that no content (204 No Content) implies a successful update.
-	   ///
 	   pub async fn update_sobject<T: Serialize + Debug>(
 		   &mut self,
 		   object_name: &str,

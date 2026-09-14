@@ -54,7 +54,7 @@ impl RestApi {
 	/// To retrieve the complete metadata for an object, use the [describe_sobject](#method.describe_sobject) method
 	///
 	/// # See
-	/// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/dome_describeGlobal.htm>
+	/// - <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/dome_describeGlobal.htm>
 	pub async fn describe_global(&self) -> Result<GlobalDescribeResponse> {
 		self.build().sobjects().describe_global().send().await
 	}

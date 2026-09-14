@@ -30,7 +30,7 @@
 //! - [Versions](crate::rest_api::RestApi::versions)
 //! - Resources by Version
 //! - Limits
-//! - Describe Global
+//! - [Describe Global](crate::rest_api::builder::sobjects::SObjectsBuilder::describe_global)
 //! - sObject Basic Information
 //!     - [Get Object Metadata Using sObject Basic Information](crate::rest_api::builder::sobjects::SObjectsBuilder::basic_info)
 //!     - [Create Records Using sObject Basic Information](crate::rest_api::builder::sobjects::SObjectsBuilder::create)
@@ -40,7 +40,7 @@
 //! - sObject Named Layouts
 //! - sObject Rows
 //!     - [Get Records Using sObject Rows](crate::rest_api::builder::sobjects::SObjectsBuilder::sobject_by_id)
-//!     - Update Records Using sObject Rows
+//!     - [Update Records Using sObject Rows](crate::rest_api::builder::sobjects::SObjectsBuilder::update)
 //!     - Delete Records Using sObject Rows
 //! - sObject Rows by External ID
 //!     - Get Records Using sObject Rows by External ID
@@ -251,7 +251,7 @@ pub enum HTTPMethod {
 	POST,
 	// PUT,
 	// DELETE,
-	// PATCH,
+	PATCH,
 	// OPTIONS,
 	// HEAD,
 	// CONNECT,
@@ -329,6 +329,7 @@ impl RestApi {
 		match method {
 			HTTPMethod::GET => Ok(self.client.get(&url, data, &headers).await?),
 			HTTPMethod::POST => Ok(self.client.post(&url, data, &headers).await?),
+			HTTPMethod::PATCH => Ok(self.client.patch(&url, data, &headers).await?),
 		}
 	}
 

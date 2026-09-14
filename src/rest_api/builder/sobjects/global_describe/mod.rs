@@ -3,10 +3,7 @@ use crate::RestApi;
 use crate::rest_api::HTTPMethod;
 use crate::rest_api::builder::sobjects::SObjectsBuilder;
 use anyhow::{Context, Result};
-use serde::Serialize;
-use serde::de::DeserializeOwned;
-use serde_json::{json, Value};
-use std::fmt::Debug;
+use serde_json::{json};
 use chrono::Utc;
 
 mod global_describe_response;
@@ -247,7 +244,7 @@ impl<'a> GlobalDescribeBuilder<'a> {
 		Self { builder }
 	}
 
-	/// Sends the request to retrieve the Salesforce SObject type sobject_describe.
+	/// Sends the request to retrieve the Salesforce SObject type sobject_basic_info.
 	///
 	/// # Returns
 	///

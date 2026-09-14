@@ -1,4 +1,3 @@
-use self::sobjects::SObjectsBuilder;
 use crate::RestApi;
 use crate::rest_api::HTTPMethod;
 use serde::Serialize;
@@ -7,6 +6,7 @@ use std::fmt::Debug;
 
 mod headers;
 mod sobjects;
+pub mod versions;
 
 impl RestApi {
 	pub fn build(&self) -> RestApiBuilder<'_> {

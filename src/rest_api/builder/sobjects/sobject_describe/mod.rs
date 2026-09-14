@@ -1,57 +1,31 @@
-use self::sobject_describe_response::SObjectDescribeResponse;
-use crate::RestApi;
-use crate::rest_api::builder::sobjects::SObjectsBuilder;
-use anyhow::{Context, Result};
-use serde::Serialize;
+use anyhow::Result;
 use serde::de::DeserializeOwned;
-use std::fmt::Debug;
-use serde_json::json;
+use crate::rest_api::builder::sobjects::sobject_by_id::SObjectSelectByIdBuilder;
+use crate::rest_api::builder::sobjects::SObjectsBuilder;
 use crate::rest_api::HTTPMethod;
-
-mod sobject_describe_response;
+use crate::RestApi;
+use crate::rest_api::responses::describe_sobject_result::DescribeSObjectResult;
 
 impl RestApi {
-	/// Get Object Metadata Using sObject Basic Information
+
+	/// Completely describes the individual metadata at all levels for the specified object.
+	/// For example, this can be used to retrieve the fields, URLs, and child relationships for
+	/// the Account object.
 	///
-	/// Gets basic metadata for a specified object, including some object properties,
-	/// recent items, and URIs for other resources related to the object.
-	///
-	/// # Parameters
-	/// - `object_name`: The name of the Salesforce object (SObject)
-	///   to sobject_describe. For example, "Account", "Contact", or a custom object like "CustomObject__c".
-	///
-	/// # Returns
-	/// - `Result<DescribeSObjectResult, Error>`:
-	///   - On success, returns a `DescribeSObjectResult` containing the metadata details
-	///     of the specified Salesforce object.
-	///   - On failure, returns an `Error` containing details about what went wrong.
-	///
-	/// # Example
-	/// ```rust
-	/// use rustsf::{Credentials, RestApi, AuthUrl};
-	/// use anyhow::Result;
-	///
-	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
-	///     let mut client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
-	///
-	///     match client.describe_sobject("Account").await {
-	///         Ok(response) => println!("Describe result: {:?}", response),
-	///         Err(e) => println!("Error retrieving object description: {:?}", e),
-	///     }
-	///     Ok(())
-	/// }
-	/// ```
-	///
-	/// # Note
-	/// To retrieve the complete metadata for an object, use the [describe_sobject](#method.describe_sobject) method
+	/// Use the builer pattern method to construct the request with the optional headers;
+	/// [If-Modified-Since](crate::rest_api::builder::RestApiBuilder::if_modified_since_header) or
+	/// [If-Unmodified-Since](crate::rest_api::builder::RestApiBuilder::if_unmodified_since_header)
 	///
 	/// # See
-	/// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_sobject_basic_info_get.htm>
-	pub async fn describe_sobject(&self, object_name: &str) -> Result<SObjectDescribeResponse> {
+	/// - https://developer.salesforce.com/docs/platform/api-rest/guide/resources-sobject-describe.html
+	/// - Builder pattern version: [describe](crate::rest_api::builder::sobjects::SObjectsBuilder::describe)
+	pub async fn sobject_describe(
+		&mut self,
+		sobject_name: &str,
+	) -> Result<DescribeSObjectResult> {
 		self.build()
 			.sobjects()
-			.describe_sobject(object_name)
+			.describe(sobject_name)
 			.send()
 			.await
 	}
@@ -59,96 +33,54 @@ impl RestApi {
 
 impl<'a> SObjectsBuilder<'a> {
 
-	/// Get Object Metadata Using sObject Basic Information
+	/// Completely describes the individual metadata at all levels for the specified object.
+	/// For example, this can be used to retrieve the fields, URLs, and child relationships for
+	/// the Account object.
 	///
-	/// Gets basic metadata for a specified object, including some object properties,
-	/// recent items, and URIs for other resources related to the object.
+	/// For more information about the metadata that is retrieved, see DescribesObjectResult in
+	/// the SOAP API Developers Guide.
 	///
-	/// # Parameters
-	/// - `object_name`: The name of the Salesforce object (SObject)
-	///   to sobject_describe. For example, "Account", "Contact", or a custom object like "CustomObject__c".
-	///
-	/// # Returns
-	/// - `Result<DescribeSObjectResult, Error>`:
-	///   - On success, returns a `DescribeSObjectResult` containing the metadata details
-	///     of the specified Salesforce object.
-	///   - On failure, returns an `Error` containing details about what went wrong.
-	///
-	/// # Example
-	/// ```rust
-	/// use rustsf::{Credentials, RestApi, AuthUrl};
-	/// use anyhow::Result;
-	///
-	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
-	///     let mut client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
-	///
-	///     match client.build()
-	/// 		.call_options_header(None, Some("MyNamespace"))
-	///         .sobjects()
-	/// 		.describe_sobject("CustomObject__c")
-	///         .send()
-	/// 		.await {
-	///         Ok(response) => println!("Describe result: {:?}", response),
-	///         Err(e) => println!("Error retrieving object description: {:?}", e),
-	///     }
-	///     Ok(())
-	/// }
-	/// ```
-	///
-	/// # Note
-	/// To retrieve the complete metadata for an object, use the [describe_sobject](#method.describe_sobject) method
+	/// You can use the [If-Modified-Since](crate::rest_api::builder::RestApiBuilder::if_modified_since_header)
+	/// or [If-Unmodified-Since](crate::rest_api::builder::RestApiBuilder::if_unmodified_since_header)
+	/// header with this resource.
+	/// When using the [If-Modified-Since](crate::rest_api::builder::RestApiBuilder::if_modified_since_header)
+	/// header, if no available object’s metadata has changed since the provided date,
+	/// a 304 Not Modified status code is returned with no response body.
 	///
 	/// # See
-	/// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_sobject_basic_info_get.htm>
-	pub fn describe_sobject(&'a self, object_name: &str) -> SObjectDescribeBuilder<'a> {
-		SObjectDescribeBuilder::new(self, object_name)
+	/// - https://developer.salesforce.com/docs/platform/api-rest/guide/resources-sobject-describe.html
+	/// - Simplified version: [sobject_describe](crate::rest_api::RestApi::sobject_describe)
+	pub fn describe(
+		&self,
+		sobject_type: &str
+	) -> SObjectDescribeBuilder<'_> {
+		SObjectDescribeBuilder::new(self, sobject_type)
 	}
 }
 
 pub struct SObjectDescribeBuilder<'a> {
 	builder: &'a SObjectsBuilder<'a>,
-	sobject_type: String,
+	sobject_type: String
 }
 
 impl<'a> SObjectDescribeBuilder<'a> {
-	pub(crate) fn new(builder: &'a SObjectsBuilder, sobject_type: &str) -> SObjectDescribeBuilder<'a> {
-		Self { builder, sobject_type: sobject_type.to_string() }
+	pub(crate) fn new(builder: &'a SObjectsBuilder, sobject_type: &str) -> SObjectDescribeBuilder<'a>
+	{
+		Self {
+			builder,
+			sobject_type: sobject_type.to_string(),
+		}
 	}
 
-	/// Sends the request to retrieve the Salesforce SObject type sobject_describe.
-	///
-	/// # Returns
-	///
-	/// - On success, returns a `Result` containing `SObjectDescribeResponse`.
-	/// - On failure, returns an `Err` containing the reason for failure.
-	///
-	/// # Example
-	/// ```rust
-	/// use rustsf::{Credentials, RestApi, AuthUrl};
-	/// use anyhow::Result;
-	///
-	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
-	///     let mut client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
-	///
-	///     match client.describe_sobject("Account").await {
-	///         Ok(response) => println!("Describe result: {:?}", response),
-	///         Err(e) => println!("Error retrieving object description: {:?}", e),
-	///     }
-	///     Ok(())
-	/// }
-	/// ```
 	pub async fn send(
-		self,
-	) -> Result<SObjectDescribeResponse> {
-		let body = json!({});
-		let http_response = self
-			.builder
-			.send(HTTPMethod::GET, format!("{}", self.sobject_type), &body)
-			.await?;
-
-		Ok(crate::authentication::handle_json_response(http_response).await
-			.context("Failed to parse describe sobject response")?)
+		&self,
+	) -> Result<DescribeSObjectResult> {
+		let param: Vec<(&str, &str)> = vec![];
+		let response = self.builder.send(
+			HTTPMethod::GET,
+			format!("sobjects/{}/describe/", self.sobject_type),
+			&param,
+		).await?;
+		crate::authentication::handle_json_response(response).await
 	}
 }

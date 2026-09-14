@@ -1,9 +1,27 @@
+//! # Salesforce REST API Headers
+//!
+//! ## Available Headers
+//!     - [Assignment Rule Header](crate::rest_api::builder::headers::assignment_rule_header)
+//!     - [Call Options Header](crate::rest_api::builder::headers::call_options_header)
+//!     - Compression Headers
+//!     - [Conditional Request Headers](crate::rest_api::builder::headers::conditional_request_headers)
+//!     - [Duplicate Rule Header](crate::rest_api::builder::headers::duplicate_rule_header)
+//!     - [Limit Info Header](crate::rest_api::builder::headers::limit_info_header)
+//!     - [MRU Header](crate::rest_api::builder::headers::mru_header)
+//!     - [Package Version Header](crate::rest_api::builder::headers::package_version_header)
+//!     - [Query Options Header](crate::rest_api::builder::headers::query_options_header)
+//!     - Warning Header
+//!
+//! # See
+//! https://developer.salesforce.com/docs/platform/api-rest/guide/headers.html
+
 use super::RestApiBuilder;
 
 mod assignment_rule_header;
 mod call_options_header;
 mod conditional_request_headers;
 mod duplicate_rule_header;
+
 mod most_recently_used_header;
 mod package_version_header;
 mod query_options_header;

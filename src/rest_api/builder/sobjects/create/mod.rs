@@ -63,7 +63,7 @@ impl<'a> SObjectsBuilder<'a> {
 	/// - Ensure the `T` type implements the `Serialize` trait (usually through a derived implementation).
 	///
 	/// # See
-	/// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_sobject_basic_info_post.htm>
+	/// https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_sobject_basic_info_post.htm
 	pub fn create<T: Debug + DeserializeOwned +  Serialize>(&'a self, sobject_type: &str, record: T) -> SObjectCreateBuilder<'a, T> {
 		SObjectCreateBuilder::new(sobject_type.to_string(), record, self)
 	}

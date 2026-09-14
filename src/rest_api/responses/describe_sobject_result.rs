@@ -10,7 +10,7 @@ use std::collections::HashMap;
 /// This struct is used to deserialize JSON responses from the Salesforce
 /// Describe SObject API. The response contains object-level metadata,
 /// relationship metadata, field metadata, URL templates, permissions,
-/// layout capabilities, record type information, and other sobject_describe details.
+/// layout capabilities, record type information, and other sobject_basic_info details.
 ///
 /// # See
 /// <https://developer.salesforce.com/docs/atlas.en-us.api.meta/api/sforce_api_calls_describesobjects_describesobjectresult.htm>
@@ -26,7 +26,7 @@ pub struct DescribeSObjectResult {
 
 	/// Metadata for action overrides defined on the object.
 	///
-	/// Action overrides sobject_describe custom behavior for standard or custom actions,
+	/// Action overrides sobject_basic_info custom behavior for standard or custom actions,
 	/// such as overriding the default New, Edit, View, Tab, or List actions.
 	#[serde(default)]
 	pub action_overrides: Vec<ActionOverride>,
@@ -227,7 +227,7 @@ pub struct DescribeSObjectResult {
 
 	/// Scope metadata supported by this object.
 	///
-	/// Supported scopes sobject_describe filtering scopes that can be applied when
+	/// Supported scopes sobject_basic_info filtering scopes that can be applied when
 	/// querying or viewing records, such as "all records" or user-specific scopes.
 	#[serde(default)]
 	pub supported_scopes: Vec<ScopeInfo>,
@@ -253,7 +253,7 @@ pub struct DescribeSObjectResult {
 	/// URL templates and related REST resource URLs for this object.
 	///
 	/// The map can include URLs for resources such as the object endpoint,
-	/// sobject_describe endpoint, row template, layouts, compact layouts, approval
+	/// sobject_basic_info endpoint, row template, layouts, compact layouts, approval
 	/// layouts, list views, quick actions, and default values.
 	#[serde(default)]
 	pub urls: HashMap<String, String>,

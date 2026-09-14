@@ -301,7 +301,7 @@ async fn test_describe_global() {
 async fn test_describe() {
 	let mut server = Server::new_async().await;
 	let mock = server
-		.mock("GET", "/services/data/v60.0/sobjects/Account/sobject_describe")
+		.mock("GET", "/services/data/v60.0/sobjects/Account/sobject_basic_info")
 		.with_status(200)
 		.with_header("content-type", "application/json")
 		.with_body(
@@ -319,7 +319,7 @@ async fn test_describe() {
 					"uiEditTemplate" : "value",
 					"defaultValues" : "value",
 					"listviews" : "value",
-					"sobject_describe" : "value",
+					"sobject_basic_info" : "value",
 					"uiNewRecord" : "value",
 					"quickActions" : "value",
 					"layouts" : "value",
@@ -332,7 +332,7 @@ async fn test_describe() {
 		.await;
 
 	let mut api = create_test_rest_api(&server.url()).await.unwrap();
-	let res = api.describe_sobject("Account").await.unwrap();
+	let res = api.sobject_basic_info("Account").await.unwrap();
 	assert_eq!(res.name, "Account");
 	assert_eq!(res.createable, true);
 	mock.assert_async().await;

@@ -6,7 +6,7 @@ use anyhow::{Context, Result, anyhow};
 use log::debug;
 use reqwest::Response;
 use reqwest::header::{AUTHORIZATION, HeaderMap, HeaderName, HeaderValue};
-use serde::Serialize;
+use serde::{Serialize};
 use serde::de::DeserializeOwned;
 use std::collections::HashMap;
 use std::fmt::Debug;
@@ -225,6 +225,10 @@ impl Client {
 		&self.instance_url
 	}
 
+	pub fn org_id(&self) -> &str {
+		&self.org_id
+	}
+
 	pub async fn post<T: Debug + Serialize>(
 		&self,
 		url: &str,
@@ -244,9 +248,19 @@ impl Client {
 			.await?)
 	}
 
+	pub fn services_data_path(&self) -> String {
+		format!("{}/services/data", self.instance_url)
+	}
+
 	pub fn services_data_version_path(&self) -> String {
 		format!("{}/services/data/{}", self.instance_url, self.api_version)
 	}
+
+	pub fn user_id(&self) -> &str {
+		&self.user_id
+	}
+
+
 
 	/// Generates a `HeaderMap` containing default headers, authorization, and additional custom headers.
 	///

@@ -10,7 +10,7 @@
 //! - [update_sobject](crate::rest_api::RestApi#method.update_sobject), Updates a single SObject record.
 //! - [upsert_sobject](crate::rest_api::RestApi#method.upserts_sobject), Creates or updates a single SObject record.
 //! - [delete_sobject](crate::rest_api::RestApi#method.delete_sobject), Deletes a specific SObject record by its ID.
-//! - [sobject_describe](crate::rest_api::RestApi#method.sobject_describe), Basic information for a specified SObjectType.
+//! - [sobject_basic_info](crate::rest_api::RestApi#method.sobject_basic_info), Basic information for a specified SObjectType.
 //! - [describe_sobject](crate::rest_api::RestApi#method.describe_sobject), Detailed information about a specific SObject.
 //! - [describe_global](crate::rest_api::RestApi#method.describe_global), Retrieves a list of all global SObjects.
 //! - [describe_global_modified](crate::rest_api::RestApi#method.describe_global_modified), Retrieves a list of all global SObjects modified since a given date.
@@ -24,7 +24,6 @@
 //! <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_sobject_basic_info.htm>
 
 // use super::{RestApi, handle_empty_response, handle_json_response};
-use self::create::SObjectCreateBuilder;
 use super::RestApi;
 use super::RestApiBuilder;
 use crate::primary_types::{SObject, SObjectOwner};
@@ -40,14 +39,14 @@ use anyhow::Result;
 use reqwest::Response;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
-use std::collections::HashMap;
 use std::fmt::Debug;
 
 mod create;
 mod delete;
 
 mod global_describe;
+mod sobject_basic_info;
+mod sobject_by_id;
 mod sobject_describe;
 
 impl<'a> RestApiBuilder<'a> {
@@ -85,135 +84,7 @@ impl<'a> SObjectsBuilder<'a> {
 }
 
 impl RestApi {
-	/*
-
-	   /// Deletes a specific record of a given Salesforce object type (`sobject_name`) using its ID.
-	   ///
-	   /// This asynchronous function constructs the resource URL for the given object type (`sobject_name`)
-	   /// and record ID (`id`), sends a `DELETE` request to the Salesforce API, and processes the response.
-	   ///
-	   /// # Arguments
-	   ///
-	   /// * `sobject_name` - The API name of the Salesforce object. For example, `"Account"`, `"Contact"`, etc.
-	   /// * `id` - The unique ID of the record to delete.
-	   ///
-	   /// # Returns
-	   ///
-	   /// * `Result<(), Error>` - Returns `Ok(())` if the record is successfully deleted.
-	   ///   Returns an `Err(Error)` if there is an issue during the deletion process (e.g., network error, API failure).
-	   ///
-	   /// # Errors
-	   ///
-	   /// This function will return an error in the following cases:
-	   /// - If constructing the resource URL fails.
-	   /// - If the `DELETE` request to the Salesforce API fails.
-	   /// - If the response from the API indicates a failure or cannot be processed.
-	   ///
-	   /// # Examples
-	   ///
-	   /// ```rust
-	   /// use rustsf::{Client, Credentials, RestApi};
-	   /// use anyhow::Result;
-	   ///
-	   /// #[tokio::main]
-	   /// async fn main() -> Result<()> {
-	   ///     let mut client= Client::new(Credentials::new()).await?;
-	   ///     // Authentication logic...
-	   ///
-	   ///     let mut api = RestApi::new(client);
-	   ///
-	   ///     let result = api.delete_sobject("Account", "001D000000IqhSLIAZ").await;
-	   ///
-	   ///     match result {
-	   ///         Ok(()) => println!("Record deleted successfully."),
-	   ///         Err(e) => eprintln!("Failed to delete record: {:?}", e),
-	   ///     }
-	   ///     Ok(())
-	   /// }
-	   /// ```
-	   ///
-	   /// # Async
-	   ///
-	   /// This function is `async` and should be awaited.
-	   ///
-	   /// # Notes
-	   ///
-	   /// Ensure that the authenticated Salesforce client (`self.client`) has the necessary permissions
-	   /// to perform delete operations in the Salesforce org.
-	   pub async fn delete_sobject(&mut self, sobject_name: &str, id: &str) -> Result<()> {
-		   let resource_url = format!("{}/sobjects/{}/{}", self.client.base_version_path()?, sobject_name, id);
-		   let response = self.client.delete(resource_url).await?;
-		   handle_empty_response(response).await
-	   }
-
-	   /// Finds and retrieves a record of the specified Salesforce object type by its ID,
-	   /// containing all of its field values.
-	   ///
-	   /// This asynchronous function builds a resource URL using the provided Salesforce object name and
-	   /// record ID, sends a GET request to Salesforce, and deserializes the JSON response into the
-	   /// appropriate type.
-	   ///
-	   /// # Type Parameters
-	   /// * `T`: The type into which the returned JSON response will be deserialized.
-	   ///   Must implement the `DeserializeOwned` trait.
-	   ///
-	   /// # Parameters
-	   /// * `sobject_name`: A string slice representing the name of the Salesforce object (e.g., "Account", "Contact").
-	   /// * `id`: A string slice representing the unique ID of the Salesforce object record to retrieve.
-	   ///
-	   /// # Returns
-	   /// * On success: `Result<T, Error>` containing the deserialized response as type `T`.
-	   /// * On failure: `Result<T, Error>` containing an error if the request fails or if deserialization fails.
-	   ///
-	   /// # Example
-	   /// ```rust
-	   /// use rustsf::{Client, Credentials, RestApi, DefSObject};
-	   /// use anyhow::Result;
-	   ///
-	   /// #[DefSObject(sobject_type = "Account", fields="system,type,name")]
-	   /// struct Account { }
-	   ///
-	   /// #[tokio::main]
-	   /// async fn main() -> Result<()> {
-	   ///     let client= Client::new(Credentials::new()).await?;
-	   ///     // Authentication logic...
-	   ///
-	   ///     let mut api = RestApi::new(client);
-	   ///
-	   ///     match api.fetch_by_id::<Account>("Account", "001D000000IqhSLIAZ").await {
-	   ///         Ok(record) => println!("Account Name: {:?}", record.name),
-	   ///         Err(error) => println!("Error retrieving account: {:?}", error),
-	   ///     };
-	   ///     Ok(())
-	   /// }
-	   /// ```
-	   ///
-	   /// # Dependencies
-	   /// This function depends on the client's `base_path()` method to obtain the base URL and the
-	   /// `get` method to perform the HTTP GET request. The response is then handled by the
-	   /// `handle_json_response` utility.
-	   ///
-	   /// # See
-	   /// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_sobject_retrieve_get.htm>
-	   pub async fn fetch_by_id<T: DeserializeOwned>(
-		   // fixme rename into sobject_by_id
-		   &mut self,
-		   sobject_name: &str,
-		   id: &str,
-	   ) -> Result<T> {
-		   let resource_url = format!("{}/sobjects/{}/{}", self.client.base_version_path()?, sobject_name, id);
-		   let response = self.client.get(resource_url, vec![], vec![]).await?;
-
-		   // Adds the Attribute attribute to the response
-		   let mut attr = SObjectAttribute::new(sobject_name);
-		   attr.set_id(Some(id));
-		   let json = serde_json::to_value(attr)?;
-
-		   let mut hm: HashMap<String, Value> = handle_json_response(response).await?;
-		   hm.insert("attributes".to_string(), json);
-		   let json = serde_json::to_value(hm)?;
-		   Ok(serde_json::from_value::<T>(json)?)
-	   }
+/*
 
 	   /// sObject Get Deleted
 	   ///

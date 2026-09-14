@@ -4,12 +4,12 @@ use crate::rest_api::responses::sobject_record::SObjectRecord;
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct SObjectDescribeResponse {
+pub struct SObjectBasicInfoResponse {
 	pub object_describe: DescribeSObjectResult,
 	pub recent_items: Vec<SObjectRecord>,
 }
 
-impl  SObjectDescribeResponse {
+impl SObjectBasicInfoResponse {
 
 	pub fn object_describe(&self) -> &DescribeSObjectResult {
 		&self.object_describe

@@ -48,6 +48,7 @@ mod deleted;
 mod global_describe;
 mod sobject_basic_info;
 mod sobject_by_id;
+mod sobject_by_ext_id;
 mod sobject_describe;
 
 mod update;
@@ -89,18 +90,6 @@ impl<'a> SObjectsBuilder<'a> {
 
 impl RestApi {
 /*
-
-
-	   pub async fn update_sobject<T: Serialize + Debug>(
-		   &mut self,
-		   object_name: &str,
-		   id: &str, // Fixme get this from the object itself
-		   params: T,
-	   ) -> Result<()> {
-		   let resource_url = format!("{}/sobjects/{}/{}", self.client.base_version_path()?, object_name, id);
-		   let response = self.client.patch(resource_url, params).await?;
-		   handle_empty_response(response).await
-	   }
 
 	   /// Performs an upsert operation for a specified Salesforce object (sObject).
 	   ///

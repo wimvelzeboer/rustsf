@@ -131,8 +131,6 @@ impl RestApi {
 	}
 }
 
-
-
 pub struct SObjectCreateBuilder<'a, T: Debug + DeserializeOwned + Serialize> {
 	builder: &'a SObjectsBuilder<'a>,
 	record: T,

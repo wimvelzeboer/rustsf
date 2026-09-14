@@ -57,6 +57,9 @@ impl RestApi {
 	///
 	/// Ensure that the authenticated Salesforce client (`self.client`) has the necessary permissions
 	/// to perform delete operations in the Salesforce org.
+	///
+	/// # See
+	/// https://developer.salesforce.com/docs/platform/api-rest/guide/resources-sobject-retrieve-delete.html
 	pub async fn delete_sobject(& self, sobject_type: &str, id: &str) -> Result<()> {
 		self.build().sobjects().delete(sobject_type, id).send().await
 	}
@@ -118,7 +121,8 @@ impl<'a> SObjectsBuilder<'a> {
 	/// Ensure that the authenticated Salesforce client (`self.client`) has the necessary permissions
 	/// to perform delete operations in the Salesforce org.
 	///
-	/// 
+	/// # See
+	/// https://developer.salesforce.com/docs/platform/api-rest/guide/resources-sobject-retrieve-delete.html
 	pub fn delete(&'a self, sobject_type: &str, id: &str) -> SObjectDeleteBuilder<'a> {
 		SObjectDeleteBuilder::new(&self, sobject_type.to_string(), id.to_string())
 	}

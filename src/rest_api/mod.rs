@@ -39,12 +39,12 @@
 //! - [sObject Get Updated](crate::rest_api::builder::sobjects::SObjectsBuilder::updated)
 //! - sObject Named Layouts
 //! - sObject Rows
-//!     - [Get Records Using sObject Rows](crate::rest_api::builder::sobjects::SObjectsBuilder::sobject_by_id)
+//!     - [Get Records Using sObject Rows](crate::rest_api::builder::sobjects::SObjectsBuilder::get_by_id)
 //!     - [Update Records Using sObject Rows](crate::rest_api::builder::sobjects::SObjectsBuilder::update)
-//!     - Delete Records Using sObject Rows
+//!     - [Delete Records Using sObject Rows](crate::rest_api::builder::sobjects::SObjectsBuilder::delete)
 //! - sObject Rows by External ID
-//!     - Get Records Using sObject Rows by External ID
-//!     - Create Records Using sObject Rows by External ID
+//!     - [Get Records Using sObject Rows by External ID](crate::rest_api::builder::sobjects::SObjectsBuilder::get_by_ext_id)
+//!     - [Create Records Using sObject Rows by External ID](crate::rest_api::builder::sobjects::SObjectsBuilder::create_by_ext_id)
 //!     - Upsert Records Using sObject Rows by External ID
 //!     - Delete Records Using sObject Rows by External ID
 //!     - Return Headers Using sObject Rows by External ID

@@ -61,7 +61,7 @@ impl RestApi {
 	) -> Result<T> {
        self.build()
            .sobjects()
-           .sobject_by_id(sobject_name, id)
+           .get_by_id(sobject_name, id)
 	       .send()
 	       .await
 	}
@@ -112,7 +112,7 @@ impl<'a> SObjectsBuilder<'a> {
    ///
    /// # See
    /// https://developer.salesforce.com/docs/platform/api-rest/guide/resources-sobject-retrieve-get.html
-   pub fn sobject_by_id(
+   pub fn get_by_id(
       &self,
       sobject_type: &str,
       id: &str,
@@ -145,7 +145,7 @@ impl<'a> SObjectSelectByIdBuilder<'a> {
 		let param: Vec<(&str, &str)> = vec![];
 		let response = self.builder.send(
 			HTTPMethod::GET,
-			format!("sobjects/{}/{}", self.sobject_type, self.id),
+			format!("{}/{}", self.sobject_type, self.id),
 			&param,
 		).await?;
 		crate::authentication::handle_json_response(response).await

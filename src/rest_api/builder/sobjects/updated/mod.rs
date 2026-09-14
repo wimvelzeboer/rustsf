@@ -98,7 +98,7 @@ impl<'a> SObjectsBuilder<'a> {
 		sobject_name: &str,
 		start_date: &DateTime<Utc>,
 		end_date: &DateTime<Utc>,
-	) -> SObjectUpdatedBuilder {
+	) -> SObjectUpdatedBuilder<'_> {
 		SObjectUpdatedBuilder::new(self, sobject_name, start_date, end_date)
 	}
 }

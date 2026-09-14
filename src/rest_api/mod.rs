@@ -44,8 +44,8 @@
 //!     - [Delete Records Using sObject Rows](crate::rest_api::builder::sobjects::SObjectsBuilder::delete)
 //! - sObject Rows by External ID
 //!     - [Get Records Using sObject Rows by External ID](crate::rest_api::builder::sobjects::SObjectsBuilder::get_by_ext_id)
-//!     - [Create Records Using sObject Rows by External ID](crate::rest_api::builder::sobjects::SObjectsBuilder::create_by_ext_id)
-//!     - Upsert Records Using sObject Rows by External ID
+//!     - Create Records Using sObject Rows by External ID
+//!     - [Upsert Records Using sObject Rows by External ID](crate::rest_api::builder::sobjects::SObjectsBuilder::upsert_by_ext_id)
 //!     - Delete Records Using sObject Rows by External ID
 //!     - Return Headers Using sObject Rows by External ID
 //! - sObject Blob Get

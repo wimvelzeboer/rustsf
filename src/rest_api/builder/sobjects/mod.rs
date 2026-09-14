@@ -23,18 +23,9 @@
 //! # See
 //! <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_sobject_basic_info.htm>
 
-// use super::{RestApi, handle_empty_response, handle_json_response};
-use super::RestApi;
 use super::RestApiBuilder;
 use crate::primary_types::{SObject, SObjectOwner};
 use crate::rest_api::HTTPMethod;
-use crate::rest_api::responses::create_response::CreateResponse;
-use crate::rest_api::responses::deleted_sobjects_response::DeletedSObjectsResponse;
-use crate::rest_api::responses::describe_global_response::DescribeGlobalResponse;
-use crate::rest_api::responses::describe_sobject_result::DescribeSObjectResult;
-use crate::rest_api::responses::sobject_attribute::SObjectAttribute;
-use crate::rest_api::responses::sobject_info::SObjectInfo;
-use crate::rest_api::responses::updated_sobjects_response::UpdatedSObjectsResponse;
 use anyhow::Result;
 use reqwest::Response;
 use serde::de::DeserializeOwned;
@@ -53,6 +44,7 @@ mod sobject_describe;
 
 mod update;
 mod updated;
+mod upsert_by_ext_id;
 
 impl<'a> RestApiBuilder<'a> {
 	pub fn sobjects(&'a self) -> SObjectsBuilder<'a> {
@@ -72,7 +64,7 @@ impl<'a> SObjectsBuilder<'a> {
 	pub(crate) async fn send_delete(
 		&self,
 		url: String,
-	) -> Result<reqwest::Response> {
+	) -> Result<Response> {
 		let url = format!("sobjects/{}", url);
 		self.builder.send_delete(url).await
 	}
@@ -82,89 +74,8 @@ impl<'a> SObjectsBuilder<'a> {
 		method: HTTPMethod,
 		url: String,
 		data: &T,
-	) -> Result<reqwest::Response> {
+	) -> Result<Response> {
 		let url = format!("sobjects/{}", url);
 		self.builder.send(method, url, &data).await
 	}
-}
-
-impl RestApi {
-/*
-
-	   /// Performs an upsert operation for a specified Salesforce object (sObject).
-	   ///
-	   /// This method sends an asynchronous PATCH request to the Salesforce API to create
-	   /// or update a record in the specified sObject. If a record with the given key exists,
-	   /// it will be updated; otherwise, a new record will be created.
-	   ///
-	   /// # Type Parameters
-	   /// * `T` - The type of the parameters being passed. It must implement the `Serialize` trait for serialization.
-	   ///
-	   /// # Arguments
-	   /// * `sobject_name` - A `&str` representing the API name of the Salesforce sObject (e.g., "Account", "Contact").
-	   /// * `key_name` - A `&str` specifying the name of the external key field used to perform the upsert operation
-	   ///   (e.g., "CustomField__c").
-	   /// * `key` - A `&str` providing the value of the external key. This is used to locate an existing record or determine
-	   ///   that a new one should be created if none exists.
-	   /// * `params` - A serializable object (of type `T`) that contains the data to be updated or inserted for the sObject.
-	   ///
-	   /// # Returns
-	   /// * `Ok(Response)` - A HTTP response object returned on a successful upsert operation.
-	   /// * `Err(Error)` - An error object in case the upsert operation fails, which encapsulates details about the failure.
-	   ///
-	   /// # Errors
-	   /// This method returns an error in the following cases:
-	   /// * If the `base_path` method of the client fails to provide the base path.
-	   /// * If the `patch` method of the client fails to execute the HTTP request successfully.
-	   ///
-	   /// # Example
-	   /// ```rust
-	   /// use rustsf::{Client, Credentials, RestApi};
-	   /// use serde_json::json;
-	   /// use anyhow::Result;
-	   ///
-	   /// #[tokio::main]
-	   /// async fn main() -> Result<()> {
-	   ///     let client= Client::new(Credentials::new()).await?;
-	   ///     // Authentication logic...
-	   ///
-	   ///     let mut api = RestApi::new(client);
-	   ///
-	   ///     let params = json!({
-	   ///         "Name": "Example Record",
-	   ///         "CustomField__c": "Value123"
-	   ///     });
-	   ///
-	   ///     let result = api.upsert_sobject(
-	   ///         "Account",
-	   ///         "CustomField__c",
-	   ///         "Value123",
-	   ///         params
-	   ///     ).await;
-	   ///
-	   ///     match result {
-	   ///         Ok(response) => println!("Upsert successful: {:?}", response),
-	   ///         Err(error) => eprintln!("Upsert failed: {:?}", error),
-	   ///     }
-	   ///     Ok(())
-	   /// }
-	   /// ```
-	   pub async fn upsert_sobject<T: Serialize + Debug>(
-		   &mut self,
-		   sobject_name: &str,
-		   key_name: &str,
-		   key: &str,
-		   params: T,
-	   ) -> Result<Response> {
-		   let resource_url = format!(
-			   "{}/sobjects/{}/{}/{}",
-			   self.client.base_version_path()?,
-			   sobject_name,
-			   key_name,
-			   key
-		   );
-		   self.client.patch(resource_url, params).await
-	   }
-
-	*/
 }

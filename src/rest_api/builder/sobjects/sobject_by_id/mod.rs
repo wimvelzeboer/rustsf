@@ -55,7 +55,7 @@ impl RestApi {
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_sobject_retrieve_get.htm>
 	pub async fn sobject_by_id<'a, T: DeserializeOwned>(
-		&mut self,
+		&self,
 		sobject_name: &str,
 		id: &str,
 	) -> Result<T> {

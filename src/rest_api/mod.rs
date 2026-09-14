@@ -36,7 +36,7 @@
 //!     - [Create Records Using sObject Basic Information](crate::rest_api::builder::sobjects::SObjectsBuilder::create)
 //! - [sObject Desribe](crate::rest_api::builder::sobjects::SObjectsBuilder::describe)
 //! - [sObject Get Deleted](crate::rest_api::builder::sobjects::SObjectsBuilder::deleted)
-//! - sObject Get Updated
+//! - [sObject Get Updated](crate::rest_api::builder::sobjects::SObjectsBuilder::updated)
 //! - sObject Named Layouts
 //! - sObject Rows
 //!     - [Get Records Using sObject Rows](crate::rest_api::builder::sobjects::SObjectsBuilder::sobject_by_id)

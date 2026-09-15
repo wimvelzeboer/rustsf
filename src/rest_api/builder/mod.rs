@@ -4,9 +4,14 @@ use serde::Serialize;
 use std::collections::HashMap;
 use std::fmt::Debug;
 
+mod composite;
 mod headers;
+// mod query;
+// mod search;
+// mod services;
 mod sobjects;
 pub mod versions;
+
 
 impl RestApi {
 	pub fn build(&self) -> RestApiBuilder<'_> {

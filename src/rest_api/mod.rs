@@ -230,7 +230,7 @@
 //!     - sObject Tree Request Body
 //!     - sObject Tree Response Body
 //! - sObject Collections
-//!     - Create Records Using sObject Collections
+//!     - [Create Records Using sObject Collections](crate::rest_api::builder::composite::sobject_collections::SObjectCollectionsBuilder::create)
 //!     - Get Records Using sObject Collections
 //!     - Get Records With a Request Body Using sObject Collections
 //!     - Update Records Using sObject Collections
@@ -336,10 +336,7 @@ impl RestApi {
 	// todo add method for unsupported paths
 }
 
-// pub mod composite;
-// pub mod query;
-// pub mod search;
-// pub mod services;
+
 
 #[cfg(test)]
 mod test;

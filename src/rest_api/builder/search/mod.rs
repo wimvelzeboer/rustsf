@@ -12,9 +12,16 @@
 //! <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_search.htm>
 //!
 
-use super::{RestApi, handle_json_response};
-use crate::rest_api::responses::search_response::SearchResponse;
 use anyhow::Result;
+use crate::rest_api::builder::query::QueryBuilder;
+use crate::rest_api::builder::RestApiBuilder;
+use crate::rest_api::builder::search::sosl_response::SearchResponse;
+use crate::rest_api::HTTPMethod;
+use crate::RestApi;
+use self::sosl_response::SoslResponse;
+
+mod sosl_response;
+mod search_record;
 
 impl RestApi {
 	/// Executes a SOSL (Salesforce Object Search Language) query and returns the search results.
@@ -59,9 +66,38 @@ impl RestApi {
 	/// - Before executing this function, ensure that the `SalesforceClient` is properly authenticated.
 	/// - This function utilizes the Salesforce REST API `/search/` endpoint.
 	pub async fn search_sosl(&mut self, query: &str) -> Result<SearchResponse> {
-		let query_url = format!("{}/search/", self.client.base_version_path()?);
-		let params = vec![("q".to_string(), query.to_string())];
-		let response = self.client.get(query_url, params, vec![]).await?;
-		handle_json_response(response).await
+		Ok(self.build()
+			.sosl(query)
+			.send()
+			.await?
+			.take_response())
+	}
+}
+
+impl<'a> RestApiBuilder<'a> {
+	pub fn sosl<'b>(&'a self, query: &'b str) -> SoslBuilder<'a, 'b> {
+		SoslBuilder::new(&self, query)
+	}
+}
+
+pub struct SoslBuilder<'a, 'b> {
+	rest_api_builder: &'a RestApiBuilder<'a>,
+	query: &'b str,
+}
+
+impl<'a, 'b> SoslBuilder<'a, 'b> {
+	pub fn new(rest_api_builder: &'a RestApiBuilder, query: &'b str) -> SoslBuilder<'a, 'b> {
+		SoslBuilder {
+			rest_api_builder,
+			query,
+		}
+	}
+
+	pub async fn send(&self) -> Result<SoslResponse> {
+		let url = "search".to_string();
+		let params = vec![("q".to_string(), self.query.to_string())];
+		let response = self.rest_api_builder.send(
+			HTTPMethod::GET, url, &params).await?;
+		crate::authentication::handle_json_response(response).await
 	}
 }

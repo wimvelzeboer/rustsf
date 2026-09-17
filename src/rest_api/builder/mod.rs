@@ -7,11 +7,11 @@ use std::fmt::Debug;
 mod composite;
 mod headers;
 mod limits;
-// mod query;
+mod query;
+mod search;
 // mod search;
 mod sobjects;
 pub mod versions;
-
 
 impl RestApi {
 	pub fn build(&self) -> RestApiBuilder<'_> {

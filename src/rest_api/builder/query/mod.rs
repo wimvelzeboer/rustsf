@@ -15,63 +15,18 @@
 //! # See
 //! <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_query.htm>
 
-use super::{RestApi, RestApiBuilder, handle_json_response};
-use crate::rest_api::responses::query_response::QueryResponse;
+use std::collections::HashMap;
+use self::query_response::QueryResponse;
+use crate::RestApi;
+use crate::rest_api::HTTPMethod;
+use crate::rest_api::builder::RestApiBuilder;
 use anyhow::{Context, Result};
-use serde::de::DeserializeOwned;
 use serde::Deserialize;
-use serde_json::Value;
+use serde::de::DeserializeOwned;
+use std::fmt::Debug;
+use crate::rest_api::builder::query::query_response::SalesforceQueryResponse;
 
-pub struct RestApiQueryBuilder<'a, 'b> {
-	rest_api_builder: &'a RestApiBuilder<'a>,
-	query: &'b str,
-}
-
-impl<'a, 'b> RestApiQueryBuilder<'a, 'b> {
-	pub fn new(rest_api_builder: &'a RestApiBuilder, query: &'b str) -> RestApiQueryBuilder<'a, 'b> {
-		RestApiQueryBuilder {
-			rest_api_builder,
-			query,
-		}
-	}
-
-	pub async fn send(&self) -> Result<RestApiQueryResponse> {
-		let query_url = format!(
-			"{}/query/",
-			self.rest_api_builder
-				.client
-				.base_version_path()
-				.context("Failed to get Salesforce instance url")?
-		);
-		let params = vec![("q".to_string(), self.query.to_string())];
-		let response = self.rest_api_builder.client.get(query_url, params, vec![]).await?;
-		Ok(RestApiQueryResponse::new(handle_json_response(response).await?))
-	}
-}
-
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct SalesforceQueryResponse {
-	pub total_size: i32,
-	pub done: bool,
-	pub records: Value,
-}
-
-pub struct RestApiQueryResponse {
-	pub response: SalesforceQueryResponse,
-}
-
-impl RestApiQueryResponse {
-	pub fn new(response: SalesforceQueryResponse) -> Self {
-		Self { response }
-	}
-
-	pub fn to_sobjects<R: DeserializeOwned>(self) -> Result<Vec<R>> {
-		let records = self.response.records;
-		let sobjects: Vec<R> = serde_json::from_value(records).context("Failed to deserialize records")?;
-		Ok(sobjects)
-	}
-}
+mod query_response;
 
 impl RestApi {
 	/// Executes an asynchronous query against the client's configured base path and returns the parsed response.
@@ -116,11 +71,12 @@ impl RestApi {
 	/// }
 	/// ```
 	/// - tag query
-	pub async fn query<T: DeserializeOwned>(&mut self, query: &str) -> Result<QueryResponse<T>> {
-		let query_url = format!("{}/query/", self.client.base_version_path()?);
-		let params = vec![("q".to_string(), query.to_string())];
-		let response = self.client.get(query_url, params, vec![]).await?;
-		handle_json_response(response).await
+	pub async fn query<T: DeserializeOwned>(&mut self, query: &str) -> Result<SalesforceQueryResponse<Vec<T>>> {
+		Ok(self.build()
+			.query(query)
+			.send()
+			.await?
+			.take_response::<T>()?)
 	}
 
 	/// Executes a query to retrieve all matching results from the server.
@@ -167,11 +123,17 @@ impl RestApi {
 	///     Ok(())
 	/// }
 	/// ```
-	pub async fn query_all<T: DeserializeOwned>(&mut self, query: &str) -> Result<QueryResponse<T>> {
-		let query_url = format!("{}/queryAll/", self.client.base_version_path()?);
+	pub async fn query_all<T: DeserializeOwned>(&mut self, query: &str) -> Result<SalesforceQueryResponse<Vec<T>>> {
+		Ok(self.build()
+			.query(query)
+			.all()
+			.send()
+			.await?
+			.take_response::<T>()?)
+		/*let query_url = format!("{}/queryAll/", self.client.base_version_path()?);
 		let params = vec![("q".to_string(), query.to_string())];
 		let response = self.client.get(query_url, params, vec![]).await?;
-		handle_json_response(response).await
+		handle_json_response(response).await*/
 	}
 
 	/// Executes a query to retrieve additional records from a Salesforce API endpoint.
@@ -232,75 +194,48 @@ impl RestApi {
 	/// # Dependencies
 	/// - The `handle_json_response` function is used to parse and handle the JSON response from the API.
 	/// - Assumes `self.client.get` performs an HTTP GET request and returns the raw HTTP response.
-	pub async fn query_more<T: DeserializeOwned>(&mut self, next_records_url: &str) -> Result<QueryResponse<T>> {
-		let instance_url = self.client.instance_url().context("Not logged in")?;
+	pub async fn query_more<T: DeserializeOwned>(&mut self, next_records_url: &str) -> Result<SalesforceQueryResponse<Vec<T>>> {
+		let instance_url = self.client.instance_url();
 		let query_url = format!("{}/{}", instance_url, next_records_url);
-		let response = self.client.get(query_url, vec![], vec![]).await?;
-		handle_json_response(response).await
+		let params: Vec<(String, String)> = vec![];
+		let response = self.client.get(&query_url, &params, &HashMap::new()).await?;
+		crate::authentication::handle_json_response(response).await
+	}
+}
+
+impl<'a> RestApiBuilder<'a> {
+	pub fn query<'b>(&'a self, query: &'b str) -> QueryBuilder<'a, 'b> {
+		QueryBuilder::new(&self, query)
+	}
+}
+
+pub struct QueryBuilder<'a, 'b> {
+	rest_api_builder: &'a RestApiBuilder<'a>,
+	all: bool,
+	query: &'b str,
+}
+
+impl<'a, 'b> QueryBuilder<'a, 'b> {
+	pub fn new(rest_api_builder: &'a RestApiBuilder, query: &'b str) -> QueryBuilder<'a, 'b> {
+		QueryBuilder {
+			rest_api_builder,
+			query,
+			all: false,
+		}
 	}
 
-	/// Executes a query to retrieve additional records from a Salesforce API endpoint.
-	///
-	/// This function is used to fetch subsequent records from a paginated Salesforce query response.
-	/// The `next_records_url` provided is the URL for the next set of results as returned by the
-	/// Salesforce API in a previous query.
-	///
-	/// # Type Parameters
-	/// - `T`: The type to which the query response will be deserialized.
-	///   It must implement the `DeserializeOwned` trait.
-	///
-	/// # Arguments
-	/// - `next_records_url`: A reference to a string slice representing the URL for the next set
-	///   of records in the paginated response.
-	///
-	/// # Returns
-	/// - `Ok(QueryResponse<T>)`: On success, returns a `QueryResponse<T>` containing the deserialized
-	///   response data.
-	/// - `Err(Error)`: If an error occurs, returns an `Error` detailing the cause. This may include:
-	///   - `Error::NotLoggedIn`: If the client is not authenticated or lacks an instance URL.
-	///   - Any other error encountered during the HTTP request or JSON deserialization.
-	///
-	/// # Errors
-	/// This function will return an error if:
-	/// - The client is not logged in, and thus no instance URL is available.
-	/// - The HTTP request to the provided `next_records_url` fails.
-	/// - The JSON response cannot be deserialized into the specified type `T`.
-	///
-	/// # Examples
-	/// ```rust
-	/// use rustsf::{Client, Credentials, RestApi, DefSObject};
-	/// use anyhow::Result;
-	///
-	/// #[DefSObject(sobject_type = "Account", fields="system,type,name")]
-	/// struct Account { }
-	///
-	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
-	///     let mut client= Client::new(Credentials::new()).await?;
-	///     // Authentication logic...
-	///
-	///     let mut api = RestApi::new(client);
-	///     let next_url = "/services/data/v67.0/queryAll/01gB0000003mzKJQAY-2000";
-	///     match api.query_all_more::<Account>(&next_url).await {
-	///         Ok(response) => println!("Query response: {:?}", response),
-	///         Err(error) => println!("Error executing query: {:?}", error),
-	///     }
-	///     Ok(())
-	/// }
-	/// ```
-	///
-	/// # Notes
-	/// - The function assumes the `next_records_url` is a relative path (e.g., `/services/data/...`)
-	///   that will be appended to the Salesforce instance URL.
-	/// - This function performs an asynchronous HTTP GET request and requires an asynchronous runtime to execute.
-	///
-	/// # Dependencies
-	/// - The `handle_json_response` function is used to parse and handle the JSON response from the API.
-	/// - Assumes `self.client.get` performs an HTTP GET request and returns the raw HTTP response.
-	pub async fn query_all_more<T: DeserializeOwned>(&mut self, next_records_url: &str) -> Result<QueryResponse<T>> {
-		let instance_url = self.client.instance_url().context("Not logged in")?;
-		let query_url = format!("{}/{}", instance_url, next_records_url);
-		let response = self.client.get(query_url, vec![], vec![]).await?;
-		handle_json_response(response).await
+	pub fn all(&mut self) -> &mut Self {
+		self.all = true;
+		self
+	}
+
+	pub async fn send(&self) -> Result<QueryResponse<'a>> {
+		let url = if self.all { "queryAll" } else { "query" }.to_string();
+		let params = vec![("q".to_string(), self.query.to_string())];
+		let response = self.rest_api_builder.send(HTTPMethod::GET, url, &params).await?;
+		Ok(QueryResponse::new(
+			self.rest_api_builder.rest_api,
+			crate::authentication::handle_json_response(response).await?,
+		))
 	}
 }

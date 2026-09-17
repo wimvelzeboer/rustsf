@@ -165,11 +165,11 @@
 //!     - Get Product Schedules
 //!     - Create Product Schedules
 //!     - Delete Product Schedules
-//! - Query
+//! - [Query](crate::rest_api::builder::RestApiBuilder::query)
 //!     - Data Cloud Query Profile Parameters
-//! - Query More Results
-//! - QueryAll
-//! - QueryAll More Results
+//! - [Query More Results](crate::rest_api::builder::query::query_response::QueryResponse::send_query_more)
+//! - [QueryAll](crate::rest_api::builder::query::QueryBuilder::all)
+//! - [QueryAll](crate::rest_api::builder::query::QueryBuilder::all) [More Results](crate::rest_api::builder::query::query_response::QueryResponse::send_query_more)
 //! - Query Performance Feedback (Beta)
 //! - Quick Actions
 //!     - Get Quick Actions
@@ -181,7 +181,7 @@
 //!     - Record Count Response Body
 //! - sObject Relevant Items
 //! - Get Knowledge Language Settings
-//! - Search
+//! - [Search](crate::rest_api::builder::RestApiBuilder::sosl)
 //! - Search Scope and Order
 //! - Search Result Layouts
 //! - Lightning Toggle Metrics

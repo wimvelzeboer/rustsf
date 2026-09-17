@@ -6,9 +6,9 @@ use std::fmt::Debug;
 
 mod composite;
 mod headers;
+mod limits;
 // mod query;
 // mod search;
-// mod services;
 mod sobjects;
 pub mod versions;
 

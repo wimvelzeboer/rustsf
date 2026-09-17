@@ -202,7 +202,7 @@ impl Client {
 	pub async fn get<T: Debug + Serialize>(
 		&self,
 		url: &str,
-		params: &T,
+		params: &T, // todo should be made optional, as some calls do not require this.
 		headers: &HashMap<String, String>,
 	) -> Result<Response> {
 		self.ensure_connection().await?;

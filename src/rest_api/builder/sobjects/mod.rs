@@ -45,6 +45,7 @@ mod sobject_describe;
 mod update;
 mod updated;
 mod upsert_by_ext_id;
+mod user_password;
 
 impl<'a> RestApiBuilder<'a> {
 	pub fn sobjects(&'a self) -> SObjectsBuilder<'a> {

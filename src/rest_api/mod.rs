@@ -90,9 +90,9 @@
 //! - sObjects Suggested Articles
 //! - sObjects Suggested Articles by ID
 //! - sObject User Password
-//!     - Get User Password Expiration Status
-//!     - Set User Password
-//!     - Reset User Password
+//!     - [Get User Password Expiration Status](crate::rest_api::RestApi::is_user_password_expired)
+//!     - [Set User Password](crate::rest_api::RestApi::set_user_password)
+//!     - [Reset User Password](crate::rest_api::RestApi::reset_user_password)
 //!     - Return Headers Using sObject User Password
 //! - sObject Self-Service User Password
 //!     - Get Self-Service User Password Expiration Status
@@ -231,7 +231,7 @@
 //!     - sObject Tree Response Body
 //! - sObject Collections
 //!     - [Create Records Using sObject Collections](crate::rest_api::builder::composite::sobject_collections::SObjectCollectionsBuilder::create)
-//!     - Get Records Using sObject Collections
+//!     - [Get Records Using sObject Collections](crate::rest_api::builder::composite::sobject_collections::SObjectCollectionsBuilder::get_by_ids)
 //!     - Get Records With a Request Body Using sObject Collections
 //!     - Update Records Using sObject Collections
 //!     - Upsert Records Using sObject Collections
@@ -309,6 +309,54 @@ impl RestApi {
 		})
 	}
 
+
+
+	/// List Available REST Resources
+	///
+	/// # Returns
+	///
+	/// A `Result` containing a `HashMap<String, String>` on success, where the keys and values
+	/// represent the resource identifiers and their corresponding details, respectively.
+	/// If the operation fails, an `Error` is returned.
+	///
+	/// # Errors
+	///
+	/// This function will return an `Error` if:
+	/// - The base path or version cannot be retrieved from the client.
+	/// - The HTTP GET request fails.
+	/// - The response cannot be parsed as a valid JSON.
+	///
+	/// # Example
+	///
+	/// ```rust
+	/// use rustsf::{Client, Credentials, RestApi};
+	///use std::collections::HashMap;
+	/// use anyhow::Result;
+	///
+	/// #[tokio::main]
+	/// async fn main() -> Result<()> {
+	///     let mut client= Client::new(Credentials::new()).await?;
+	///     // Authentication logic...
+	///
+	///     let mut api = RestApi::new(client);
+	///     let res: Result<HashMap<String, String>> = api.list_resources().await;
+	///     match res {
+	///         Ok(data) => println!("Resources: {:?}", data),
+	///         Err(e) => eprintln!("Failed to list resources: {}", e),
+	///     }
+	///     Ok(())
+	/// }
+	/// ```
+	///
+	/// # See
+	/// https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/dome_discoveryresource.htm
+	pub async fn list_resources(&mut self) -> Result<HashMap<String, String>> {
+		let url = self.client.services_data_version_path();
+		let params: Vec<(String, String)> = vec![];
+		let response = self.client.get(&url, &params, &HashMap::new()).await?;
+		crate::authentication::handle_json_response(response).await
+	}
+
 	pub(crate) async fn send_delete(
 		&self,
 		url: String,
@@ -340,5 +388,4 @@ impl RestApi {
 
 #[cfg(test)]
 mod test;
-// pub mod user_password;
 

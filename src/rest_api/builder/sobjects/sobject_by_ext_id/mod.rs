@@ -70,7 +70,7 @@ impl<'a> SObjectSelectByExtIdBuilder<'a> {
 			format!("{}/{}/{}", self.sobject_type, self.ext_id_field, self.ext_id),
 			&param,
 		).await?;
-		crate::authentication::handle_json_response(response).await
+		crate::client::handle_json_response(response).await
 	}
 }
 

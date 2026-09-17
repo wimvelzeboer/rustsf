@@ -131,6 +131,6 @@ impl<'a> SObjectUpdatedBuilder<'a> {
 			("end".to_string(), self.end_date.to_string()),
 		];
 		let response = self.builder.send(HTTPMethod::GET, url, &params).await?;
-		crate::authentication::handle_json_response(response).await
+		crate::client::handle_json_response(response).await
 	}
 }

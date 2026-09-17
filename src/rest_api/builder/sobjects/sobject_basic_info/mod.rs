@@ -148,7 +148,7 @@ impl<'a> SObjectBasicInfoBuilder<'a> {
 			.send(HTTPMethod::GET, format!("{}", self.sobject_type), &body)
 			.await?;
 
-		Ok(crate::authentication::handle_json_response(http_response).await
+		Ok(crate::client::handle_json_response(http_response).await
 			.context("Failed to parse describe sobject response")?)
 	}
 }

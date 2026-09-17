@@ -95,7 +95,7 @@ impl<'a> QueryResponse<'a> {
 			Some(url) => {
 				let params: Vec<(String, String)> = vec![];
 				let response = self.rest_api.send(HTTPMethod::GET, url.to_string(), &params, &HashMap::new()).await?;
-				self.response = crate::authentication::handle_json_response(response).await?;
+				self.response = crate::client::handle_json_response(response).await?;
 			}
 			None => {}
 		}

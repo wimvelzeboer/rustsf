@@ -276,7 +276,7 @@ impl<'a> GlobalDescribeBuilder<'a> {
 			.send(HTTPMethod::GET, url, &body)
 			.await?;
 
-		Ok(crate::authentication::handle_json_response(http_response)
+		Ok(crate::client::handle_json_response(http_response)
 			.await
 			.context("Failed to parse describe global response")?)
 	}

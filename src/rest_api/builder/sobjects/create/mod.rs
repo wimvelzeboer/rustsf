@@ -184,7 +184,7 @@ impl<'a, T: Debug + DeserializeOwned + Serialize> SObjectCreateBuilder<'a, T> {
 
 		Ok(SObjectsCreateResult::new(
 			self.record,
-			crate::authentication::handle_json_response(http_response).await?,
+			crate::client::handle_json_response(http_response).await?,
 		))
 	}
 }

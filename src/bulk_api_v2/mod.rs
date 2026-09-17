@@ -35,7 +35,7 @@
 //! async fn main() -> Result<()> {
 //!     // Initialize client and authenticate
 //!     let mut client= Client::new(Credentials::new()).await?;
-//!     // ... authentication logic ...
+//!     // ... client logic ...
 //!
 //!     let mut bulk_api = BulkApiV2::new(client);
 //!
@@ -310,7 +310,7 @@ impl BulkApiV2 {
 	///
 	/// # Note
 	/// The caller must ensure that the client is properly configured
-	/// with the required base path and authentication (if applicable)
+	/// with the required base path and client (if applicable)
 	/// before invoking this function.
 	///
 	/// # See

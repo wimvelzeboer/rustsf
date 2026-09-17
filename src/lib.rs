@@ -1,8 +1,8 @@
 //! # Salesforce SDK for Rust
 //!
-//! The Salesforce SDK for Rust is a comprehensive library that provides a high-level interface to
-//! the Salesforce APIs. It allows developers to interact with Salesforce data and metadata in a
-//! structured and idiomatic way, making it easier to manage and manipulate data.
+//! A comprehensive library that provides a high-level interface to the Salesforce APIs.
+//! It allows developers to interact with Salesforce data and metadata in a structured and
+//! idiomatic way, making it easier to manage and manipulate data.
 //!
 //! ## Features
 //! All features are updated to the latest version (v67.0 Summer 2026) of the Salesforce APIs.
@@ -11,17 +11,7 @@
 //! - [**Tooling API**](crate::tooling_api)
 //! - [**Metadata API**](crate::metadata_api)
 //!
-//! ## Installation
-//!
-//! Add the following to your `Cargo.toml`:
-//!
-//! ```toml
-//! [dependencies]
-//! rustsf = { version = "0.0.2", features = ["rest-api", "tooling-api", "metadata_api""] }
-//!```
-mod authentication;
-// pub mod client;
-
+mod client;
 
 #[cfg(feature = "rest-api")]
 pub mod rest_api;
@@ -41,11 +31,11 @@ pub mod bulk_api_v2;
 pub mod primary_types;
 
 
-pub use authentication::Client;
-pub use authentication::credentials::Credentials;
-pub use authentication::credentials::auth_url::AuthUrl;
-pub use authentication::credentials::client_credentials::ClientCredentials;
-pub use authentication::credentials::credential_file::CredentialFile;
+pub use client::Client;
+pub use client::credentials::Credentials;
+pub use client::credentials::auth_url::AuthUrl;
+pub use client::credentials::client_credentials::ClientCredentials;
+pub use client::credentials::credential_file::CredentialFile;
 pub use primary_types::{SObject, SObjectOwner};
 pub use rest_api::responses::error_response::ErrorResponse;
 

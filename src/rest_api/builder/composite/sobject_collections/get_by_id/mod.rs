@@ -33,7 +33,7 @@ impl RestApi {
 	/// This function will return an `Error` if:
 	/// - The underlying HTTP request fails.
 	/// - The response from Salesforce is invalid or cannot be deserialized into the expected format.
-	/// - Key or authentication issues arise when communicating with the Salesforce API.
+	/// - Key or client issues arise when communicating with the Salesforce API.
 	///
 	/// # Example
 	/// ```rust
@@ -142,7 +142,7 @@ SObjectsByIdBuilder<'builder, 'api> {
 			.await?;
 
 		// fixme - why not strait to the response but first go through option? Could there be a none in the vector?
-		let responses: Vec<Option<T>> = crate::authentication::handle_json_response(response).await?;
+		let responses: Vec<Option<T>> = crate::client::handle_json_response(response).await?;
 		Ok(responses.into_iter().filter_map(|r| r).collect())
 	}
 }

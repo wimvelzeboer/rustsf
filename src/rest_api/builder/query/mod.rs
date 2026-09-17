@@ -199,7 +199,7 @@ impl RestApi {
 		let query_url = format!("{}/{}", instance_url, next_records_url);
 		let params: Vec<(String, String)> = vec![];
 		let response = self.client.get(&query_url, &params, &HashMap::new()).await?;
-		crate::authentication::handle_json_response(response).await
+		crate::client::handle_json_response(response).await
 	}
 }
 
@@ -235,7 +235,7 @@ impl<'a, 'b> QueryBuilder<'a, 'b> {
 		let response = self.rest_api_builder.send(HTTPMethod::GET, url, &params).await?;
 		Ok(QueryResponse::new(
 			self.rest_api_builder.rest_api,
-			crate::authentication::handle_json_response(response).await?,
+			crate::client::handle_json_response(response).await?,
 		))
 	}
 }

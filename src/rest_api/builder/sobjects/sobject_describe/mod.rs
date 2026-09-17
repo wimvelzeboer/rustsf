@@ -81,6 +81,6 @@ impl<'a> SObjectDescribeBuilder<'a> {
 			format!("sobjects/{}/describe/", self.sobject_type),
 			&param,
 		).await?;
-		crate::authentication::handle_json_response(response).await
+		crate::client::handle_json_response(response).await
 	}
 }

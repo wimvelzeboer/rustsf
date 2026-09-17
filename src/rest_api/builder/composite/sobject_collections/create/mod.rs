@@ -221,7 +221,7 @@ SObjectsCreateBuilder<'builder, 'api, 'records, T> {
 		).await?;
 
 		let salesforce_response =
-			crate::authentication::handle_json_response::<Vec<SalesforceSObjectsCreateResponse>>(response)
+			crate::client::handle_json_response::<Vec<SalesforceSObjectsCreateResponse>>(response)
 				.await
 				.context("Failed to parse create records response")?;
 

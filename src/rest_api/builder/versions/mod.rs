@@ -70,7 +70,7 @@ impl RestApi {
 		let data: Vec<(String, String)> = vec![];
 		let headers = HashMap::new();
 		let response = self.send(HTTPMethod::GET, url, &data, &headers).await?;
-		crate::authentication::handle_json_response(response).await
+		crate::client::handle_json_response(response).await
 	}
 
 }

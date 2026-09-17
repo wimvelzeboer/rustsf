@@ -108,7 +108,7 @@ impl<'a> SObjectsBuilder<'a> {
    ///
    /// # Dependencies
    /// - This function internally uses `self.builder.send` to send an HTTP GET request.
-   /// - The response is processed using `crate::authentication::handle_json_response`.
+   /// - The response is processed using `crate::client::handle_json_response`.
    ///
    /// # See
    /// https://developer.salesforce.com/docs/platform/api-rest/guide/resources-sobject-retrieve-get.html
@@ -148,6 +148,6 @@ impl<'a> SObjectSelectByIdBuilder<'a> {
 			format!("{}/{}", self.sobject_type, self.id),
 			&param,
 		).await?;
-		crate::authentication::handle_json_response(response).await
+		crate::client::handle_json_response(response).await
 	}
 }

@@ -98,6 +98,6 @@ impl<'a, 'b> SoslBuilder<'a, 'b> {
 		let params = vec![("q".to_string(), self.query.to_string())];
 		let response = self.rest_api_builder.send(
 			HTTPMethod::GET, url, &params).await?;
-		crate::authentication::handle_json_response(response).await
+		crate::client::handle_json_response(response).await
 	}
 }

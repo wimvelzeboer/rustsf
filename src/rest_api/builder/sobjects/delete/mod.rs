@@ -176,6 +176,6 @@ impl<'a> SObjectDeleteBuilder<'a> {
 			.send_delete(format!("{}/{}", self.sobject_type, self.id))
 			.await?;
 
-		crate::authentication::handle_empty_response(http_response).await
+		crate::client::handle_empty_response(http_response).await
 	}
 }

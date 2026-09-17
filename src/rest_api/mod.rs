@@ -10,7 +10,7 @@
 //! - [**/services/data/vXX.X/search**](crate::rest_api::search), SOSL search operations on Salesforce objects
 //! - [**/services/data/vXX.X/services**](crate::rest_api::services), system information and metadata
 //! - [**/services/data/vXX.X/query**](crate::rest_api::query), retrieving up to 2,000 records
-//! - [**/services/data/vXX.X/userPassword**](crate::rest_api::user_password), user password authentication
+//! - [**/services/data/vXX.X/userPassword**](crate::rest_api::user_password), user password client
 //!
 //! ## Reference
 //! https://developer.salesforce.com/docs/platform/api-rest/guide/resources-list.html
@@ -237,7 +237,7 @@
 //!     - Upsert Records Using sObject Collections
 //!     - Delete Records Using sObject Collections
 
-use crate::authentication::{Client, Credentials};
+use crate::client::{Client, Credentials};
 use std::collections::HashMap;
 use std::fmt::Debug;
 use anyhow::{Context, Result};
@@ -354,7 +354,7 @@ impl RestApi {
 		let url = self.client.services_data_version_path();
 		let params: Vec<(String, String)> = vec![];
 		let response = self.client.get(&url, &params, &HashMap::new()).await?;
-		crate::authentication::handle_json_response(response).await
+		crate::client::handle_json_response(response).await
 	}
 
 	pub(crate) async fn send_delete(

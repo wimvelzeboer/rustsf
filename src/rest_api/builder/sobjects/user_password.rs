@@ -54,7 +54,7 @@ impl RestApi {
 		);
 		let params: Vec<(String, String)> = Vec::new();
 		let response = self.client.get(&url, &params, &HashMap::new()).await?;
-		let response: HashMap<String, bool> = crate::authentication::handle_json_response(response).await?;
+		let response: HashMap<String, bool> = crate::client::handle_json_response(response).await?;
 		match response.get("isExpired") {
 			Some(is_expired) => Ok(*is_expired),
 			None => Err(anyhow!("Expected 'isExpired' property".to_string())),
@@ -106,7 +106,7 @@ impl RestApi {
 			user_id
 		);
 		let response = self.client.delete(&url, &HashMap::new()).await?;
-		let response: HashMap<String, String> = crate::authentication::handle_json_response(response).await?;
+		let response: HashMap<String, String> = crate::client::handle_json_response(response).await?;
 		match response.get("NewPassword") {
 			Some(new_password) => Ok(new_password.to_string()),
 			None => Err(anyhow!("Expected 'NewPassword' property".to_string())),

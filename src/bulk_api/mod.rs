@@ -28,7 +28,7 @@
 //! #[tokio::main]
 //! async fn main() -> Result<()> {
 //!     let mut client= Client::new(Credentials::new()).await?;
-//!     // Perform authentication...
+//!     // Perform client...
 //!     
 //!     let mut bulk_api = BulkApi::new(client);
 //!     
@@ -126,7 +126,7 @@ impl BulkApi {
 	/// Asynchronously creates a new job with the specified parameters.
 	///
 	/// This method sends a POST request to the "/job" endpoint using the provided parameters
-	/// and authentication headers to create a new job resource.
+	/// and client headers to create a new job resource.
 	///
 	/// # Type Parameters
 	/// - `T`: The type of the payload to be serialized and sent as the request body.
@@ -201,12 +201,12 @@ impl BulkApi {
 	/// - `Ok(Response)`: A `Response` object containing the server's response if the
 	///   operation is successful.
 	/// - `Err(Error)`: An `Error` object if an error occurs during the operation, such as
-	///   authentication issues, network errors, or invalid input.
+	///   client issues, network errors, or invalid input.
 	///
 	/// # Errors
 	/// This function can return errors under the following conditions:
 	/// - If constructing the base path (`self.base_path()`) fails.
-	/// - If generating the authentication headers (`self.get_auth_headers()`) fails.
+	/// - If generating the client headers (`self.get_auth_headers()`) fails.
 	/// - If the HTTP POST request fails due to network issues or server-side errors.
 	///
 	/// # Example
@@ -253,7 +253,7 @@ impl BulkApi {
 	/// This asynchronous function retrieves data for the specified batch, identified by its `batch_id`,
 	/// which is associated with the provided `job_id`. The function constructs the appropriate URL
 	/// using the job and batch identifiers and sends a GET request to the remote service.
-	/// The request includes authentication headers for authorization.
+	/// The request includes client headers for authorization.
 	///
 	/// # Parameters
 	/// - `job_id`: A reference to a string slice representing the unique identifier of the job.
@@ -268,7 +268,7 @@ impl BulkApi {
 	/// # Errors
 	/// This function can return an error in the following cases:
 	/// - If the base path cannot be determined (`self.base_path()` fails).
-	/// - If authentication headers cannot be generated (`self.get_auth_headers()` fails).
+	/// - If client headers cannot be generated (`self.get_auth_headers()` fails).
 	/// - If the HTTP request to the remote service fails.
 	///
 	/// # Example
@@ -307,12 +307,12 @@ impl BulkApi {
 	/// An asynchronous `Result` containing:
 	/// - `Response`: The server's response if the job closure is successful.
 	/// - `Error`: An error indicating what went wrong (e.g., network issues, invalid job ID, or
-	/// authentication failure).
+	/// client failure).
 	///
 	/// # Errors
 	/// This function will return an error in the following cases:
 	/// - If `base_path` fails to retrieve the base URL for the request.
-	/// - If `get_auth_headers` fails to retrieve the necessary authentication headers.
+	/// - If `get_auth_headers` fails to retrieve the necessary client headers.
 	/// - If the HTTP POST request to update the job state fails.
 	///
 	/// # Example
@@ -361,7 +361,7 @@ impl BulkApi {
 	///
 	/// This function will return an error in the following cases:
 	/// * If the `base_path()` method fails to generate a valid base URL.
-	/// * If the `get_auth_headers()` method fails to generate the required authentication headers.
+	/// * If the `get_auth_headers()` method fails to generate the required client headers.
 	/// * If the HTTP GET request to the server fails.
 	///
 	/// # Examples
@@ -387,7 +387,7 @@ impl BulkApi {
 	/// # Remarks
 	///
 	/// The function constructs the resource URL by appending the job ID to the base path.
-	/// It adds the required authentication headers before sending the GET request using the HTTP client.
+	/// It adds the required client headers before sending the GET request using the HTTP client.
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_jobs_get_details.htm>
@@ -412,7 +412,7 @@ impl BulkApi {
 	///
 	/// This function will return an `Error` if:
 	/// - The `base_path` method fails to generate the base URL.
-	/// - The authentication headers cannot be generated.
+	/// - The client headers cannot be generated.
 	/// - The HTTP GET request to the resource URL fails.
 	///
 	/// # Example
@@ -460,12 +460,12 @@ impl BulkApi {
 	///
 	/// # Returns
 	/// - `Ok(Response)`: A successful HTTP response containing the result list for the specified job and batch.
-	/// - `Err(Error)`: An error if the operation fails, such as issues with authentication, URL construction, or the HTTP request.
+	/// - `Err(Error)`: An error if the operation fails, such as issues with client, URL construction, or the HTTP request.
 	///
 	/// # Errors
 	/// This function may return an error in the following cases:
 	/// - If the `base_path` retrieval fails.
-	/// - If there's an issue generating the authentication headers.
+	/// - If there's an issue generating the client headers.
 	/// - If the HTTP `GET` request fails (e.g., network issues or a non-success HTTP status).
 	///
 	/// # Example
@@ -516,7 +516,7 @@ impl BulkApi {
 	///
 	/// This function builds the URL for accessing the result of a job by taking
 	/// the job ID, batch ID, and result ID, and it includes the necessary
-	/// authentication headers for the request. The result is retrieved
+	/// client headers for the request. The result is retrieved
 	/// using an HTTP GET request.
 	///
 	/// # Arguments
@@ -535,7 +535,7 @@ impl BulkApi {
 	///
 	/// This function will return an error in the following cases:
 	/// * If the base URL cannot be retrieved through `self.base_path()`.
-	/// * If there is an issue generating authentication headers via `self.get_auth_headers()`.
+	/// * If there is an issue generating client headers via `self.get_auth_headers()`.
 	/// * If the HTTP GET request fails.
 	///
 	/// # Example
@@ -561,7 +561,7 @@ impl BulkApi {
 	/// # Notes
 	///
 	/// Ensure that the `client` instance is properly configured with the
-	/// required base path and authentication capabilities before calling this function.
+	/// required base path and client capabilities before calling this function.
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_code_curl_walkthrough_pk_chunking.htm>
@@ -581,7 +581,7 @@ impl BulkApi {
 	/// Aborts a job with the specified `job_id`.
 	///
 	/// This function sends a `POST` request to the resource URL corresponding to the job,
-	/// updating its state to "Aborted". The request includes authentication headers
+	/// updating its state to "Aborted". The request includes client headers
 	/// and a JSON content type header.
 	///
 	/// # Arguments
@@ -635,7 +635,7 @@ impl BulkApi {
 		self.client.post(resource_url, params, headers).await
 	}
 
-	/// Retrieves the authentication headers required for making API requests.
+	/// Retrieves the client headers required for making API requests.
 	///
 	/// # Returns
 	/// * `Ok(Vec<(String, String)>)` - A vector of header key-value pairs, where each pair represents

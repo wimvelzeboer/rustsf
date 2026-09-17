@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use anyhow::Result;
-use crate::authentication::handle_json_response;
+use crate::client::handle_json_response;
 use crate::rest_api::responses::limits_response::LimitsResponse;
 use crate::RestApi;
 

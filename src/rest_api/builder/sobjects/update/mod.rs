@@ -115,6 +115,6 @@ impl<'a, T: Serialize + Debug> SObjectUpdateBuilder<'a, T> {
 	pub async fn send(&self) -> Result<()> {
 		let url = format!("{}/{}", self.sobject_name, self.id);
 		let response = self.builder.send(HTTPMethod::PATCH, url, &self.data).await?;
-		crate::authentication::handle_empty_response(response).await
+		crate::client::handle_empty_response(response).await
 	}
 }

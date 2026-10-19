@@ -31,6 +31,9 @@ pub mod bulk_api_v2;
 pub mod primary_types;
 
 
+pub use rustsf_auth::Credentials;
+
+
 pub use client::Client;
 pub use client::credentials::Credentials;
 pub use client::credentials::auth_url::AuthUrl;

@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 use crate::rest_api::HTTPMethod;
-use crate::rest_api::builder::RestApiBuilder;
-use anyhow::{Context, Result};
 use serde::Deserialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use std::fmt::Debug;
+use crate::rest_api::error::RestApiError;
 use crate::RestApi;
 
 pub struct QueryResponse<'a> {
@@ -25,10 +24,9 @@ impl<'a> QueryResponse<'a> {
 		self.response.done
 	}
 
-	pub fn records<T: DeserializeOwned>(self) -> Result<Vec<T>> {
+	pub fn records<T: DeserializeOwned>(self) -> Result<Vec<T>, RestApiError> {
 		let records = self.response.records;
-		let sobjects: Vec<T> = serde_json::from_value(records)
-			.context("Failed to deserialize records")?;
+		let sobjects: Vec<T> = serde_json::from_value(records)?;
 		Ok(sobjects)
 	}
 
@@ -90,12 +88,12 @@ impl<'a> QueryResponse<'a> {
 	/// # Dependencies
 	/// - The `handle_json_response` function is used to parse and handle the JSON response from the API.
 	/// - Assumes `self.client.get` performs an HTTP GET request and returns the raw HTTP response.
-	pub async fn send_query_more(&mut self) -> Result<&mut Self> {
+	pub async fn send_query_more(&mut self) -> Result<&mut Self, RestApiError> {
 		match &self.response.next_records_url {
 			Some(url) => {
 				let params: Vec<(String, String)> = vec![];
 				let response = self.rest_api.send(HTTPMethod::GET, url.to_string(), &params, &HashMap::new()).await?;
-				self.response = crate::client::handle_json_response(response).await?;
+				self.response = RestApi::handle_json_response(response).await?;
 			}
 			None => {}
 		}
@@ -110,13 +108,12 @@ impl<'a> QueryResponse<'a> {
 		self.response.next_records_url.as_deref()
 	}
 
-	pub fn take_response<T: DeserializeOwned>(self) -> Result<SalesforceQueryResponse<Vec<T>>> {
+	pub fn take_response<T: DeserializeOwned>(self) -> Result<SalesforceQueryResponse<Vec<T>>, RestApiError> {
 		Ok(SalesforceQueryResponse {
 			total_size: self.response.total_size,
 			done: self.response.done,
 			next_records_url: self.response.next_records_url,
-			records: serde_json::from_value(self.response.records)
-				.context("Failed to deserialize records")?
+			records: serde_json::from_value(self.response.records)?
 		})
 	}
 }

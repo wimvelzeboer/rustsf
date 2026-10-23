@@ -3,6 +3,7 @@ use crate::rest_api::HTTPMethod;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::fmt::Debug;
+use crate::rest_api::error::RestApiError;
 
 mod composite;
 mod headers;
@@ -11,7 +12,7 @@ mod query;
 mod search;
 // mod search;
 mod sobjects;
-pub mod versions;
+mod versions;
 
 impl RestApi {
 	pub fn build(&self) -> RestApiBuilder<'_> {
@@ -35,8 +36,8 @@ impl<'a> RestApiBuilder<'a> {
 	pub(crate) async fn send_delete(
 		&self,
 		url: String,
-	) -> anyhow::Result<reqwest::Response> {
-		let url = format!("services/data/{}/{}", self.rest_api.client.api_version(), url);
+	) -> Result<reqwest::Response, RestApiError> {
+		let url = format!("services/data/v{}/{}", crate::rest_api::DEFAULT_API_VERSION, url);
 		self.rest_api.send_delete(url, &self.headers).await
 	}
 
@@ -45,8 +46,8 @@ impl<'a> RestApiBuilder<'a> {
 		method: HTTPMethod,
 		url: String,
 		data: &T,
-	) -> anyhow::Result<reqwest::Response> {
-		let url = format!("services/data/{}/{}", self.rest_api.client.api_version(), url);
+	) -> Result<reqwest::Response, RestApiError> {
+		let url = format!("services/data/v{}/{}", crate::rest_api::DEFAULT_API_VERSION, url);
 		self.rest_api.send(method, url, &data, &self.headers).await
 	}
 }

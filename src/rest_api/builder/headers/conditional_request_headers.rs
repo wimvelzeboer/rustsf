@@ -31,7 +31,14 @@ impl<'a> RestApiBuilder<'a> {
 	pub fn if_match_header(&mut self, etag: &[&str] ) -> &Self {
 		let value = etag
 			.iter()
-			.map(|e| format!("\"{}\"", e))
+
+			.map(|e| {
+				if e.starts_with('"') && e.ends_with('"') {
+					e.to_string()
+				} else {
+					format!("\"{}\"", e)
+				}
+			})
 			.collect::<Vec<_>>()
 			.join(", ");
 

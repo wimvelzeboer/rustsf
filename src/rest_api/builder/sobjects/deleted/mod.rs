@@ -1,6 +1,5 @@
 use anyhow::Result;
 use chrono::{DateTime, Utc};
-use serde::de::DeserializeOwned;
 use crate::rest_api::builder::sobjects::SObjectsBuilder;
 use crate::rest_api::HTTPMethod;
 use crate::RestApi;
@@ -145,9 +144,20 @@ impl<'a> SObjectDeletedBuilder<'a> {
 		&self,
 	) -> Result<SObjectDeletedResponse> {
 		let url = format!("{}/deleted", self.sobject_name);
+
+		let start_formatted = DateTime::parse_from_rfc3339(&self.start_date)
+			.map(|dt| dt.with_timezone(&Utc))
+			.or_else(|_| self.start_date.parse::<DateTime<Utc>>())
+			.map(|dt| dt.format("%Y-%m-%dT%H:%M:%S.000Z").to_string())?;
+
+		let end_formatted = DateTime::parse_from_rfc3339(&self.end_date)
+			.map(|dt| dt.with_timezone(&Utc))
+			.or_else(|_| self.end_date.parse::<DateTime<Utc>>())
+			.map(|dt| dt.format("%Y-%m-%dT%H:%M:%S.000Z").to_string())?;
+
 		let params = vec![
-			("start".to_string(), self.start_date.to_string()),
-			("end".to_string(), self.end_date.to_string()),
+			("start".to_string(), start_formatted),
+			("end".to_string(), end_formatted),
 		];
 		let response = self.builder.send(HTTPMethod::GET, url, &params).await?;
 		crate::client::handle_json_response(response).await

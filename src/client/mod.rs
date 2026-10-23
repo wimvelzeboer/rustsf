@@ -1,17 +1,21 @@
-use self::access_token::AccessToken;
-pub(crate) use self::credentials::{Credentials, CredentialsType};
-use self::token_response::TokenResponse;
+
+// use self::access_token::AccessToken;
+// pub(crate) use self::credentials::{Credentials, CredentialsType};
+// use self::token_response::TokenResponse;
 use crate::ErrorResponse;
 use anyhow::{Context, Result, anyhow};
-use log::debug;
+// use log::debug;
 use reqwest::Response;
-use reqwest::header::{AUTHORIZATION, HeaderMap, HeaderName, HeaderValue};
-use serde::{Serialize};
+// use reqwest::header::{AUTHORIZATION, HeaderMap, HeaderName, HeaderValue};
+// use serde::{Serialize};
 use serde::de::DeserializeOwned;
-use std::collections::HashMap;
-use std::fmt::Debug;
-use std::sync::{Arc, RwLock};
+// use std::collections::HashMap;
+// use std::fmt::Debug;
+// use std::sync::{Arc, RwLock};
+// use serde_json::json;
 
+
+/*
 pub(crate) mod access_token;
 pub(crate) mod credentials;
 pub(crate) mod token_response;
@@ -333,62 +337,6 @@ impl Client {
 
 
 
-	/// Generates a `HeaderMap` containing default headers, authorization, and additional custom headers.
-	///
-	/// # Arguments
-	///
-	/// * `additional_headers` - A list of key-value pairs representing additional headers
-	///   to be added to the request. Each key is the header name and each value is the corresponding header value.
-	///
-	/// # Returns
-	///
-	/// * `Ok(HeaderMap)` - Returns the constructed `HeaderMap` with all headers included.
-	/// * `Err(Error)` - Returns an error in the following scenarios:
-	///   - If the access token is not found (`Error::NotLoggedIn`).
-	///   - If a provided header name is invalid (`Error::ConfigError`).
-	///   - If a provided header value cannot be parsed.
-	///
-	/// # Behavior
-	///
-	/// - Authenticates the request by including an `Authorization` header with a Bearer token.
-	///   The token is retrieved from the `access_token` field of the struct, and an error is
-	///   returned if it is not available.
-	/// - Sets a default `Accept: application/json` header.
-	/// - Iterates through the `additional_headers` list and adds the headers
-	///   to the `HeaderMap`. If a header name already exists, the existing value is replaced.
-	/// - All header names are validated for correctness, and invalid header names or values will result in an error.
-	///
-	/// # Errors
-	///
-	/// - `Error::NotLoggedIn` occurs when there is no access token available.
-	/// - `Error::ConfigError` occurs if the custom header name is invalid or unparseable.
-	/// - Errors are propagated if the header value conversion fails.
-	///
-	fn create_header(&self, additional_headers: &HashMap<String, String>) -> Result<HeaderMap> {
-		let mut headers = HeaderMap::new();
-
-		let guard = self.access_token.read().unwrap_or_else(|e| e.into_inner());
-		let access_token = guard;
-
-		let auth_value = format!("Bearer {}", access_token.value);
-		headers.insert(AUTHORIZATION, HeaderValue::from_str(&auth_value)?);
-
-		//Default header
-		headers.insert("Accept", HeaderValue::from_static("application/json"));
-
-		for (key, value) in additional_headers {
-			let header_name: HeaderName = key.parse().context(format!("Invalid header name: {}", key))?;
-
-			let header_value = HeaderValue::from_str(&value)?;
-
-			//delete duplicates
-			headers.remove(&header_name);
-
-			headers.insert(header_name, header_value);
-		}
-
-		Ok(headers)
-	}
 	async fn ensure_connection(&self) -> Result<()> {
 		match self.access_token.read() {
 			Ok(guard) if guard.is_expired() == false => return Ok(()),
@@ -505,7 +453,7 @@ async fn get_refresh_token_response(client: &reqwest::Client, credentials: &Cred
 		.await
 		.context("Failed to parse refresh token response")?)
 }
-
+*/
 pub async fn handle_json_response<T: DeserializeOwned>(response: Response) -> Result<T> {
 	if response.status().is_success() {
 		Ok(response.json().await.context("Failed to parse response")?)

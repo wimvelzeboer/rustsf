@@ -3,6 +3,7 @@ use anyhow::Result;
 use reqwest::Response;
 use serde::Serialize;
 use crate::rest_api::builder::RestApiBuilder;
+use crate::rest_api::error::RestApiError;
 use crate::rest_api::HTTPMethod;
 
 const PATH: &'static str = "composite";
@@ -24,20 +25,22 @@ impl<'a> CompositeBuilder<'a> {
 		CompositeBuilder { builder }
 	}
 
+/*
 	pub(crate) async fn send_delete(
 		&self,
 		url: String,
-	) -> Result<Response> {
+	) -> Result<Response, RestApiError> {
 		let url = format!("{}/{}", PATH, url);
 		self.builder.send_delete(url).await
 	}
+*/
 
 	pub(crate) async fn send<T: Debug + Serialize>(
 		&self,
 		method: HTTPMethod,
 		url: String,
 		data: &T,
-	) -> Result<Response> {
+	) -> Result<Response, RestApiError> {
 		let url = format!("{}/{}", PATH, url);
 		self.builder.send(method, url, &data).await
 	}

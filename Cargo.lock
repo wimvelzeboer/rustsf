@@ -2027,6 +2027,7 @@ dependencies = [
  "base64 0.23.1",
  "chrono",
  "compact_str",
+ "env_logger",
  "html-escape",
  "log",
  "mockito",
@@ -2044,9 +2045,9 @@ dependencies = [
 
 [[package]]
 name = "rustsf_auth"
-version = "0.1.0"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2941aa10b3d19db6bcc4293aceb71d2f1e2e3cb865be13148249f56021696be0"
+checksum = "ca3fac7f2863d1a92a21af4530014a93634612b06ea9a7912a82ff1a244007ea"
 dependencies = [
  "anyhow",
  "base64 0.22.1",

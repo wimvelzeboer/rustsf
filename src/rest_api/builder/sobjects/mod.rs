@@ -24,13 +24,12 @@
 //! <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_sobject_basic_info.htm>
 
 use super::RestApiBuilder;
-use crate::primary_types::{SObject, SObjectOwner};
 use crate::rest_api::HTTPMethod;
 use anyhow::Result;
 use reqwest::Response;
-use serde::de::DeserializeOwned;
-use serde::{Deserialize, Serialize};
+use serde::{Serialize};
 use std::fmt::Debug;
+use crate::rest_api::error::RestApiError;
 
 mod create;
 mod delete;
@@ -65,7 +64,7 @@ impl<'a> SObjectsBuilder<'a> {
 	pub(crate) async fn send_delete(
 		&self,
 		url: String,
-	) -> Result<Response> {
+	) -> Result<Response, RestApiError> {
 		let url = format!("sobjects/{}", url);
 		self.builder.send_delete(url).await
 	}
@@ -75,7 +74,7 @@ impl<'a> SObjectsBuilder<'a> {
 		method: HTTPMethod,
 		url: String,
 		data: &T,
-	) -> Result<Response> {
+	) -> Result<Response, RestApiError> {
 		let url = format!("sobjects/{}", url);
 		self.builder.send(method, url, &data).await
 	}

@@ -237,14 +237,23 @@
 //!     - Upsert Records Using sObject Collections
 //!     - Delete Records Using sObject Collections
 
-use crate::client::{Client, Credentials};
 use std::collections::HashMap;
 use std::fmt::Debug;
-use anyhow::{Context, Result};
+use log::trace;
+use reqwest::Response;
+use rustsf_auth::SalesforceCredentials;
+use serde::de::DeserializeOwned;
 use serde::Serialize;
+use client::Client;
+use crate::ErrorResponse;
+use crate::rest_api::error::RestApiError;
 
 pub mod builder;
+pub mod client;
+pub mod error;
 pub mod responses;
+
+pub const DEFAULT_API_VERSION: &str = "68.0";
 
 pub enum HTTPMethod {
 	GET,
@@ -295,21 +304,17 @@ impl RestApi {
 	/// #[tokio::main]
 	/// async fn main() -> Result<()> {
 	///
-	///     let mut api = RestApi::new(AuthUrl::new("force://......."));
+	///     let mut api = RestApi::new(SalesforceCredentials::sfdx_url("force://....my.salesforce.comm")?).await?;
 	///     // you call the api here..
 	///
 	///     Ok(())
 	/// }
 	/// ```
-	pub async fn new(credentials: Credentials) -> Result<Self> {
+	pub async fn new(credentials: SalesforceCredentials) -> Result<Self, RestApiError> {
 		Ok(Self {
-			client: Client::connect(credentials)
-				.await
-				.context("Failed to connect to Salesforce REST API")?,
+			client: Client::new(credentials).await?
 		})
 	}
-
-
 
 	/// List Available REST Resources
 	///
@@ -329,16 +334,15 @@ impl RestApi {
 	/// # Example
 	///
 	/// ```rust
-	/// use rustsf::{Client, Credentials, RestApi};
+	/// use rustsf::{RestApi, SalesforceCredentials};
 	///use std::collections::HashMap;
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
 	/// async fn main() -> Result<()> {
-	///     let mut client= Client::new(Credentials::new()).await?;
-	///     // Authentication logic...
+	///     let mut credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@org-name.my.salesforce.com").unwrap();
 	///
-	///     let mut api = RestApi::new(client);
+	///     let mut api = RestApi::new(credentials);
 	///     let res: Result<HashMap<String, String>> = api.list_resources().await;
 	///     match res {
 	///         Ok(data) => println!("Resources: {:?}", data),
@@ -350,18 +354,26 @@ impl RestApi {
 	///
 	/// # See
 	/// https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/dome_discoveryresource.htm
-	pub async fn list_resources(&mut self) -> Result<HashMap<String, String>> {
+	pub async fn list_resources(&self) -> Result<HashMap<String, String>, RestApiError> {
 		let url = self.client.services_data_version_path();
 		let params: Vec<(String, String)> = vec![];
 		let response = self.client.get(&url, &params, &HashMap::new()).await?;
-		crate::client::handle_json_response(response).await
+		RestApi::handle_json_response(response).await
+	}
+
+	pub fn org_id(&self) -> Option<&str> {
+		self.client.user_id()
+	}
+
+	pub fn user_id(&self) -> Option<&str> {
+		self.client.user_id()
 	}
 
 	pub(crate) async fn send_delete(
 		&self,
 		url: String,
 		headers: &HashMap<String, String>,
-	) -> Result<reqwest::Response> {
+	) -> Result<reqwest::Response, RestApiError> {
 		let url = format!("{}/{}", self.client.instance_url(), url);
 		self.client.delete(&url, &headers).await
 	}
@@ -372,12 +384,27 @@ impl RestApi {
 		url: String,
 		data: &T,
 		headers: &HashMap<String, String>,
-	) -> Result<reqwest::Response> {
+	) -> Result<reqwest::Response, RestApiError> {
 		let url = format!("{}/{}", self.client.instance_url(), url);
 		match method {
 			HTTPMethod::GET => Ok(self.client.get(&url, data, &headers).await?),
 			HTTPMethod::POST => Ok(self.client.post(&url, data, &headers).await?),
 			HTTPMethod::PATCH => Ok(self.client.patch(&url, data, &headers).await?),
+		}
+	}
+
+	async fn handle_json_response<T: DeserializeOwned>(response: Response) -> anyhow::Result<T, RestApiError> {
+
+		trace!("Headers: {:?}", response.headers());
+
+		if response.status().is_success() {
+			let json_str = response.text().await?;
+			trace!("Raw response: {}", json_str);
+			Ok(serde_json::from_str(&json_str)?)
+		//	Ok(response.json().await?)
+		} else {
+			let errors: Vec<ErrorResponse> = response.json().await?;
+			Err(RestApiError::Salesforce(errors))
 		}
 	}
 

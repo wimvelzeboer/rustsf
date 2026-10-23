@@ -20,6 +20,7 @@ use std::fmt::Debug;
 use reqwest::Response;
 use serde::Serialize;
 use crate::rest_api::builder::composite::CompositeBuilder;
+use crate::rest_api::error::RestApiError;
 use crate::rest_api::HTTPMethod;
 
 const PATH: &'static str = "sobjects";
@@ -42,20 +43,21 @@ impl<'a> SObjectCollectionsBuilder<'a> {
 		SObjectCollectionsBuilder { builder }
 	}
 
+/*
 	pub(crate) async fn send_delete(
 		&self,
 		url: String,
-	) -> anyhow::Result<Response> {
+	) -> anyhow::Result<Response, RestApiError> {
 		let url = format!("{}/{}", PATH, url);
 		self.builder.send_delete(url).await
 	}
-
+*/
 	pub(crate) async fn send<T: Debug + Serialize>(
 		&self,
 		method: HTTPMethod,
 		url: String,
 		data: &T,
-	) -> anyhow::Result<Response> {
+	) -> anyhow::Result<Response, RestApiError> {
 		let url = format!("{}/{}", PATH, url);
 		self.builder.send(method, url, &data).await
 	}

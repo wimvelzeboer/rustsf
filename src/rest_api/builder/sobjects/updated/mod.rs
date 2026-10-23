@@ -3,7 +3,6 @@ use crate::rest_api::HTTPMethod;
 use crate::rest_api::builder::sobjects::SObjectsBuilder;
 use anyhow::Result;
 use chrono::{DateTime, Utc};
-use serde::de::DeserializeOwned;
 use crate::rest_api::builder::sobjects::updated::sobject_updated_response::SObjectUpdatedResponse;
 
 mod sobject_updated_response;

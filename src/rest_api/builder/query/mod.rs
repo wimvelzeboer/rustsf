@@ -20,11 +20,9 @@ use self::query_response::QueryResponse;
 use crate::RestApi;
 use crate::rest_api::HTTPMethod;
 use crate::rest_api::builder::RestApiBuilder;
-use anyhow::{Context, Result};
-use serde::Deserialize;
 use serde::de::DeserializeOwned;
-use std::fmt::Debug;
 use crate::rest_api::builder::query::query_response::SalesforceQueryResponse;
+use crate::rest_api::error::RestApiError;
 
 mod query_response;
 
@@ -71,7 +69,7 @@ impl RestApi {
 	/// }
 	/// ```
 	/// - tag query
-	pub async fn query<T: DeserializeOwned>(&mut self, query: &str) -> Result<SalesforceQueryResponse<Vec<T>>> {
+	pub async fn query<T: DeserializeOwned>(&mut self, query: &str) -> Result<SalesforceQueryResponse<Vec<T>>, RestApiError> {
 		Ok(self.build()
 			.query(query)
 			.send()
@@ -123,7 +121,7 @@ impl RestApi {
 	///     Ok(())
 	/// }
 	/// ```
-	pub async fn query_all<T: DeserializeOwned>(&mut self, query: &str) -> Result<SalesforceQueryResponse<Vec<T>>> {
+	pub async fn query_all<T: DeserializeOwned>(&mut self, query: &str) -> Result<SalesforceQueryResponse<Vec<T>>, RestApiError> {
 		Ok(self.build()
 			.query(query)
 			.all()
@@ -194,12 +192,12 @@ impl RestApi {
 	/// # Dependencies
 	/// - The `handle_json_response` function is used to parse and handle the JSON response from the API.
 	/// - Assumes `self.client.get` performs an HTTP GET request and returns the raw HTTP response.
-	pub async fn query_more<T: DeserializeOwned>(&mut self, next_records_url: &str) -> Result<SalesforceQueryResponse<Vec<T>>> {
+	pub async fn query_more<T: DeserializeOwned>(&mut self, next_records_url: &str) -> Result<SalesforceQueryResponse<Vec<T>>, RestApiError> {
 		let instance_url = self.client.instance_url();
 		let query_url = format!("{}/{}", instance_url, next_records_url);
 		let params: Vec<(String, String)> = vec![];
 		let response = self.client.get(&query_url, &params, &HashMap::new()).await?;
-		crate::client::handle_json_response(response).await
+		RestApi::handle_json_response(response).await
 	}
 }
 
@@ -229,13 +227,13 @@ impl<'a, 'b> QueryBuilder<'a, 'b> {
 		self
 	}
 
-	pub async fn send(&self) -> Result<QueryResponse<'a>> {
+	pub async fn send(&self) -> Result<QueryResponse<'a>, RestApiError> {
 		let url = if self.all { "queryAll" } else { "query" }.to_string();
 		let params = vec![("q".to_string(), self.query.to_string())];
 		let response = self.rest_api_builder.send(HTTPMethod::GET, url, &params).await?;
 		Ok(QueryResponse::new(
 			self.rest_api_builder.rest_api,
-			crate::client::handle_json_response(response).await?,
+			RestApi::handle_json_response(response).await?,
 		))
 	}
 }

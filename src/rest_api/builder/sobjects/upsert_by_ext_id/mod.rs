@@ -1,12 +1,9 @@
 use std::fmt::Debug;
 use anyhow::Result;
-use chrono::{DateTime, Utc};
 use reqwest::Response;
-use serde::de::DeserializeOwned;
 use serde::Serialize;
-use crate::rest_api::builder::sobjects::sobject_by_ext_id::SObjectSelectByExtIdBuilder;
-use crate::rest_api::builder::sobjects::sobject_by_id::SObjectSelectByIdBuilder;
 use crate::rest_api::builder::sobjects::SObjectsBuilder;
+use crate::rest_api::error::RestApiError;
 use crate::rest_api::HTTPMethod;
 use crate::RestApi;
 
@@ -78,7 +75,7 @@ impl RestApi {
 		key_name: &str,
 		key: &str,
 		data: T,
-	) -> Result<Response> {
+	) -> Result<Response, RestApiError> {
 		self.build()
 			.sobjects()
 			.upsert_by_ext_id(sobject_name, key_name, key, data)
@@ -125,7 +122,7 @@ impl<'a, T: Debug + Serialize> SObjectUpsertByExtIdBuilder<'a, T> {
 		}
 	}
 
-	pub async fn send(&self) -> Result<Response> {
+	pub async fn send(&self) -> Result<Response, RestApiError> {
 		self.builder
 			.send(
 				HTTPMethod::PATCH,

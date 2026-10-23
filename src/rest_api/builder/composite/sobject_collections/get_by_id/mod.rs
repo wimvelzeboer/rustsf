@@ -1,9 +1,7 @@
-use anyhow::Result;
 use std::fmt::Debug;
-use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
-use crate::rest_api::builder::composite::sobject_collections::create::SObjectsCreateBuilder;
 use crate::rest_api::builder::composite::sobject_collections::SObjectCollectionsBuilder;
+use crate::rest_api::error::RestApiError;
 use crate::rest_api::HTTPMethod;
 use crate::RestApi;
 
@@ -83,7 +81,7 @@ impl RestApi {
 		object_name: &str,
 		ids: &[&str],
 		fields: &[&str],
-	) -> Result<Vec<T>> {
+	) -> Result<Vec<T>, RestApiError> {
 		self.build()
 			.composite()
 			.sobject_collections()
@@ -131,7 +129,7 @@ SObjectsByIdBuilder<'builder, 'api> {
 
 	pub async fn send<T: Debug + DeserializeOwned>(
 		&self,
-	) -> anyhow::Result<Vec<T>> {
+	) -> Result<Vec<T>, RestApiError> {
 
 		let params = vec![("fields", self.fields.join(",")), ("ids", self.ids.join(","))];
 		let response = self.builder
@@ -142,7 +140,7 @@ SObjectsByIdBuilder<'builder, 'api> {
 			.await?;
 
 		// fixme - why not strait to the response but first go through option? Could there be a none in the vector?
-		let responses: Vec<Option<T>> = crate::client::handle_json_response(response).await?;
+		let responses: Vec<Option<T>> = RestApi::handle_json_response(response).await?;
 		Ok(responses.into_iter().filter_map(|r| r).collect())
 	}
 }

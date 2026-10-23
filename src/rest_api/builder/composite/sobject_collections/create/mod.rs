@@ -1,20 +1,17 @@
-use std::fmt::Debug;
-use anyhow::{anyhow, Context, Result};
-use serde::de::DeserializeOwned;
-use serde::Serialize;
-use crate::rest_api::builder::composite::sobject_collections::create::salesforce_sobjects_create_response::SalesforceSObjectsCreateResponse;
-use crate::rest_api::builder::composite::sobject_collections::create::sobjects_create_response::SObjectsCreateResponse;
-use super::SObjectCollectionsBuilder;
-use crate::rest_api::HTTPMethod;
-use crate::RestApi;
 use self::sobjects_create_request::SObjectsCreateRequest;
+use super::SObjectCollectionsBuilder;
+use crate::RestApi;
+use crate::rest_api::HTTPMethod;
+use crate::rest_api::builder::composite::sobject_collections::create::salesforce_sobjects_create_response::SalesforceSObjectsCreateResponse;
+use crate::rest_api::error::RestApiError;
+use crate::rest_api::responses::rest_response::RestResponse;
+use serde::Serialize;
+use std::fmt::Debug;
 
-mod sobjects_create_request;
-mod sobjects_create_response;
 mod salesforce_sobjects_create_response;
+mod sobjects_create_request;
 
 impl RestApi {
-
 	/// Creates a batch of records in Salesforce using the Composite SObjects API.
 	///
 	/// # Type Parameters
@@ -86,23 +83,23 @@ impl RestApi {
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_composite_sobjects_collections_create.htm>
 	pub async fn create_sobjects<T: Serialize + Debug>(
-		&mut self,
+		&self,
 		records: &mut Vec<T>,
 		all_or_none: bool,
-	) -> Result<Vec<SalesforceSObjectsCreateResponse>> {
-		Ok(self.build()
+	) -> Result<Vec<SalesforceSObjectsCreateResponse>, RestApiError> {
+		self
+			.build()
 			.composite()
 			.sobject_collections()
 			.create(records, all_or_none)
 			.send()
 			.await?
-			// todo - stamp id onto records?
-			.take_response())
+			.rest_response()
+			.await
 	}
 }
 
 impl<'a> SObjectCollectionsBuilder<'a> {
-
 	/// Creates a batch of records in Salesforce using the Composite SObjects API.
 	///
 	/// # Type Parameters
@@ -188,8 +185,7 @@ pub struct SObjectsCreateBuilder<'builder, 'api, 'records, T: Debug + Serialize>
 	all_or_none: bool,
 }
 
-impl<'builder, 'api, 'records, T: Debug + Serialize>
-SObjectsCreateBuilder<'builder, 'api, 'records, T> {
+impl<'builder, 'api, 'records, T: Debug + Serialize> SObjectsCreateBuilder<'builder, 'api, 'records, T> {
 	pub(crate) fn new(
 		builder: &'builder SObjectCollectionsBuilder<'api>,
 		sobjects: &'records mut [T],
@@ -202,73 +198,19 @@ SObjectsCreateBuilder<'builder, 'api, 'records, T> {
 		}
 	}
 
-	pub async fn send(
-		&mut self,
-	) -> Result<SObjectsCreateResponse<'_, T>> {
+	pub async fn send(&mut self) -> Result<RestResponse, RestApiError> {
+
 		// fixme - should we do automatically multiple requests if needed?
 		if self.sobjects.len() > 200 {
-			return Err(anyhow!("Max 200 records per request"));
-		} else if self.sobjects.len() == 0 {
-
-			return Ok(SObjectsCreateResponse::new(self.sobjects, vec![]));
+			return Err(RestApiError::Other(format!(
+				"Max 200 records per request, received: {}",
+				self.sobjects.len()
+			)));
 		}
 
 		let request = SObjectsCreateRequest::new(self.sobjects, self.all_or_none);
-		let response = self.builder.send(
-			HTTPMethod::POST,
-			"".to_string(),
-			&request,
-		).await?;
+		let response = self.builder.send(HTTPMethod::POST, "".to_string(), &request).await?;
 
-		let salesforce_response =
-			crate::client::handle_json_response::<Vec<SalesforceSObjectsCreateResponse>>(response)
-				.await
-				.context("Failed to parse create records response")?;
-
-		Ok(SObjectsCreateResponse::new(
-			&mut self.sobjects,
-			salesforce_response
-		))
-
-		/* todo Do we still need something of this old logic?
-		if !response.status().is_success() {
-			return Err(anyhow!("Failed to create records: {}", response.text().await?));
-		}
-
-		let responses: Vec<SObjectCreateResponse> = handle_json_response(response).await
-			.context("Failed to parse create records response")?;
-		debug!("response: {:?}", responses);
-
-		if responses.len() != records.len() {
-			return Err(anyhow!(
-				"Expected the same amount of responses, send {}, response {}",
-				responses.len(),
-				records.len()
-			));
-		};
-
-		let mut has_failures = false;
-		for i in 0..responses.len() {
-			let response = responses.get(i).ok_or(anyhow!("Failed to get response at index {}", i))?;
-			let id = response.id();
-			let record = records.iter_mut().nth(i).unwrap();
-			record.set_id(id);
-			if !response.is_success() {
-				has_failures = true;
-			}
-		}
-
-		if has_failures && all_or_none {
-			return Err(anyhow!(
-				"{}",
-				responses
-					.iter()
-					.map(|r| r.to_string())
-					.collect::<Vec<String>>()
-					.join(", ")
-			));
-		}
-
-		Ok(responses)*/
+		Ok(RestResponse::new(response))
 	}
 }

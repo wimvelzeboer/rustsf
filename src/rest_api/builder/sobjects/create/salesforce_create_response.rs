@@ -41,7 +41,7 @@ mod tests {
 		.to_string();
 
 		let resp: SalesforceCreateResponse = serde_json::from_str(&json_str).unwrap();
-		assert_eq!(resp.id, "0019K00001pVhatQAC");
+		assert_eq!(resp.id.unwrap(), "0019K00001pVhatQAC");
 		assert_eq!(resp.success, true);
 	}
 }

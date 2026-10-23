@@ -17,12 +17,6 @@ use std::collections::HashMap;
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DescribeSObjectResult {
-	/// Reserved for future use.
-	///
-	/// Salesforce currently exposes this flag for compatibility and future
-	/// platform functionality.
-	#[serde(default)]
-	pub activateable: bool,
 
 	/// Metadata for action overrides defined on the object.
 	///
@@ -30,6 +24,22 @@ pub struct DescribeSObjectResult {
 	/// such as overriding the default New, Edit, View, Tab, or List actions.
 	#[serde(default)]
 	pub action_overrides: Vec<ActionOverride>,
+
+	/// Reserved for future use.
+	///
+	/// Salesforce currently exposes this flag for compatibility and future
+	/// platform functionality.
+	#[serde(default)]
+	pub activateable: bool,
+
+	/// If the object is associated with a parent object,
+	/// the type of association it has to its parent, such as History.
+	/// Otherwise, its value is null.
+	pub associate_entity_type: Option<String>,
+
+	/// If the object is associated with a parent object,
+	/// the parent object it’s associated with. Otherwise, its value is null.
+	pub associate_parent_entity: Option<String>,
 
 	/// Metadata for child relationships from this object to other objects.
 	///

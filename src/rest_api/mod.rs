@@ -393,7 +393,7 @@ impl RestApi {
 		}
 	}
 
-	async fn handle_json_response<T: DeserializeOwned>(response: Response) -> anyhow::Result<T, RestApiError> {
+	async fn handle_json_response<T: DeserializeOwned>(response: Response) -> Result<T, RestApiError> {
 
 		trace!("Headers: {:?}", response.headers());
 
@@ -402,6 +402,15 @@ impl RestApi {
 			trace!("Raw response: {}", json_str);
 			Ok(serde_json::from_str(&json_str)?)
 		//	Ok(response.json().await?)
+		} else {
+			let errors: Vec<ErrorResponse> = response.json().await?;
+			Err(RestApiError::Salesforce(errors))
+		}
+	}
+
+	async fn handle_empty_response(response: Response) -> Result<(), RestApiError> {
+		if response.status().is_success() {
+			Ok(())
 		} else {
 			let errors: Vec<ErrorResponse> = response.json().await?;
 			Err(RestApiError::Salesforce(errors))

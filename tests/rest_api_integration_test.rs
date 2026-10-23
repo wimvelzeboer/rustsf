@@ -1,6 +1,7 @@
 extern crate rustsf;
 use anyhow::Result;
 use log::LevelFilter;
+use crate::common::Account;
 
 mod common;
 
@@ -203,11 +204,6 @@ async fn test_call_options_header_create_account() -> Result<()> {
 #[tokio::test]
 //#[ignore]
 async fn test_if_match_header_update_account_precondition() -> Result<()> {
-	/*	env_logger::builder()
-	.filter_level(LevelFilter::Trace)
-	.format_target(false)
-	.init();*/
-
 	let api = common::get_rest_api_client().await?;
 
 	let account = common::Account::new()
@@ -267,6 +263,60 @@ async fn test_if_match_header_update_account_precondition() -> Result<()> {
 		update_result.is_ok(),
 		"Expected update with a matching If-Match ETag to succeed"
 	);
+	api.delete_sobject("Account", &id).await?;
+
+	Ok(())
+}
+
+
+#[tokio::test]
+#[ignore]
+async fn test_if_none_match_header_get_account_not_modified() -> Result<()> {
+	env_logger::builder()
+		.filter_level(LevelFilter::Trace)
+		.format_target(false)
+		.init();
+	let api = common::get_rest_api_client().await?;
+
+	let account = common::Account::new()
+		.set_name("If-None-Match Header Test Account")
+		.set_owner_id(api.user_id().unwrap());
+
+	let result = api.build().sobjects().create("Account", account).send().await?;
+
+	assert!(result.is_success(), "Account creation failed");
+
+	let id = result
+		.take_id()
+		.expect("Expected created Account response to include an Id");
+
+	assert_eq!(18, id.len());
+
+	let response = api.build().sobjects().get_by_id("Account", &id).send().await?;
+	let etag = response.etag();
+	assert!(etag.is_some(), "Expected etag to be returned");
+
+	println!("Account ETag: {:?} and Id: {}", etag, id);
+
+	let update_result = api
+		.build()
+		.if_none_match_header(&[&etag.unwrap()])
+		.sobjects()
+		.get_by_id(
+			"Account",
+			&id
+		)
+		.send()
+		.await;
+
+	println!("result {:?}", update_result?.rest_response::<Account>().await);
+
+	assert_eq!(
+		reqwest::StatusCode::NOT_MODIFIED,
+		response.status(),
+		"Expected If-None-Match GET request with matching ETag to return 304 Not Modified"
+	);
+
 	api.delete_sobject("Account", &id).await?;
 
 	Ok(())
@@ -475,11 +525,6 @@ async fn test_create_account() -> Result<()> {
 #[tokio::test]
 #[ignore]
 async fn test_sobject_get_deleted_account() -> Result<()> {
-	env_logger::builder()
-		.filter_level(LevelFilter::Trace)
-		.format_target(false)
-		.init();
-
 	let api = common::get_rest_api_client().await?;
 
 	let start_date = chrono::Utc::now() - chrono::Duration::minutes(5);
@@ -661,6 +706,165 @@ async fn test_sobject_describe_account() -> Result<()> {
 	Ok(())
 }
 
+#[tokio::test]
+#[ignore]
+async fn test_update_sobject_account() -> Result<()> {
+	let api = common::get_rest_api_client().await?;
+
+	let account = common::Account::new()
+		.set_name("Updated SObject Test Account")
+		.set_owner_id(api.user_id().unwrap());
+
+	let result = api.create("Account", account).await?;
+
+	assert!(result.success, "Account creation failed");
+	assert!(result.id.is_some(), "Expected created Account response to include an Id");
+
+	let id = result.id.expect("Expected created Account response to include an Id");
+
+	assert_eq!(18, id.len());
+
+	api.update_sobject(
+		"Account",
+		&id,
+		serde_json::json!({
+			"Description": "Updated SObject Test Account"
+		}),
+	)
+		.await?;
+
+	let fetched_account = api.sobject_by_id::<common::Account>("Account", &id).await?;
+
+	assert_eq!(Some(id.as_str()), fetched_account.id.as_deref());
+	assert_eq!(
+		Some("Updated SObject Test Account".to_string()),
+		fetched_account.description
+	);
+
+	api.delete_sobject("Account", &id).await?;
+
+	Ok(())
+}
+
+
+#[tokio::test]
+#[ignore]
+async fn test_sobject_get_updated_account() -> Result<()> {
+	let api = common::get_rest_api_client().await?;
+
+	let start_date = chrono::Utc::now() - chrono::Duration::minutes(5);
+
+	let account = common::Account::new()
+		.set_name("Get Updated Test Account")
+		.set_owner_id(api.user_id().unwrap());
+
+	let result = api.create("Account", account).await?;
+
+	assert!(result.success, "Account creation failed");
+	assert!(result.id.is_some(), "Expected created Account response to include an Id");
+
+	let id = result.id.expect("Expected created Account response to include an Id");
+
+	assert_eq!(18, id.len());
+
+	api.update_sobject(
+		"Account",
+		&id,
+		serde_json::json!({
+			"Description": "Get Updated Test Account"
+		}),
+	)
+		.await?;
+
+	let end_date = chrono::Utc::now() + chrono::Duration::minutes(5);
+
+	let response = api
+		.sobject_get_updated("Account", &start_date, &end_date)
+		.await?;
+
+	assert!(
+		response.ids.iter().any(|updated_id| updated_id == &id),
+		"Expected updated records to include updated Account"
+	);
+	assert!(
+		!response.latest_date_covered.is_empty(),
+		"Expected latest_date_covered to be present"
+	);
+
+	api.delete_sobject("Account", &id).await?;
+
+	Ok(())
+}
+
+#[tokio::test]
+#[ignore]
+async fn test_upsert_sobject_account() -> Result<()> {
+	env_logger::builder()
+		.filter_level(LevelFilter::Trace)
+		.format_target(false)
+		.init();
+
+	let mut api = common::get_rest_api_client().await?;
+
+	let account = common::Account::new()
+		.set_name("Upsert SObject Test Account")
+		.set_owner_id(api.user_id().unwrap());
+
+	let result = api.create("Account", account).await?;
+
+	assert!(result.success, "Account creation failed");
+	assert!(result.id.is_some(), "Expected created Account response to include an Id");
+
+	let id = result.id.expect("Expected created Account response to include an Id");
+
+	assert_eq!(18, id.len());
+
+	let response = api
+		.upsert_sobject(
+			"Account",
+			"Id",
+			&id,
+			serde_json::json!({
+				"Description": "Upserted SObject Test Account"
+			}),
+		)
+		.await?;
+
+	assert!(
+		response.status().is_success(),
+		"Expected upsert_sobject response to be successful"
+	);
+
+	let fetched_account = api.sobject_by_id::<common::Account>("Account", &id).await?;
+
+	print!("fetched account {:?}", fetched_account);
+
+	assert_eq!(Some(id.as_str()), fetched_account.id.as_deref());
+	assert_eq!(
+		Some("Upserted SObject Test Account".to_string()),
+		fetched_account.description
+	);
+
+	api.delete_sobject("Account", &id).await?;
+
+	Ok(())
+}
+
+#[tokio::test]
+#[ignore]
+async fn test_is_user_password_expired() -> Result<()> {
+	let api = common::get_rest_api_client().await?;
+
+	let user_id = api
+		.user_id()
+		.expect("Expected authenticated REST API client to include a user id");
+
+	let is_expired = api.is_user_password_expired(user_id).await?;
+
+	println!("User password expired: {}", is_expired);
+
+	Ok(())
+}
 /*
 /// Create an Account record and Fetch it via Id
 #[tokio::test]

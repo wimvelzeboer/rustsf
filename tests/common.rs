@@ -26,6 +26,9 @@ pub struct Account {
 	#[serde(rename = "Id", skip_serializing_if = "Option::is_none")]
 	pub id: Option<String>,
 
+	#[serde(rename = "Description", skip_serializing_if = "Option::is_none")]
+	pub description: Option<String>,
+
 	#[serde(rename = "Name", skip_serializing_if = "Option::is_none")]
 	pub name: Option<String>,
 
@@ -38,6 +41,7 @@ impl Account {
 		Self {
 			attributes: Attribute { sobject_type: "Account".to_string() },
 			id: None,
+			description: None,
 			name: None,
 			owner_id: None,
 		}

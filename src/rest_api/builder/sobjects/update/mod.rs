@@ -1,11 +1,11 @@
 use std::fmt::Debug;
 
-use anyhow::Result;
 use serde::Serialize;
 
 use crate::RestApi;
 use crate::rest_api::HTTPMethod;
 use crate::rest_api::builder::sobjects::SObjectsBuilder;
+use crate::rest_api::error::RestApiError;
 
 impl RestApi {
 	///
@@ -67,7 +67,7 @@ impl RestApi {
 		sobject_name: &str,
 		id: &str,
 		data: T,
-	) -> Result<()> { // todo Return a response here?
+	) -> Result<(), RestApiError> { // todo Return a response here?
 		self.build()
 			.sobjects()
 			.update(sobject_name, id, data)
@@ -112,9 +112,9 @@ impl<'a, T: Serialize + Debug> SObjectUpdateBuilder<'a, T> {
 		}
 	}
 
-	pub async fn send(&self) -> Result<()> {
+	pub async fn send(&self) -> Result<(), RestApiError> {
 		let url = format!("{}/{}", self.sobject_name, self.id);
 		let response = self.builder.send(HTTPMethod::PATCH, url, &self.data).await?;
-		crate::client::handle_empty_response(response).await
+		RestApi::handle_empty_response(response).await
 	}
 }

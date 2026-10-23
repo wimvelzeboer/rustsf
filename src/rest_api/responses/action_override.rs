@@ -19,7 +19,7 @@ pub struct ActionOverride {
 
 	/// Indicates whether the action override is available in the Salesforce mobile app (true) or not (false).
 	#[serde(default)]
-	pub is_available_in_touch: String,
+	pub is_available_in_touch: bool,
 
 	/// The name of the action that overrides the default action. For example,
 	/// if the new/create page was overridden with a custom action, the name might be “New”.
@@ -32,5 +32,5 @@ pub struct ActionOverride {
 
 	/// The URL of the item being used for the action override, such as a Visualforce page. Returns as null for Lightning page overrides.
 	#[serde(default)]
-	pub url: String,
+	pub url: Option<String>,
 }

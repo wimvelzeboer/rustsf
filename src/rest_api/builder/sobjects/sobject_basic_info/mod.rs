@@ -25,12 +25,12 @@ impl RestApi {
 	///
 	/// # Example
 	/// ```rust
-	/// use rustsf::{Credentials, RestApi, AuthUrl};
+	/// use rustsf::{RestApi, AuthUrl};
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
 	/// async fn main() -> Result<()> {
-	///     let mut client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
 	///
 	///     match client.sobject_basic_info("Account").await {
 	///         Ok(response) => println!("Describe result: {:?}", response),
@@ -73,12 +73,12 @@ impl<'a> SObjectsBuilder<'a> {
 	///
 	/// # Example
 	/// ```rust
-	/// use rustsf::{Credentials, RestApi, AuthUrl};
+	/// use rustsf::{RestApi, AuthUrl};
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
 	/// async fn main() -> Result<()> {
-	///     let mut client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
 	///
 	///     match client.build()
 	/// 		.call_options_header(None, Some("MyNamespace"))
@@ -122,14 +122,14 @@ impl<'a> SObjectBasicInfoBuilder<'a> {
 	///
 	/// # Example
 	/// ```rust
-	/// use rustsf::{Credentials, RestApi, AuthUrl};
+	/// use rustsf::{RestApi, AuthUrl};
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
 	/// async fn main() -> Result<()> {
-	///     let mut client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
 	///
-	///     match client.sobject_basic_info("Account").await {
+	///     match client.build().sobjects().basic_info("Account").send().await {
 	///         Ok(response) => println!("Describe result: {:?}", response),
 	///         Err(e) => println!("Error retrieving object description: {:?}", e),
 	///     }

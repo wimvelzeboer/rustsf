@@ -28,17 +28,15 @@ impl RestApi {
 	///
 	/// # Example
 	/// ```rust
-	/// use rustsf::{Client, Credentials, RestApi};
+	/// use rustsf::{RestApi, AuthUrl};
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
 	/// async fn main() -> Result<()> {
-	///     let mut client= Client::new(Credentials::new()).await?;
-	///     // Authentication logic...
-	///     let mut api = RestApi::new(client);
+	///     let api = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
 	///     match api.is_user_password_expired("user_id").await {
-	///         Ok(is_expired) => println!("The new password expired?: {}", is_expired),
-	///         Err(e) => println!("Failed to reset password: {}", e),
+	///         Ok(is_expired) => println!("Is password expired?: {}", is_expired),
+	///         Err(e) => println!("Failed to check password status: {}", e),
 	///     }
 	///     Ok(())
 	/// }
@@ -81,14 +79,12 @@ impl RestApi {
 	/// # Example
 	///
 	/// ```rust
-	/// use rustsf::{Client, Credentials, RestApi};
+	/// use rustsf::{RestApi, AuthUrl};
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
 	/// async fn main() -> Result<()> {
-	///     let mut client= Client::new(Credentials::new()).await?;
-	///     // Authentication logic...
-	///     let mut api = RestApi::new(client);
+	///     let mut api = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
 	///     match api.user_password_reset("user_id").await {
 	///         Ok(new_password) => println!("The new password is: {}", new_password),
 	///         Err(e) => println!("Failed to reset password: {}", e),
@@ -130,17 +126,15 @@ impl RestApi {
 	/// # Example
 	///
 	/// ```rust
-	/// use rustsf::{Client, Credentials, RestApi};
+	/// use rustsf::{RestApi, AuthUrl};
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
 	/// async fn main() -> Result<()> {
-	///     let mut client= Client::new(Credentials::new()).await?;
-	///     // Authentication logic...
-	///     let mut api = RestApi::new(client);
-	///     match api.user_password_set("user_id", "password").await {
-	///         Ok(new_password) => println!("Successful password change"),
-	///         Err(e) => println!("Failed to reset password: {:?}", e),
+	///     let mut api = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	///     match api.set_user_password("user_id", "password").await {
+	///         Ok(_) => println!("Successful password change"),
+	///         Err(e) => println!("Failed to set password: {:?}", e),
 	///     }
 	///     Ok(())
 	/// }

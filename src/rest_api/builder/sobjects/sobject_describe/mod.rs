@@ -14,6 +14,23 @@ impl RestApi {
 	/// [If-Modified-Since](crate::rest_api::builder::RestApiBuilder::if_modified_since_header) or
 	/// [If-Unmodified-Since](crate::rest_api::builder::RestApiBuilder::if_unmodified_since_header)
 	///
+	/// # Example
+	/// ```rust
+	/// use rustsf::{RestApi, AuthUrl};
+	/// use anyhow::Result;
+	///
+	/// #[tokio::main]
+	/// async fn main() -> Result<()> {
+	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	///
+	///     match client.sobject_describe("Account").await {
+	///         Ok(response) => println!("Describe result: {:?}", response),
+	///         Err(e) => println!("Error retrieving object description: {:?}", e),
+	///     }
+	///     Ok(())
+	/// }
+	/// ```
+	///
 	/// # See
 	/// - https://developer.salesforce.com/docs/platform/api-rest/guide/resources-sobject-describe.html
 	/// - Builder pattern version: [describe](crate::rest_api::builder::sobjects::SObjectsBuilder::describe)
@@ -44,6 +61,23 @@ impl<'a> SObjectsBuilder<'a> {
 	/// When using the [If-Modified-Since](crate::rest_api::builder::RestApiBuilder::if_modified_since_header)
 	/// header, if no available object’s metadata has changed since the provided date,
 	/// a 304 Not Modified status code is returned with no response body.
+	///
+	/// # Example
+	/// ```rust
+	/// use rustsf::{RestApi, AuthUrl};
+	/// use anyhow::Result;
+	///
+	/// #[tokio::main]
+	/// async fn main() -> Result<()> {
+	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	///
+	///     match client.build().sobjects().describe("Account").send().await {
+	///         Ok(response) => println!("Describe result: {:?}", response),
+	///         Err(e) => println!("Error retrieving object description: {:?}", e),
+	///     }
+	///     Ok(())
+	/// }
+	/// ```
 	///
 	/// # See
 	/// - https://developer.salesforce.com/docs/platform/api-rest/guide/resources-sobject-describe.html

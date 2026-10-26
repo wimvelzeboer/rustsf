@@ -48,20 +48,16 @@ impl RestApi {
 	///
 	/// # Example
 	/// ```rust
-	/// use rustsf::{Client, Credentials, RestApi, DefSObject};
+	/// use rustsf::{RestApi, AuthUrl};
 	/// use anyhow::Result;
-	///
-	/// #[DefSObject(sobject_type = "Account", fields="system,audit,type,name")]
-	/// struct Account { }
 	///
 	/// #[tokio::main]
 	/// async fn main() -> Result<()> {
-	///     let client= Client::new(Credentials::new()).await?;
-	///     // Authentication logic...
-	///
-	///     let mut api = RestApi::new(client);
+	///     let mut api = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
 	///     let query_str = "SELECT Id, Name FROM Account WHERE Id = '001D000000IqhSLIAZ'";
-	///     match api.query::<Account>(query_str).await {
+	///
+	///     // Using a custom struct or serde_json::Value
+	///     match api.query::<serde_json::Value>(query_str).await {
 	///         Ok(response) => println!("Query response: {:?}", response),
 	///         Err(error) => println!("Error executing query: {:?}", error),
 	///     }
@@ -101,20 +97,15 @@ impl RestApi {
 	///
 	/// # Example
 	/// ```rust
-	/// use rustsf::{Client, Credentials, RestApi, DefSObject};
+	/// use rustsf::{RestApi, AuthUrl};
 	/// use anyhow::Result;
-	///
-	/// #[DefSObject(sobject_type = "Account", fields="system,type,audit,name")]
-	/// struct Account { }
 	///
 	/// #[tokio::main]
 	/// async fn main() -> Result<()> {
-	///     let client= Client::new(Credentials::new()).await?;
-	///     // Authentication logic...
+	///     let api = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	///     let query = "SELECT Id, Name FROM Account";
 	///
-	///     let mut api = RestApi::new(client);
-	///     let query = "SELECT * FROM Account";
-	///     match api.query_all::<Account>(query).await {
+	///     match api.query_all::<serde_json::Value>(query).await {
 	///         Ok(response) => println!("Query response: {:?}", response),
 	///         Err(error) => println!("Error executing query: {:?}", error),
 	///     }
@@ -163,20 +154,15 @@ impl RestApi {
 	///
 	/// # Examples
 	/// ```rust
-	/// use rustsf::{Client, Credentials, RestApi, DefSObject};
+	/// use rustsf::{RestApi, AuthUrl};
 	/// use anyhow::Result;
-	///
-	/// #[DefSObject(sobject_type = "Account", fields="system,type,audit,name")]
-	/// struct Account { }
 	///
 	/// #[tokio::main]
 	/// async fn main() -> Result<()> {
-	///     let mut client= Client::new(Credentials::new()).await?;
-	///     // Authentication logic...
-	///
-	///     let mut api = RestApi::new(client);
+	///     let mut api = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
 	///     let next_url = "/services/data/v60.0/query/01gB0000003mzKJQAY-2000";
-	///     match api.query_more::<Account>(&next_url).await {
+	///
+	///     match api.query_more::<serde_json::Value>(&next_url).await {
 	///         Ok(response) => println!("Query response: {:?}", response),
 	///         Err(error) => println!("Error executing query: {:?}", error),
 	///     }

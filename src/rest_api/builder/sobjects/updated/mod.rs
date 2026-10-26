@@ -48,26 +48,24 @@ impl RestApi {
 	///
 	/// # Example
 	/// ```rust
-	/// use rustsf::{Client, Credentials, RestApi};
+	/// use rustsf::{RestApi, AuthUrl};
 	/// use anyhow::Result;
+	/// use chrono::{Utc, TimeZone};
 	///
 	/// #[tokio::main]
 	/// async fn main() -> Result<()> {
-	///     use rustsf::RestApi;
-	///     let client= Client::new(Credentials::new()).await?;
-	///     // Authentication logic...
+	///     let api = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
 	///
-	///     let mut api = RestApi::new(client);
-	///     let start_date = "2023-01-01";
-	///     let end_date = "2023-01-31";
-	///     let result = api.sobject_get_deleted("Account", start_date, end_date).await;
+	///     let start_date = Utc.with_ymd_and_hms(2023, 1, 1, 0, 0, 0).unwrap();
+	///     let end_date = Utc.with_ymd_and_hms(2023, 1, 31, 23, 59, 59).unwrap();
+	///     let result = api.sobject_get_updated("Account", &start_date, &end_date).await;
 	///
 	///     match result {
 	///         Ok(response) => {
-	///             println!("Deleted objects: {:?}", response);
+	///             println!("Updated objects: {:?}", response);
 	///         }
 	///         Err(e) => {
-	///             eprintln!("Error fetching deleted objects: {:?}", e);
+	///             eprintln!("Error fetching updated objects: {:?}", e);
 	///         }
 	///     }
 	///     Ok(())

@@ -53,23 +53,16 @@ impl Client {
 	///
 	/// # Example
 	/// ```rust
-	/// use rustsf::{Client, Credentials};
-	/// use anyhow::Result;
+	/// use rustsf::{Client, SalesforceCredentials};
+	/// use std::collections::HashMap;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
-	///     let mut client= Client::new(Credentials::new()).await?;
-	///     // Authentication logic...
-	///     let response = client.rest_delete("/resource/123".to_string()).await;
+	/// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com")?;
+	///     let client = Client::new(credentials).await?;
 	///
-	///     match response {
-	///         Ok(res) => {
-	///             println!("DELETE request successful: {}", res.status());
-	///         }
-	///         Err(err) => {
-	///             eprintln!("Error occurred: {}", err);
-	///         }
-	///     }
+	///     let response = client.delete("https://example.com/services/data/v62.0/sobjects/Account/001...", &HashMap::new()).await?;
+	///     println!("Status: {}", response.status());
 	///     Ok(())
 	/// }
 	/// ```
@@ -116,26 +109,21 @@ impl Client {
 	///
 	/// # Example
 	/// ```rust
-	/// use rustsf::{Client, Credentials};
-	/// use anyhow::Result;
+	/// use rustsf::{Client, SalesforceCredentials};
+	/// use std::collections::HashMap;
+	/// use serde_json::json;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
-	///     let mut client= Client::new(Credentials::new()).await?;
-	///     // Authentication logic...
+	/// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com")?;
+	///     let client = Client::new(credentials).await?;
+	///
 	///     let response = client.get(
-	///         "https://api.example.com/items".into(),
-	///         vec![("key".into(), "value".into())],
-	///         vec![]
-	///     ).await;
-	///     match response {
-	///         Ok(res) => {
-	///             println!("Response: {:?}", res);
-	///         },
-	///         Err(err) => {
-	///             eprintln!("Error: {:?}", err);
-	///         }
-	///     }
+	///         "https://example.com/services/data/v62.0/query",
+	///         &json!({"q": "SELECT Id FROM Account"}),
+	///         &HashMap::new()
+	///     ).await?;
+	///     println!("Status: {}", response.status());
 	///     Ok(())
 	/// }
 	/// ```
@@ -194,25 +182,26 @@ impl Client {
 	/// # Examples
 	/// ```rust
 	/// use serde::Serialize;
-	/// use rustsf::{Client, Credentials};
-	/// use anyhow::Result;
+	/// use rustsf::{Client, SalesforceCredentials};
+	/// use std::collections::HashMap;
 	///
-	/// #[derive(Serialize)]
+	/// #[derive(Serialize, Debug)]
 	/// struct UpdateParams {
 	///     field: String,
 	///     value: String,
 	/// }
 	///
-	/// async fn example() -> Result<()> {
-	///     let mut client= Client::new(Credentials::new()).await?;
-	///     // Authentication...
+	/// async fn example() -> Result<(), Box<dyn std::error::Error>> {
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com")?;
+	///     let client = Client::new(credentials).await?;
+	///
 	///     let params = UpdateParams {
-	///         field: "example_field".to_string(),
-	///         value: "new_value".to_string(),
+	///         field: "Name".to_string(),
+	///         value: "New Name".to_string(),
 	///     };
 	///
 	///     let response = client
-	///         .rest_patch("/api/endpoint".to_string(), params)
+	///         .patch("https://example.com/services/data/v62.0/sobjects/Account/001...", params, &HashMap::new())
 	///         .await?;
 	///
 	///     println!("Response: {:?}", response);

@@ -335,16 +335,15 @@ impl RestApi {
 	///
 	/// ```rust
 	/// use rustsf::{RestApi, SalesforceCredentials};
-	///use std::collections::HashMap;
+	/// use std::collections::HashMap;
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
 	/// async fn main() -> Result<()> {
-	///     let mut credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@org-name.my.salesforce.com").unwrap();
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@org-name.my.salesforce.com").unwrap();
 	///
-	///     let mut api = RestApi::new(credentials);
-	///     let res: Result<HashMap<String, String>> = api.list_resources().await;
-	///     match res {
+	///     let api = RestApi::new(credentials).await?;
+	///     match api.list_resources().await {
 	///         Ok(data) => println!("Resources: {:?}", data),
 	///         Err(e) => eprintln!("Failed to list resources: {}", e),
 	///     }

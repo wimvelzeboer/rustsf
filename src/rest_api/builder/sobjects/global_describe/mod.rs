@@ -36,7 +36,7 @@ impl RestApi {
 	///
 	/// #[tokio::main]
 	/// async fn main() -> Result<()> {
-	///     let mut client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
 	///
 	///     match client.describe_global().await {
 	///         Ok(response) => {
@@ -84,17 +84,15 @@ impl RestApi {
 	///
 	/// # Example
 	/// ```rust
-	/// use rustsf::{Client, Credentials, RestApi};
+	/// use rustsf::{RestApi, AuthUrl};
 	/// use anyhow::Result;
+	/// use chrono::{Utc, TimeZone};
 	///
 	/// #[tokio::main]
 	/// async fn main() -> Result<()> {
-	///     use rustsf::RestApi;
-	///     let client= Client::new(Credentials::new()).await?;
-	///     // Authentication logic...
+	///     let api = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
 	///
-	///     let mut api = RestApi::new(client);
-	///     let since = "Wed, 21 Oct 2015 07:28:00 GMT".to_string();
+	///     let since = Utc.with_ymd_and_hms(2015, 10, 21, 7, 28, 0).unwrap();
 	///     match api.describe_global_modified(since).await {
 	///         Ok(response) => println!("Retrieved modified sObjects: {:?}", response),
 	///         Err(err) => println!("Failed to retrieve modified sObjects: {:?}", err),
@@ -139,20 +137,18 @@ impl RestApi {
 	///
 	/// # Example
 	/// ```rust
-	/// use rustsf::{Client, Credentials, RestApi};
+	/// use rustsf::{RestApi, AuthUrl};
 	/// use anyhow::Result;
+	/// use chrono::{Utc, TimeZone};
 	///
 	/// #[tokio::main]
 	/// async fn main() -> Result<()> {
-	///     use rustsf::RestApi;
-	///     let client= Client::new(Credentials::new()).await?;
-	///     // Authentication logic...
+	///     let api = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
 	///
-	///     let mut api = RestApi::new(client);
-	///     let since = "Wed, 21 Oct 2015 07:28:00 GMT".to_string();
-	///     match api.describe_global_modified(since).await {
-	///         Ok(response) => println!("Retrieved modified sObjects: {:?}", response),
-	///         Err(err) => println!("Failed to retrieve modified sObjects: {:?}", err),
+	///     let since = Utc.with_ymd_and_hms(2015, 10, 21, 7, 28, 0).unwrap();
+	///     match api.describe_global_unmodified(since).await {
+	///         Ok(response) => println!("Retrieved unmodified sObjects: {:?}", response),
+	///         Err(err) => println!("Failed to retrieve unmodified sObjects: {:?}", err),
 	///     }
 	///     Ok(())
 	/// }
@@ -197,13 +193,15 @@ impl<'a> SObjectsBuilder<'a> {
 	/// ```rust
 	/// use rustsf::{RestApi, AuthUrl};
 	/// use anyhow::Result;
+	/// use chrono::{Utc, TimeZone};
 	///
 	/// #[tokio::main]
 	/// async fn main() -> Result<()> {
-	///     let mut client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	///     let since = Utc.with_ymd_and_hms(2015, 10, 21, 7, 28, 0).unwrap();
 	///
 	///     match client.build()
-	///         .if_modified_since_header("Wed, 21 Oct 2015 07:28:00 GMT")?
+	///         .if_modified_since_header(&since)
 	/// 		.sobjects()
 	/// 		.describe_global()
 	/// 		.send()

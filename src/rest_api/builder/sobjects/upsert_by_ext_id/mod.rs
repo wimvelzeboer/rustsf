@@ -37,16 +37,13 @@ impl RestApi {
 	///
 	/// # Example
 	/// ```rust
-	/// use rustsf::{Client, Credentials, RestApi};
+	/// use rustsf::{RestApi, AuthUrl};
 	/// use serde_json::json;
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
 	/// async fn main() -> Result<()> {
-	///     let client= Client::new(Credentials::new()).await?;
-	///     // Authentication logic...
-	///
-	///     let mut api = RestApi::new(client);
+	///     let mut api = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
 	///
 	///     let params = json!({
 	///         "Name": "Example Record",

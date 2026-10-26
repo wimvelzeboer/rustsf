@@ -94,10 +94,15 @@ impl<'a> RestApiBuilder<'a> {
 	///
 	/// # Example
 	/// ```rust
-	/// let mut request = Request::new();
-	/// let datetime = Utc::now();
-	/// let since = datetime.format("%a, %d %b %Y %H:%M:%S %:z").to_string(); // e.g. "Wed, 11 Sep 2026 20:33:00 GMT"
-	/// request.if_modified_since_header(since);
+	/// use rustsf::{RestApi, AuthUrl};
+	/// use chrono::Utc;
+	///
+	/// #[tokio::main]
+	/// async fn main() {
+	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com").unwrap()).await.unwrap();
+	///     let datetime = Utc::now();
+	///     let builder = client.build().if_modified_since_header(&datetime);
+	/// }
 	/// ```
 	///
 	/// # See
@@ -127,10 +132,16 @@ impl<'a> RestApiBuilder<'a> {
 	///
 	/// # Example
 	/// ```rust
-	/// let mut request = Request::new();
-	/// let datetime = Utc::now();
-	/// let since = datetime.format("%a, %d %b %Y %H:%M:%S %:z").to_string(); // e.g. "Wed, 11 Sep 2026 20:33:00 GMT"
-	/// request.if_unmodified_since_header(since);
+	/// use rustsf::{RestApi, AuthUrl};
+	/// use chrono::Utc;
+	///
+	/// #[tokio::main]
+	/// async fn main() {
+	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com").unwrap()).await.unwrap();
+	///     let datetime = Utc::now();
+	///     let since = datetime.format("%a, %d %b %Y %H:%M:%S %:z").to_string();
+	///     let builder = client.build().if_unmodified_since_header(&since);
+	/// }
 	/// ```
 	///
 	/// # See

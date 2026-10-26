@@ -10,16 +10,12 @@ impl RestApi {
 	/// # Example
 	///
 	/// ```rust
-	/// use rustsf::{Client, Credentials, RestApi};
-	/// use serde::{Deserialize, Serialize};
+	/// use rustsf::{RestApi, AuthUrl};
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
 	/// async fn main() -> Result<()> {
-	///     let mut client= Client::new(Credentials::new()).await?;
-	///     // Authentication logic...
-	///
-	///     let mut api = RestApi::new(client);
+	///     let api = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
 	///     match api.list_limits().await {
 	///         Ok(limits) => {
 	///             println!("Daily API Requests: Max {}, Remaining: {}",

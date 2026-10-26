@@ -35,23 +35,21 @@ impl<'a> SObjectsBuilder<'a> {
 	///
 	/// # Example
 	/// ```rust
-	/// use serde::{Serialize, Deserialize};
+	/// use rustsf::{RestApi, AuthUrl};
 	/// use serde_json::json;
 	///
 	/// #[tokio::main]
 	/// async fn main() {
-	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com").unwrap()).await.unwrap();
 	///
 	///     match client.build()
-	/// 			.most_recently_used_header(false)
 	/// 			.sobjects()
-	/// 			.create("Account", json!({"Name": "Acme"})
+	/// 			.create("Account", json!({"Name": "Acme"}))
 	/// 			.send()
 	/// 			.await {
 	///         Ok(response) => println!("Record ID: {:?}", response.id),
 	///         Err(error) => println!("Error creating account: {:?}", error),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///
@@ -92,12 +90,12 @@ impl RestApi {
 	///
 	/// # Example
 	/// ```rust
-	/// use serde::{Serialize, Deserialize};
+	/// use rustsf::{RestApi, AuthUrl};
 	/// use serde_json::json;
 	///
 	/// #[tokio::main]
 	/// async fn main() {
-	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com").unwrap()).await.unwrap();
 	///
 	///     match client.create("Account", json!({"Name": "Acme"})).await {
 	///         Ok(response) => println!("Created record with ID: {}", response.id),
@@ -158,22 +156,21 @@ impl<'a, T: Debug + DeserializeOwned + Serialize> SObjectCreateBuilder<'a, T> {
 	///
 	/// # Example
 	/// ```rust
-	/// use serde::{Serialize, Deserialize};
+	/// use rustsf::{RestApi, AuthUrl};
 	/// use serde_json::json;
 	///
 	/// #[tokio::main]
 	/// async fn main() {
-	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com").unwrap()).await.unwrap();
 	///
 	///     match client.build()
 	/// 			.sobjects()
-	/// 			.create("Account", json!({"Name": "Acme"})
+	/// 			.create("Account", json!({"Name": "Acme"}))
 	/// 			.send()
 	/// 			.await {
 	///         Ok(response) => println!("Record ID: {:?}", response.id),
 	///         Err(error) => println!("Error creating account: {:?}", error),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	pub async fn send(self) -> Result<SObjectsCreateResult<T>> {

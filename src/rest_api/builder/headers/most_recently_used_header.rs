@@ -26,8 +26,13 @@ impl<'a> RestApiBuilder<'a> {
 	///
 	/// # Example
 	/// ```rust
-	/// let mut request = Request::new();
-	/// request.most_recently_used_header(true);
+	/// use rustsf::{RestApi, AuthUrl};
+	///
+	/// #[tokio::main]
+	/// async fn main() {
+	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com").unwrap()).await.unwrap();
+	///     let builder = client.build().most_recently_used_header(true);
+	/// }
 	/// ```
 	///
 	/// In this example, the "Sforce-Mru" header will be set to "updateMru=true".

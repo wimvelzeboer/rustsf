@@ -39,41 +39,21 @@ impl RestApi {
 	///
 	/// # Example
 	/// ```rust
-	/// use rustsf::{Client, Credentials, RestApi, DefSObject};
-	/// use rustsf::rest_api::responses::sobject_attribute::SObjectAttribute;
+	/// use rustsf::{RestApi, AuthUrl};
+	/// use serde_json::json;
 	/// use anyhow::Result;
-	///
-	/// #[DefSObject(sobject_type = "Account", fields="name,owner")]
-	/// struct Account {}
-	///
-	/// impl Account {
-	///     pub fn set_name(mut self, name: String) -> Self {
-	///         self.name = Some(name);
-	///         self
-	///     }
-	/// }
 	///
 	/// #[tokio::main]
 	/// async fn main() -> Result<()> {
-	///     let client= Client::new(Credentials::new()).await?;
-	///     // Authentication logic...
-	///
-	///     let mut api = RestApi::new(client);
+	///     let api = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
 	///
 	///     let mut accounts = vec![
-	///         Account::new().set_name("Acme Inc".to_string()),
-	///         Account::new().set_name("Acme Co".to_string()),
+	///         json!({"attributes": {"type": "Account"}, "Name": "Acme Inc"}),
+	///         json!({"attributes": {"type": "Account"}, "Name": "Acme Co"}),
 	///     ];
 	///
-	///     match api.create(&mut accounts, true).await {
-	///         Ok(res) => {
-	///             // Print the created accounts with their Salesforce Id
-	///             println!("{:?}", accounts);
-	///
-	///             // Print the response from Salesforce,
-	///             // including error messages if all_or_none was false and there were errors
-	///             println!("{:?}", res);
-	///         },
+	///     match api.create_sobjects(&mut accounts, true).await {
+	///         Ok(res) => println!("Success: {:?}", res),
 	///         Err(e) => println!("Failed {:?}", e),
 	///     }
 	///     Ok(())
@@ -127,41 +107,21 @@ impl<'a> SObjectCollectionsBuilder<'a> {
 	///
 	/// # Example
 	/// ```rust
-	/// use rustsf::{Client, Credentials, RestApi, DefSObject};
-	/// use rustsf::rest_api::responses::sobject_attribute::SObjectAttribute;
+	/// use rustsf::{RestApi, AuthUrl};
+	/// use serde_json::json;
 	/// use anyhow::Result;
-	///
-	/// #[DefSObject(sobject_type = "Account", fields="name,owner")]
-	/// struct Account {}
-	///
-	/// impl Account {
-	///     pub fn set_name(mut self, name: String) -> Self {
-	///         self.name = Some(name);
-	///         self
-	///     }
-	/// }
 	///
 	/// #[tokio::main]
 	/// async fn main() -> Result<()> {
-	///     let client= Client::new(Credentials::new()).await?;
-	///     // Authentication logic...
-	///
-	///     let mut api = RestApi::new(client);
+	///     let api = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
 	///
 	///     let mut accounts = vec![
-	///         Account::new().set_name("Acme Inc".to_string()),
-	///         Account::new().set_name("Acme Co".to_string()),
+	///         json!({"attributes": {"type": "Account"}, "Name": "Acme Inc"}),
+	///         json!({"attributes": {"type": "Account"}, "Name": "Acme Co"}),
 	///     ];
 	///
-	///     match api.create(&mut accounts, true).await {
-	///         Ok(res) => {
-	///             // Print the created accounts with their Salesforce Id
-	///             println!("{:?}", accounts);
-	///
-	///             // Print the response from Salesforce,
-	///             // including error messages if all_or_none was false and there were errors
-	///             println!("{:?}", res);
-	///         },
+	///     match api.create_sobjects(&mut accounts, true).await {
+	///         Ok(res) => println!("Success: {:?}", res),
 	///         Err(e) => println!("Failed {:?}", e),
 	///     }
 	///     Ok(())

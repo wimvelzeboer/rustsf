@@ -27,21 +27,16 @@ impl RestApi {
 	///
 	/// # Example
 	/// ```rust
-	/// use rustsf::{Client, Credentials, RestApi, DefSObject};
+	/// use rustsf::{RestApi, AuthUrl};
 	/// use anyhow::Result;
-	///
-	/// #[DefSObject(sobject_type = "Account", fields="system,type,name")]
-	/// struct Account { }
 	///
 	/// #[tokio::main]
 	/// async fn main() -> Result<()> {
-	///     let client= Client::new(Credentials::new()).await?;
-	///     // Authentication logic...
+	///     let api = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
 	///
-	///     let mut api = RestApi::new(client);
-	///
-	///     match api.sobject_by_id::<Account>("Account", "001D000000IqhSLIAZ").await {
-	///         Ok(record) => println!("Account Name: {:?}", record.name),
+	///     // Using a custom struct or serde_json::Value
+	///     match api.sobject_by_id::<serde_json::Value>("Account", "001D000000IqhSLIAZ").await {
+	///         Ok(record) => println!("Account Data: {:?}", record),
 	///         Err(error) => println!("Error retrieving account: {:?}", error),
 	///     };
 	///     Ok(())

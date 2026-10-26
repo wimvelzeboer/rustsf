@@ -41,19 +41,15 @@ impl RestApi {
 	///
 	/// # Examples
 	/// ```rust
-	/// use rustsf::{Client, Credentials, RestApi};
-	/// use serde::{Deserialize, Serialize};
+	/// use rustsf::{RestApi, AuthUrl};
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
 	/// async fn main() -> Result<()> {
-	///     let client= Client::new(Credentials::new()).await?;
-	///     // Authentication logic...
-	///
-	///     let mut api = RestApi::new(client);
+	///     let api = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
 	///     let query = "FIND {test} RETURNING Account(Name)";
-	///     let result = api.search_sosl(query).await;
-	///     match result {
+	///
+	///     match api.search_sosl(query).await {
 	///         Ok(response) => println!("Search results: {:?}", response),
 	///         Err(error) => println!("Error executing SOSL query: {:?}", error),
 	///     }

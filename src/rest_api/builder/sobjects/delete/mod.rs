@@ -29,15 +29,12 @@ impl RestApi {
 	/// # Examples
 	///
 	/// ```rust
-	/// use rustsf::{Client, Credentials, RestApi};
+	/// use rustsf::{RestApi, AuthUrl};
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
 	/// async fn main() -> Result<()> {
-	///     let mut client= Client::new(Credentials::new()).await?;
-	///     // Authentication logic...
-	///
-	///     let mut api = RestApi::new(client);
+	///     let api = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
 	///
 	///     let result = api.delete_sobject("Account", "001D000000IqhSLIAZ").await;
 	///
@@ -92,17 +89,14 @@ impl<'a> SObjectsBuilder<'a> {
 	/// # Examples
 	///
 	/// ```rust
-	/// use rustsf::{Client, Credentials, RestApi};
+	/// use rustsf::{RestApi, AuthUrl};
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
 	/// async fn main() -> Result<()> {
-	///     let mut client= Client::new(Credentials::new()).await?;
-	///     // Authentication logic...
+	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
 	///
-	///     let mut api = RestApi::new(client);
-	///
-	///     let result = api.delete_sobject("Account", "001D000000IqhSLIAZ").await;
+	///     let result = client.build().sobjects().delete("Account", "001D000000IqhSLIAZ").send().await;
 	///
 	///     match result {
 	///         Ok(()) => println!("Record deleted successfully."),
@@ -151,23 +145,21 @@ impl<'a> SObjectDeleteBuilder<'a> {
 	///
 	/// # Example
 	/// ```rust
-	/// use serde::{Serialize, Deserialize};
-	/// use serde_json::json;
+	/// use rustsf::{RestApi, AuthUrl};
 	///
 	/// #[tokio::main]
 	/// async fn main() {
-	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com").unwrap()).await.unwrap();
 	///
 	///     let account_id = "0012F00002h5G8V";
 	///     match client.build()
 	/// 			.sobjects()
-	/// 			.delete(account_id)
+	/// 			.delete("Account", account_id)
 	/// 			.send()
 	/// 			.await {
-	///         Ok(response) => println!("Record ID {} successfully deleted", record_id),
-	///         Err(error) => println!("Error deleting record with Id {}: {:?}", record_id, error),
+	///         Ok(_) => println!("Record ID {} successfully deleted", account_id),
+	///         Err(error) => println!("Error deleting record with Id {}: {:?}", account_id, error),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	pub async fn send(self) -> Result<(), RestApiError> { // fixme - you want to have a proper error here (non anyhow)

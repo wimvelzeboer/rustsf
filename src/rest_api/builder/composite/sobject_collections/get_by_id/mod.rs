@@ -35,26 +35,17 @@ impl RestApi {
 	///
 	/// # Example
 	/// ```rust
-	/// use rustsf::{Client, Credentials, RestApi, DefSObject};
+	/// use rustsf::{RestApi, AuthUrl};
 	/// use anyhow::Result;
-	///
-	/// #[DefSObject(sobject_type = "Account", fields="system,name")]
-	/// struct Account {
-	///     #[serde(rename = "Custom_Field__c")]
-	///     custom_field: Option<String>,
-	/// }
 	///
 	/// #[tokio::main]
 	/// async fn main() -> Result<()> {
-	///     let mut client= Client::new(Credentials::new()).await?;
-	///     // Authentication logic...
-	///
-	///     let mut api = RestApi::new(client);
+	///     let api = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
 	///     let object_name = "Account";
 	///     let ids = vec!["001XXXXXXXXXXXXXXX", "001YYYYYYYYYYYYYYY"];
-	///     let fields = vec!["Id", "Name", "Custom_Field__c"];
+	///     let fields = vec!["Id", "Name"];
 	///
-	///     match api.sobject_by_ids::<Account>(object_name, ids, fields).await {
+	///     match api.sobject_by_ids::<serde_json::Value>(object_name, &ids, &fields).await {
 	///         Ok(accounts) => {
 	///             for account in accounts {
 	///                 println!("{:?}", account);

@@ -26,8 +26,13 @@ impl<'a> RestApiBuilder<'a> {
 	/// # Example
 	///
 	/// ```rust
-	/// let mut client = MyClient::new();
-	/// client.query_options_header(500);
+	/// use rustsf::{RestApi, AuthUrl};
+	///
+	/// #[tokio::main]
+	/// async fn main() {
+	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com").unwrap()).await.unwrap();
+	///     let builder = client.build().query_options_header(500);
+	/// }
 	/// ```
 	///
 	/// In the above example, the header `"Sforce-Query-Options"` will be set

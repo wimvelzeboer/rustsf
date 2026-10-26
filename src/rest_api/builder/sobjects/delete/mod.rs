@@ -1,5 +1,5 @@
-use anyhow::Result;
 use crate::rest_api::builder::sobjects::SObjectsBuilder;
+use crate::rest_api::error::RestApiError;
 use crate::RestApi;
 
 impl RestApi {
@@ -60,7 +60,7 @@ impl RestApi {
 	///
 	/// # See
 	/// https://developer.salesforce.com/docs/platform/api-rest/guide/resources-sobject-retrieve-delete.html
-	pub async fn delete_sobject(& self, sobject_type: &str, id: &str) -> Result<()> {
+	pub async fn delete_sobject(& self, sobject_type: &str, id: &str) -> Result<(), RestApiError> {
 		self.build().sobjects().delete(sobject_type, id).send().await
 	}
 }
@@ -170,12 +170,12 @@ impl<'a> SObjectDeleteBuilder<'a> {
 	///     Ok(())
 	/// }
 	/// ```
-	pub async fn send(self) -> Result<()> { // fixme - you want to have a proper error here (non anyhow)
+	pub async fn send(self) -> Result<(), RestApiError> { // fixme - you want to have a proper error here (non anyhow)
 		let http_response = self
 			.builder
 			.send_delete(format!("{}/{}", self.sobject_type, self.id))
 			.await?;
 
-		crate::client::handle_empty_response(http_response).await
+		RestApi::handle_empty_response(http_response).await
 	}
 }

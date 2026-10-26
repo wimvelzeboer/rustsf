@@ -22,16 +22,8 @@ impl fmt::Display for RestApiError {
 	}
 }
 
-impl std::error::Error for RestApiError {
-	/*fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-		match self {
-			RestApiError::Authentication(err) => Some(err),
-			RestApiError::Http(err) => Some(err),
-			RestApiError::Salesforce(err) => Some(err),
-			RestApiError::Other(err) => Some(err),
-		}
-	}*/
-}
+impl std::error::Error for RestApiError {}
+
 
 impl From<reqwest::Error> for RestApiError {
 	fn from(err: reqwest::Error) -> Self {
@@ -54,6 +46,12 @@ impl From<InvalidHeaderValue> for RestApiError {
 impl From<serde_json::Error> for RestApiError {
 	fn from(err: serde_json::Error) -> Self {
 		RestApiError::Other(format!("Json error: {}", err))
+	}
+}
+
+impl From<chrono::ParseError> for RestApiError {
+	fn from(err: chrono::ParseError) -> Self {
+		RestApiError::Other(format!("Date/time parse error: {}", err))
 	}
 }
 

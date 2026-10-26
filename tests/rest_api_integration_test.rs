@@ -1,7 +1,5 @@
 extern crate rustsf;
 use anyhow::Result;
-use log::LevelFilter;
-use crate::common::Account;
 
 mod common;
 
@@ -91,7 +89,7 @@ async fn test_create_sobjects_failing() -> Result<()> {
 #[tokio::test]
 #[ignore]
 async fn test_sobject_by_ids() -> Result<()> {
-	let mut api = common::get_rest_api_client().await?;
+	let api = common::get_rest_api_client().await?;
 
 	// Create multiple Account records
 	let mut accounts = vec![
@@ -116,14 +114,10 @@ async fn test_sobject_by_ids() -> Result<()> {
 
 	assert_eq!(2, ids.len());
 
-	println!("Created Account IDs: {:?}", ids);
-
 	// Fetch the created records by IDs
 	let fetched_accounts = api
 		.sobject_by_ids::<common::Account>("Account", &ids, &["Id", "Name", "OwnerId"])
 		.await?;
-
-	println!("Accounts {:?}", fetched_accounts);
 
 	assert_eq!(2, fetched_accounts.len());
 	for account in &fetched_accounts {
@@ -272,10 +266,7 @@ async fn test_if_match_header_update_account_precondition() -> Result<()> {
 #[tokio::test]
 #[ignore]
 async fn test_if_none_match_header_get_account_not_modified() -> Result<()> {
-	env_logger::builder()
-		.filter_level(LevelFilter::Trace)
-		.format_target(false)
-		.init();
+
 	let api = common::get_rest_api_client().await?;
 
 	let account = common::Account::new()
@@ -296,8 +287,6 @@ async fn test_if_none_match_header_get_account_not_modified() -> Result<()> {
 	let etag = response.etag();
 	assert!(etag.is_some(), "Expected etag to be returned");
 
-	println!("Account ETag: {:?} and Id: {}", etag, id);
-
 	let update_result = api
 		.build()
 		.if_none_match_header(&[&etag.unwrap()])
@@ -309,18 +298,67 @@ async fn test_if_none_match_header_get_account_not_modified() -> Result<()> {
 		.send()
 		.await;
 
-	println!("result {:?}", update_result?.rest_response::<Account>().await);
+	let response = update_result?.response();
 
 	assert_eq!(
 		reqwest::StatusCode::NOT_MODIFIED,
 		response.status(),
-		"Expected If-None-Match GET request with matching ETag to return 304 Not Modified"
+		"Expected If-None-Match GET request with matching ETag to return 200"
 	);
 
 	api.delete_sobject("Account", &id).await?;
 
 	Ok(())
 }
+
+/*
+	env_logger::builder()
+		.filter_level(LevelFilter::Trace)
+		.format_target(false)
+		.init();
+ */
+
+
+#[tokio::test]
+#[ignore]
+async fn test_if_modified_since_header_get_account_not_modified() -> Result<()> {
+	let api = common::get_rest_api_client().await?;
+
+	let account = common::Account::new()
+		.set_name("If-Modified-Since Header Test Account")
+		.set_owner_id(api.user_id().unwrap());
+
+	let result = api.build().sobjects().create("Account", account).send().await?;
+
+	assert!(result.is_success(), "Account creation failed");
+
+	let id = result
+		.take_id()
+		.expect("Expected created Account response to include an Id");
+
+	assert_eq!(18, id.len());
+
+	let since = chrono::Utc::now();
+
+	let response = api
+		.build()
+		.if_modified_since_header(&since)
+		.sobjects()
+		.get_by_id("Account", &id)
+		.send()
+		.await?;
+
+	assert_eq!(
+		reqwest::StatusCode::NOT_MODIFIED,
+		response.status(),
+		"Expected If-Modified-Since GET request with a current timestamp to return 304 Not Modified"
+	);
+
+	api.delete_sobject("Account", &id).await?;
+
+	Ok(())
+}
+
 
 #[tokio::test]
 #[ignore]
@@ -415,11 +453,9 @@ async fn test_query_options_header_query_accounts() -> Result<()> {
 #[tokio::test]
 #[ignore]
 async fn test_list_limits() -> Result<()> {
-	let mut api = common::get_rest_api_client().await?;
+	let api = common::get_rest_api_client().await?;
 
 	let limits = api.list_limits().await?;
-
-	println!("Limits: {:?}", limits);
 
 	assert!(
 		limits.daily_api_requests.max > 0,
@@ -436,7 +472,7 @@ async fn test_list_limits() -> Result<()> {
 #[tokio::test]
 #[ignore]
 async fn test_query_all_accounts() -> Result<()> {
-	let mut api = common::get_rest_api_client().await?;
+	let api = common::get_rest_api_client().await?;
 
 	let account = common::Account::new()
 		.set_name("Query All Test Account")
@@ -469,7 +505,7 @@ async fn test_query_all_accounts() -> Result<()> {
 #[tokio::test]
 #[ignore]
 async fn test_search_sosl_accounts() -> Result<()> {
-	let mut api = common::get_rest_api_client().await?;
+	let api = common::get_rest_api_client().await?;
 
 	let account = common::Account::new()
 		.set_name("Search Sosl Test Account")
@@ -688,7 +724,7 @@ async fn test_sobject_by_id_account() -> Result<()> {
 #[tokio::test]
 #[ignore]
 async fn test_sobject_describe_account() -> Result<()> {
-	let mut api = common::get_rest_api_client().await?;
+	let api = common::get_rest_api_client().await?;
 
 	let response = api.sobject_describe("Account").await?;
 
@@ -799,12 +835,7 @@ async fn test_sobject_get_updated_account() -> Result<()> {
 #[tokio::test]
 #[ignore]
 async fn test_upsert_sobject_account() -> Result<()> {
-	env_logger::builder()
-		.filter_level(LevelFilter::Trace)
-		.format_target(false)
-		.init();
-
-	let mut api = common::get_rest_api_client().await?;
+	let api = common::get_rest_api_client().await?;
 
 	let account = common::Account::new()
 		.set_name("Upsert SObject Test Account")
@@ -837,8 +868,6 @@ async fn test_upsert_sobject_account() -> Result<()> {
 
 	let fetched_account = api.sobject_by_id::<common::Account>("Account", &id).await?;
 
-	print!("fetched account {:?}", fetched_account);
-
 	assert_eq!(Some(id.as_str()), fetched_account.id.as_deref());
 	assert_eq!(
 		Some("Upserted SObject Test Account".to_string()),
@@ -861,7 +890,7 @@ async fn test_is_user_password_expired() -> Result<()> {
 
 	let is_expired = api.is_user_password_expired(user_id).await?;
 
-	println!("User password expired: {}", is_expired);
+	assert!(!is_expired, "Expected user password not to be expired");
 
 	Ok(())
 }

@@ -11,6 +11,7 @@
 //! # See
 //! https://developer.salesforce.com/docs/platform/api-rest/guide/intro-rest-conditional-requests.html
 
+use chrono::{DateTime, Utc};
 use crate::rest_api::builder::RestApiBuilder;
 
 impl<'a> RestApiBuilder<'a> {
@@ -101,8 +102,12 @@ impl<'a> RestApiBuilder<'a> {
 	///
 	/// # See
 	/// https://developer.salesforce.com/docs/platform/api-rest/guide/intro-rest-conditional-requests.html#if-modified-since
-	pub fn if_modified_since_header(&mut self, since: &str) -> &mut Self {
-		self.header("If-Modified-Since", since);
+	pub fn if_modified_since_header(&mut self, time: &DateTime<Utc>) -> &mut Self {
+
+		let since = time
+			.format("%a, %d %b %Y %H:%M:%S %:z")
+			.to_string();
+		self.header("If-Modified-Since", &since);
 		self
 	}
 

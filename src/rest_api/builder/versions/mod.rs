@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use anyhow::Result;
+use crate::rest_api::error::RestApiError;
 use crate::rest_api::HTTPMethod;
 use crate::RestApi;
 
@@ -65,12 +65,12 @@ impl RestApi {
 	/// # See
 	/// - [VersionResponse]
 	/// - <https://developer.salesforce.com/docs/platform/api-rest/guide/resources-versions.html>
-	pub async fn versions(&self) -> Result<Vec<VersionResponse>> {
+	pub async fn versions(&self) -> Result<Vec<VersionResponse>, RestApiError> {
 		let url = "services/data".to_string();
 		let data: Vec<(String, String)> = vec![];
 		let headers = HashMap::new();
 		let response = self.send(HTTPMethod::GET, url, &data, &headers).await?;
-		crate::client::handle_json_response(response).await
+		RestApi::handle_json_response(response).await
 	}
 
 }

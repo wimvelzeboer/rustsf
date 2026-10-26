@@ -1,7 +1,7 @@
 use anyhow::Result;
 use rustsf::{RestApi, SalesforceCredentials};
-use std::env;
 use serde::{Deserialize, Serialize};
+use std::env;
 
 pub async fn get_rest_api_client() -> Result<RestApi> {
 	let url = env::var("SCRATCH_AUTH_URL")

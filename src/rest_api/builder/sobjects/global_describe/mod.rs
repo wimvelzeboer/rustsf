@@ -2,9 +2,9 @@ use self::global_describe_response::GlobalDescribeResponse;
 use crate::RestApi;
 use crate::rest_api::HTTPMethod;
 use crate::rest_api::builder::sobjects::SObjectsBuilder;
-use anyhow::{Context, Result};
 use serde_json::{json};
 use chrono::Utc;
+use crate::rest_api::error::RestApiError;
 
 mod global_describe_response;
 
@@ -55,7 +55,7 @@ impl RestApi {
 	///
 	/// # See
 	/// - <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/dome_describeGlobal.htm>
-	pub async fn describe_global(&self) -> Result<GlobalDescribeResponse> {
+	pub async fn describe_global(&self) -> Result<GlobalDescribeResponse, RestApiError> {
 		self.build().sobjects().describe_global().send().await
 	}
 
@@ -105,10 +105,9 @@ impl RestApi {
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_describeGlobal.htm>
-	pub async fn describe_global_modified(&mut self, datetime: chrono::DateTime<Utc>) -> Result<GlobalDescribeResponse> {
-		let since = datetime.format("%a, %d %b %Y %H:%M:%S %:z").to_string();
+	pub async fn describe_global_modified(&mut self, datetime: chrono::DateTime<Utc>) -> Result<GlobalDescribeResponse, RestApiError> {
 		Ok(self.build()
-			.if_modified_since_header(&since)
+			.if_modified_since_header(&datetime)
 			.sobjects()
 			.describe_global()
 			.send()
@@ -160,7 +159,7 @@ impl RestApi {
 	/// ```
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_describeGlobal.htm>
-	pub async fn describe_global_unmodified(&mut self, datetime: chrono::DateTime<Utc>) -> Result<GlobalDescribeResponse> {
+	pub async fn describe_global_unmodified(&mut self, datetime: chrono::DateTime<Utc>) -> Result<GlobalDescribeResponse, RestApiError> {
 		let since = datetime.format("%a, %d %b %Y %H:%M:%S %:z").to_string();
 		Ok(self.build()
 			.if_unmodified_since_header(&since)
@@ -267,7 +266,7 @@ impl<'a> GlobalDescribeBuilder<'a> {
 	///     Ok(())
 	/// }
 	/// ```
-	pub async fn send(self) -> Result<GlobalDescribeResponse> {
+	pub async fn send(self) -> Result<GlobalDescribeResponse, RestApiError> {
 		let body = json!({});
 		let url = "sobjects".to_string();
 		let http_response = self
@@ -276,8 +275,6 @@ impl<'a> GlobalDescribeBuilder<'a> {
 			.send(HTTPMethod::GET, url, &body)
 			.await?;
 
-		Ok(crate::client::handle_json_response(http_response)
-			.await
-			.context("Failed to parse describe global response")?)
+		RestApi::handle_json_response(http_response).await
 	}
 }

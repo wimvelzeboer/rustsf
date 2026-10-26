@@ -1,9 +1,9 @@
 use crate::RestApi;
 use crate::rest_api::HTTPMethod;
 use crate::rest_api::builder::sobjects::SObjectsBuilder;
-use anyhow::Result;
 use chrono::{DateTime, Utc};
 use crate::rest_api::builder::sobjects::updated::sobject_updated_response::SObjectUpdatedResponse;
+use crate::rest_api::error::RestApiError;
 
 mod sobject_updated_response;
 
@@ -81,7 +81,7 @@ impl RestApi {
 		sobject_name: &str,
 		start_date: &DateTime<Utc>,
 		end_date: &DateTime<Utc>,
-	) -> Result<SObjectUpdatedResponse> {
+	) -> Result<SObjectUpdatedResponse, RestApiError> {
 		self.build()
 			.sobjects()
 			.updated(sobject_name, start_date, end_date)
@@ -123,7 +123,7 @@ impl<'a> SObjectUpdatedBuilder<'a> {
 
 	pub async fn send(
 		&self,
-	) -> Result<SObjectUpdatedResponse> {
+	) -> Result<SObjectUpdatedResponse, RestApiError> {
 		let url = format!("{}/updated", self.sobject_name);
 
 		let start_formatted = DateTime::parse_from_rfc3339(&self.start_date)
@@ -141,6 +141,6 @@ impl<'a> SObjectUpdatedBuilder<'a> {
 			("end".to_string(), end_formatted),
 		];
 		let response = self.builder.send(HTTPMethod::GET, url, &params).await?;
-		crate::client::handle_json_response(response).await
+		RestApi::handle_json_response(response).await
 	}
 }

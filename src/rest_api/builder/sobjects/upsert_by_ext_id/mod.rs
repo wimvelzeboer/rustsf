@@ -70,7 +70,7 @@ impl RestApi {
 	/// # See
 	/// https://developer.salesforce.com/docs/platform/api-rest/guide/resources-sobject-upsert-patch.html
 	pub async fn upsert_sobject<T: Serialize + Debug>(
-		&mut self,
+		&self,
 		sobject_name: &str,
 		key_name: &str,
 		key: &str,

@@ -77,7 +77,7 @@ impl RestApi {
 	/// # See
 	/// https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_composite_sobjects_collections_retrieve.htm
 	pub async fn sobject_by_ids<T: Debug + DeserializeOwned>(
-		&mut self,
+		&self,
 		object_name: &str,
 		ids: &[&str],
 		fields: &[&str],
@@ -94,7 +94,7 @@ impl RestApi {
 impl<'a> SObjectCollectionsBuilder<'a> {
 
 	pub fn get_by_ids(
-		&mut self,
+		&self,
 		object_name: &str,
 		ids: &[&str],
 		fields: &[&str],

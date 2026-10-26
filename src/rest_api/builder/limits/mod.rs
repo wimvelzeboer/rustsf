@@ -34,7 +34,7 @@ impl RestApi {
 	///
 	/// # See
 	/// https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/dome_limits.htm
-	pub async fn list_limits(&mut self) -> Result<LimitsResponse, RestApiError> {
+	pub async fn list_limits(&self) -> Result<LimitsResponse, RestApiError> {
 		let url = format!("{}/limits/", self.client.services_data_version_path());
 		let params: Vec<(String, String)> = vec![];
 		let response = self.client.get(&url, &params, &HashMap::new()).await?;

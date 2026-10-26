@@ -27,7 +27,7 @@ anyhow = "1.0.104"
 base64 = "0.23.1"
 zip = "8.6.0"
 s-zip = "0.11.3"
-rustsf_auth = "0.2.0"
+rustsf_auth = "0.2.1"
 # rustsf_marcos = "0.0.6"
 rustsf_marcos = { path = "../rustsf-marcos"}
 reqwest = { version = "0.13.4", features = ["form", "json", "query"] }

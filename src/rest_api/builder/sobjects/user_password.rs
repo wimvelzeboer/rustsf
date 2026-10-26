@@ -11,8 +11,8 @@
 //! - [user_password_set](crate::rest_api::RestApi#method.user_password_reset), Sets the password for a user.
 //!
 use crate::rest_api::{RestApi};
-use anyhow::{Result, anyhow};
 use std::collections::HashMap;
+use crate::rest_api::error::RestApiError;
 
 impl RestApi {
 	/// Checks if a user's password has expired in the system.
@@ -46,7 +46,7 @@ impl RestApi {
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/dome_sobject_user_password.htm>
-	pub async fn is_user_password_expired(&self, user_id: &str) -> Result<bool> {
+	pub async fn is_user_password_expired(&self, user_id: &str) -> Result<bool, RestApiError> {
 		let url = format!(
 			"{}/sobjects/User/{}/password",
 			self.client.services_data_version_path(),
@@ -54,10 +54,10 @@ impl RestApi {
 		);
 		let params: Vec<(String, String)> = Vec::new();
 		let response = self.client.get(&url, &params, &HashMap::new()).await?;
-		let response: HashMap<String, bool> = crate::client::handle_json_response(response).await?;
+		let response: HashMap<String, bool> = RestApi::handle_json_response(response).await?;
 		match response.get("isExpired") {
 			Some(is_expired) => Ok(*is_expired),
-			None => Err(anyhow!("Expected 'isExpired' property".to_string())),
+			None => Err(RestApiError::Other("Expected 'isExpired' property".to_string())),
 		}
 	}
 
@@ -99,17 +99,17 @@ impl RestApi {
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/dome_sobject_user_password.htm>
-	pub async fn user_password_reset(&mut self, user_id: &str) -> Result<String> {
+	pub async fn user_password_reset(&mut self, user_id: &str) -> Result<String, RestApiError> {
 		let url = format!(
 			"{}/sobjects/User/{}/password",
 			self.client.services_data_version_path(),
 			user_id
 		);
 		let response = self.client.delete(&url, &HashMap::new()).await?;
-		let response: HashMap<String, String> = crate::client::handle_json_response(response).await?;
+		let response: HashMap<String, String> = RestApi::handle_json_response(response).await?;
 		match response.get("NewPassword") {
 			Some(new_password) => Ok(new_password.to_string()),
-			None => Err(anyhow!("Expected 'NewPassword' property".to_string())),
+			None => Err(RestApiError::Other("Expected 'NewPassword' property".to_string())),
 		}
 	}
 
@@ -155,7 +155,7 @@ impl RestApi {
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/dome_sobject_user_password.htm>
-	pub async fn set_user_password(&mut self, user_id: &str, password: &str) -> Result<()> {
+	pub async fn set_user_password(&mut self, user_id: &str, password: &str) -> Result<(), RestApiError> {
 		let url = format!(
 			"{}/sobjects/User/{}/password",
 			self.client.services_data_version_path(),

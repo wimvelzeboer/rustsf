@@ -1,6 +1,6 @@
-use anyhow::Result;
 use serde::de::DeserializeOwned;
 use crate::rest_api::builder::sobjects::SObjectsBuilder;
+use crate::rest_api::error::RestApiError;
 use crate::rest_api::HTTPMethod;
 use crate::RestApi;
 
@@ -15,7 +15,7 @@ impl RestApi {
 		sobject_name: &str,
 		ext_id_field: &str,
 		ext_id: &str,
-	) -> Result<T> {
+	) -> Result<T, RestApiError> {
 		self.build()
 			.sobjects()
 			.get_by_ext_id(sobject_name, ext_id_field, ext_id)
@@ -63,14 +63,14 @@ impl<'a> SObjectSelectByExtIdBuilder<'a> {
 
 	pub async fn send<T: DeserializeOwned>(
 		&self,
-	) -> Result<T> {
+	) -> Result<T, RestApiError> {
 		let param: Vec<(&str, &str)> = vec![];
 		let response = self.builder.send(
 			HTTPMethod::GET,
 			format!("{}/{}/{}", self.sobject_type, self.ext_id_field, self.ext_id),
 			&param,
 		).await?;
-		crate::client::handle_json_response(response).await
+		RestApi::handle_json_response(response).await
 	}
 }
 

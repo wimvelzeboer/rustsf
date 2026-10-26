@@ -64,7 +64,7 @@ impl RestApi {
 	/// # Notes
 	/// - Before executing this function, ensure that the `SalesforceClient` is properly authenticated.
 	/// - This function utilizes the Salesforce REST API `/search/` endpoint.
-	pub async fn search_sosl(&mut self, query: &str) -> Result<SearchResponse, RestApiError> {
+	pub async fn search_sosl(&self, query: &str) -> Result<SearchResponse, RestApiError> {
 		Ok(self.build()
 			.sosl(query)
 			.send()

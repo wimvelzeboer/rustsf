@@ -2045,9 +2045,9 @@ dependencies = [
 
 [[package]]
 name = "rustsf_auth"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ca3fac7f2863d1a92a21af4530014a93634612b06ea9a7912a82ff1a244007ea"
+checksum = "a3b92f5c4a8e31800aae5110cc1de61a9748d980466d3010ce5765bd858be546"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -2057,6 +2057,7 @@ dependencies = [
  "regex",
  "reqwest 0.12.28",
  "rsa",
+ "secrecy",
  "serde",
  "serde_json",
  "sha2 0.10.9",
@@ -2120,6 +2121,15 @@ name = "scopeguard"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
+
+[[package]]
+name = "secrecy"
+version = "0.10.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e891af845473308773346dc847b2c23ee78fe442e0472ac50e22a18a93d3ae5a"
+dependencies = [
+ "zeroize",
+]
 
 [[package]]
 name = "security-framework"

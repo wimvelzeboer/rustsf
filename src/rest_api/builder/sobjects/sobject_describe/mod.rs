@@ -18,7 +18,7 @@ impl RestApi {
 	/// - https://developer.salesforce.com/docs/platform/api-rest/guide/resources-sobject-describe.html
 	/// - Builder pattern version: [describe](crate::rest_api::builder::sobjects::SObjectsBuilder::describe)
 	pub async fn sobject_describe(
-		&mut self,
+		&self,
 		sobject_name: &str,
 	) -> Result<DescribeSObjectResult, RestApiError> {
 		self.build()

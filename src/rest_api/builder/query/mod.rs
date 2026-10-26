@@ -121,7 +121,7 @@ impl RestApi {
 	///     Ok(())
 	/// }
 	/// ```
-	pub async fn query_all<T: DeserializeOwned>(&mut self, query: &str) -> Result<SalesforceQueryResponse<Vec<T>>, RestApiError> {
+	pub async fn query_all<T: DeserializeOwned>(&self, query: &str) -> Result<SalesforceQueryResponse<Vec<T>>, RestApiError> {
 		Ok(self.build()
 			.query(query)
 			.all()

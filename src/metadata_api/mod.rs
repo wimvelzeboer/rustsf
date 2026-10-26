@@ -124,7 +124,7 @@ impl MetadataApi {
 	///     Ok(())
 	/// }
 	/// ```
-	pub async fn cancel(&mut self, deploy_request_id: &str) -> Result<DeployResponse> {
+	pub async fn cancel(&self, deploy_request_id: &str) -> Result<DeployResponse> {
 		let response = self
 			.client
 			.patch(
@@ -174,7 +174,7 @@ impl MetadataApi {
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_rest_deploy.htm>
-	pub async fn deploy(&mut self, request: MetadataDeployer) -> Result<DeployResponse> {
+	pub async fn deploy(&self, request: MetadataDeployer) -> Result<DeployResponse> {
 		// create the form
 		let form = multipart::Form::new()
 			.part(
@@ -236,7 +236,7 @@ impl MetadataApi {
 		MetadataRetriever::new()
 	}
 
-	pub async fn retrieve(&mut self, request: MetadataRetriever) -> Result<AsyncResult> {
+	pub async fn retrieve(&self, request: MetadataRetriever) -> Result<AsyncResult> {
 		let body = format!(
 			r#"<?xml version="1.0" encoding="UTF-8"?>
 <soapenv:Envelope xmlns:soapenv="{}" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="{}">
@@ -265,7 +265,7 @@ impl MetadataApi {
 		Ok(AsyncResult::from_xml(&xml)?)
 	}
 
-	pub async fn retrieve_status(&mut self, id: &str) -> Result<CheckRetrieveStatusResponse> {
+	pub async fn retrieve_status(&self, id: &str) -> Result<CheckRetrieveStatusResponse> {
 		let body = format!(
 			r#"<?xml version="1.0" encoding="UTF-8"?>
 <soapenv:Envelope xmlns:soapenv="{}" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="{}">
@@ -347,7 +347,7 @@ impl MetadataApi {
 	/// - `handle_json_response`: An asynchronous function that processes the
 	///   JSON-formatted response from the server.
 	pub async fn deploy_status(
-		&mut self,
+		&self,
 		deploy_request_id: &str,
 		include_details: bool,
 		// ) -> Result<Value> {

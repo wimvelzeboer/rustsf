@@ -10,8 +10,6 @@
 //! - [**Rest API**](crate::rest_api)
 //! - [**Tooling API**](crate::tooling_api)
 //! - [**Metadata API**](crate::metadata_api)
-//!
-mod client;
 
 #[cfg(feature = "rest-api")]
 pub mod rest_api;

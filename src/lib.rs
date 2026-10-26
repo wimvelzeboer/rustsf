@@ -13,7 +13,7 @@
 
 #[cfg(feature = "rest-api")]
 pub mod rest_api;
-/*
+
 #[cfg(feature = "tooling-api")]
 pub mod tooling_api;
 
@@ -25,24 +25,19 @@ pub mod bulk_api;
 
 #[cfg(feature = "bulk-api-v2")]
 pub mod bulk_api_v2;
-*/
-pub mod primary_types;
 
+pub mod primary_types;
+pub mod client;
+pub mod error;
 
 pub use rustsf_auth::SalesforceCredentials;
 
-
-// pub use client::Client;
-// pub use client::credentials::Credentials;
-// pub use client::credentials::auth_url::AuthUrl;
-// pub use client::credentials::client_credentials::ClientCredentials;
-// pub use client::credentials::credential_file::CredentialFile;
 pub use primary_types::{SObject, SObjectOwner};
 pub use rest_api::responses::error_response::ErrorResponse;
 
 #[cfg(feature = "rest-api")]
 pub use rest_api::RestApi;
-/*
+
 #[cfg(feature = "tooling-api")]
 pub use tooling_api::ToolingApi;
 
@@ -54,5 +49,5 @@ pub use bulk_api::BulkApi;
 
 #[cfg(feature = "bulk-api-v2")]
 pub use bulk_api_v2::BulkApiV2;
-*/
+
 pub use rustsf_marcos::def_sobject as DefSObject;

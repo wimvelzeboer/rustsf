@@ -6,7 +6,7 @@ use reqwest::Response;
 use rustsf_auth::{SalesforceAuthSession, SalesforceCredentials};
 use serde::Serialize;
 use crate::rest_api::DEFAULT_API_VERSION;
-use super::error::RestApiError;
+use crate::error::Error;
 
 pub const CONNECT_TIMEOUT: u64 = 15;
 pub const REQUEST_TIMEOUT: u64 = 30;
@@ -17,7 +17,7 @@ pub struct Client {
 }
 
 impl Client {
-	pub async fn new(session: SalesforceCredentials) -> Result<Self, RestApiError> {
+	pub async fn new(session: SalesforceCredentials) -> Result<Self, Error> {
 		let http_client = reqwest::Client::builder()
 			.redirect(reqwest::redirect::Policy::none())
 			.connect_timeout(std::time::Duration::from_secs(CONNECT_TIMEOUT))
@@ -66,7 +66,7 @@ impl Client {
 	///     Ok(())
 	/// }
 	/// ```
-	pub async fn delete(&self, url: &str, headers: &HashMap<String, String>) -> anyhow::Result<Response, RestApiError> {
+	pub async fn delete(&self, url: &str, headers: &HashMap<String, String>) -> anyhow::Result<Response, Error> {
 		debug!("DELETE: {} headers: {:?}", url, headers);
 
 		let response = self
@@ -132,7 +132,7 @@ impl Client {
 		url: &str,
 		params: &T, // todo should be made optional, as some calls do not require this.
 		headers: &HashMap<String, String>,
-	) -> Result<Response, RestApiError> {
+	) -> Result<Response, Error> {
 
 		debug!("GET: {} params: {:?} headers: {:?}", url, params, headers);
 
@@ -213,7 +213,7 @@ impl Client {
 		url: &str,
 		params: T,
 		headers: &HashMap<String, String>,
-	) -> Result<Response, RestApiError> {
+	) -> Result<Response, Error> {
 
 		debug!("PATCH: {} params: {:?} headers: {:?}", url, params, headers);
 
@@ -231,7 +231,7 @@ impl Client {
 		url: &str,
 		data: &T,
 		headers: &HashMap<String, String>,
-	) -> Result<reqwest::Response, RestApiError> {
+	) -> Result<reqwest::Response, Error> {
 
 		debug!("POST: {} params: {:?} headers: {:?}", url, data, headers);
 
@@ -288,7 +288,7 @@ impl Client {
 	/// - `Error::ConfigError` occurs if the custom header name is invalid or unparseable.
 	/// - Errors are propagated if the header value conversion fails.
 	///
-	async fn create_header(&self, additional_headers: &HashMap<String, String>) -> Result<HeaderMap, RestApiError> {
+	async fn create_header(&self, additional_headers: &HashMap<String, String>) -> Result<HeaderMap, Error> {
 		let mut headers = HeaderMap::new();
 
 		let auth_value = format!("Bearer {}", self.session.access_token().await?);

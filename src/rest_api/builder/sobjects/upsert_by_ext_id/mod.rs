@@ -3,7 +3,7 @@ use anyhow::Result;
 use reqwest::Response;
 use serde::Serialize;
 use crate::rest_api::builder::sobjects::SObjectsBuilder;
-use crate::rest_api::error::RestApiError;
+use crate::error::Error;
 use crate::rest_api::HTTPMethod;
 use crate::RestApi;
 
@@ -72,7 +72,7 @@ impl RestApi {
 		key_name: &str,
 		key: &str,
 		data: T,
-	) -> Result<Response, RestApiError> {
+	) -> Result<Response, Error> {
 		self.build()
 			.sobjects()
 			.upsert_by_ext_id(sobject_name, key_name, key, data)
@@ -119,7 +119,7 @@ impl<'a, T: Debug + Serialize> SObjectUpsertByExtIdBuilder<'a, T> {
 		}
 	}
 
-	pub async fn send(&self) -> Result<Response, RestApiError> {
+	pub async fn send(&self) -> Result<Response, Error> {
 		self.builder
 			.send(
 				HTTPMethod::PATCH,

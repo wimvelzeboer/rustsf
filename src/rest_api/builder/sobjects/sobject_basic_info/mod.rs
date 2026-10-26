@@ -2,7 +2,7 @@ use self::sobject_basic_info_response::SObjectBasicInfoResponse;
 use crate::RestApi;
 use crate::rest_api::builder::sobjects::SObjectsBuilder;
 use serde_json::json;
-use crate::rest_api::error::RestApiError;
+use crate::error::Error;
 use crate::rest_api::HTTPMethod;
 
 mod sobject_basic_info_response;
@@ -45,7 +45,7 @@ impl RestApi {
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_sobject_basic_info_get.htm>
-	pub async fn sobject_basic_info(&self, object_name: &str) -> Result<SObjectBasicInfoResponse, RestApiError> {
+	pub async fn sobject_basic_info(&self, object_name: &str) -> Result<SObjectBasicInfoResponse, Error> {
 		self.build()
 			.sobjects()
 			.basic_info(object_name)
@@ -141,7 +141,7 @@ impl<'a> SObjectBasicInfoBuilder<'a> {
 	/// https://developer.salesforce.com/docs/platform/api-rest/guide/resources-sobject-basic-info-get.html
 	pub async fn send(
 		self,
-	) -> Result<SObjectBasicInfoResponse, RestApiError> {
+	) -> Result<SObjectBasicInfoResponse, Error> {
 		let body = json!({});
 		let http_response = self
 			.builder

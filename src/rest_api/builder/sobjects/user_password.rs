@@ -12,7 +12,7 @@
 //!
 use crate::rest_api::{RestApi};
 use std::collections::HashMap;
-use crate::rest_api::error::RestApiError;
+use crate::error::Error;
 
 impl RestApi {
 	/// Checks if a user's password has expired in the system.
@@ -44,7 +44,7 @@ impl RestApi {
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/dome_sobject_user_password.htm>
-	pub async fn is_user_password_expired(&self, user_id: &str) -> Result<bool, RestApiError> {
+	pub async fn is_user_password_expired(&self, user_id: &str) -> Result<bool, Error> {
 		let url = format!(
 			"{}/sobjects/User/{}/password",
 			self.client.services_data_version_path(),
@@ -55,7 +55,7 @@ impl RestApi {
 		let response: HashMap<String, bool> = RestApi::handle_json_response(response).await?;
 		match response.get("isExpired") {
 			Some(is_expired) => Ok(*is_expired),
-			None => Err(RestApiError::Other("Expected 'isExpired' property".to_string())),
+			None => Err(Error::Other("Expected 'isExpired' property".to_string())),
 		}
 	}
 
@@ -95,7 +95,7 @@ impl RestApi {
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/dome_sobject_user_password.htm>
-	pub async fn user_password_reset(&mut self, user_id: &str) -> Result<String, RestApiError> {
+	pub async fn user_password_reset(&mut self, user_id: &str) -> Result<String, Error> {
 		let url = format!(
 			"{}/sobjects/User/{}/password",
 			self.client.services_data_version_path(),
@@ -105,7 +105,7 @@ impl RestApi {
 		let response: HashMap<String, String> = RestApi::handle_json_response(response).await?;
 		match response.get("NewPassword") {
 			Some(new_password) => Ok(new_password.to_string()),
-			None => Err(RestApiError::Other("Expected 'NewPassword' property".to_string())),
+			None => Err(Error::Other("Expected 'NewPassword' property".to_string())),
 		}
 	}
 
@@ -149,7 +149,7 @@ impl RestApi {
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/dome_sobject_user_password.htm>
-	pub async fn set_user_password(&mut self, user_id: &str, password: &str) -> Result<(), RestApiError> {
+	pub async fn set_user_password(&mut self, user_id: &str, password: &str) -> Result<(), Error> {
 		let url = format!(
 			"{}/sobjects/User/{}/password",
 			self.client.services_data_version_path(),

@@ -244,13 +244,11 @@ use reqwest::Response;
 use rustsf_auth::SalesforceCredentials;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-use client::Client;
+use crate::client::Client;
 use crate::ErrorResponse;
-use crate::rest_api::error::RestApiError;
+use crate::error::Error;
 
 pub mod builder;
-pub mod client;
-pub mod error;
 pub mod responses;
 
 pub const DEFAULT_API_VERSION: &str = "68.0";
@@ -310,7 +308,7 @@ impl RestApi {
 	///     Ok(())
 	/// }
 	/// ```
-	pub async fn new(credentials: SalesforceCredentials) -> Result<Self, RestApiError> {
+	pub async fn new(credentials: SalesforceCredentials) -> Result<Self, Error> {
 		Ok(Self {
 			client: Client::new(credentials).await?
 		})
@@ -353,7 +351,7 @@ impl RestApi {
 	///
 	/// # See
 	/// https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/dome_discoveryresource.htm
-	pub async fn list_resources(&self) -> Result<HashMap<String, String>, RestApiError> {
+	pub async fn list_resources(&self) -> Result<HashMap<String, String>, Error> {
 		let url = self.client.services_data_version_path();
 		let params: Vec<(String, String)> = vec![];
 		let response = self.client.get(&url, &params, &HashMap::new()).await?;
@@ -372,7 +370,7 @@ impl RestApi {
 		&self,
 		url: String,
 		headers: &HashMap<String, String>,
-	) -> Result<reqwest::Response, RestApiError> {
+	) -> Result<reqwest::Response, Error> {
 		let url = format!("{}/{}", self.client.instance_url(), url);
 		self.client.delete(&url, &headers).await
 	}
@@ -383,7 +381,7 @@ impl RestApi {
 		url: String,
 		data: &T,
 		headers: &HashMap<String, String>,
-	) -> Result<reqwest::Response, RestApiError> {
+	) -> Result<reqwest::Response, Error> {
 		let url = format!("{}/{}", self.client.instance_url(), url);
 		match method {
 			HTTPMethod::GET => Ok(self.client.get(&url, data, &headers).await?),
@@ -392,7 +390,7 @@ impl RestApi {
 		}
 	}
 
-	async fn handle_json_response<T: DeserializeOwned>(response: Response) -> Result<T, RestApiError> {
+	async fn handle_json_response<T: DeserializeOwned>(response: Response) -> Result<T, Error> {
 
 		trace!("Headers: {:?}", response.headers());
 
@@ -403,16 +401,16 @@ impl RestApi {
 		//	Ok(response.json().await?)
 		} else {
 			let errors: Vec<ErrorResponse> = response.json().await?;
-			Err(RestApiError::Salesforce(errors))
+			Err(Error::Salesforce(errors))
 		}
 	}
 
-	async fn handle_empty_response(response: Response) -> Result<(), RestApiError> {
+	async fn handle_empty_response(response: Response) -> Result<(), Error> {
 		if response.status().is_success() {
 			Ok(())
 		} else {
 			let errors: Vec<ErrorResponse> = response.json().await?;
-			Err(RestApiError::Salesforce(errors))
+			Err(Error::Salesforce(errors))
 		}
 	}
 

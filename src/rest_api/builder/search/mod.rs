@@ -14,7 +14,7 @@
 
 use crate::rest_api::builder::RestApiBuilder;
 use crate::rest_api::builder::search::sosl_response::SearchResponse;
-use crate::rest_api::error::RestApiError;
+use crate::error::Error;
 use crate::rest_api::HTTPMethod;
 use crate::RestApi;
 use self::sosl_response::SoslResponse;
@@ -60,7 +60,7 @@ impl RestApi {
 	/// # Notes
 	/// - Before executing this function, ensure that the `SalesforceClient` is properly authenticated.
 	/// - This function utilizes the Salesforce REST API `/search/` endpoint.
-	pub async fn search_sosl(&self, query: &str) -> Result<SearchResponse, RestApiError> {
+	pub async fn search_sosl(&self, query: &str) -> Result<SearchResponse, Error> {
 		Ok(self.build()
 			.sosl(query)
 			.send()
@@ -88,7 +88,7 @@ impl<'a, 'b> SoslBuilder<'a, 'b> {
 		}
 	}
 
-	pub async fn send(&self) -> Result<SoslResponse, RestApiError> {
+	pub async fn send(&self) -> Result<SoslResponse, Error> {
 		let url = "search".to_string();
 		let params = vec![("q".to_string(), self.query.to_string())];
 		let response = self.rest_api_builder.send(

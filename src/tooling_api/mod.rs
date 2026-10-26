@@ -1,4 +1,4 @@
-use crate::Client;
+use std::collections::HashMap;
 use crate::primary_types::SObject;
 use crate::rest_api::responses::error_response::ErrorResponse;
 use crate::rest_api::responses::query_response::QueryResponse;
@@ -6,9 +6,11 @@ use crate::tooling_api::responses::create_result::CreateResult;
 use crate::tooling_api::responses::execute_anonymous_result::ExecuteAnonymousResult;
 use anyhow::{Result, anyhow};
 use reqwest::Response;
+use rustsf_auth::SalesforceCredentials;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
+use crate::client::Client;
 
 pub mod primary_types;
 pub mod responses;
@@ -24,7 +26,7 @@ pub struct ToolingApi {
 }
 
 impl ToolingApi {
-	pub fn new(client: Client) -> Self {
+	pub fn new(credentials: SalesforceCredentials) -> Result<Self, ToolingApiError> {
 		ToolingApi { client }
 	}
 
@@ -61,10 +63,10 @@ impl ToolingApi {
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_tooling.meta/api_tooling/intro_rest_resources.htm>
-	pub async fn execute_anonymous(&mut self, apex_code: &str) -> Result<ExecuteAnonymousResult> {
+	pub async fn execute_anonymous(&self, apex_code: &str) -> Result<ExecuteAnonymousResult> {
 		let url = format!("{}/executeAnonymous/", self.base_path()?);
 		let params = vec![("anonymousBody".to_string(), apex_code.to_string())];
-		let response = self.client.get(url, params, vec![]).await?;
+		let response = self.client.get(&url, &params, &HashMap::new()).await?;
 
 		if response.status().is_success() {
 			Ok(response.json::<ExecuteAnonymousResult>().await?)
@@ -95,7 +97,7 @@ impl ToolingApi {
 	///     Ok(())
 	/// }
 	/// ```
-	pub async fn get_latest_apex_logs(&mut self, limit: u32) -> Result<Vec<schema::apex_log::ApexLog>> {
+	pub async fn get_latest_apex_logs(&self, limit: u32) -> Result<Vec<schema::apex_log::ApexLog>> {
 		match self
 			.query(&format!(
 				"SELECT {} FROM {} ORDER BY StartTime DESC LIMIT {}",
@@ -140,9 +142,10 @@ impl ToolingApi {
 	///     Ok(())
 	/// }
 	/// ```
-	pub async fn get_apex_log_body(&mut self, log_id: &str) -> Result<String> {
-		let url = format!("{}/sobjects/ApexLog/{}/Body", self.client.base_version_path()?, log_id);
-		let response = self.client.get(url, vec![], vec![]).await?;
+	pub async fn get_apex_log_body(&self, log_id: &str) -> Result<String> {
+		let url = format!("{}/sobjects/ApexLog/{}/Body", self.client.services_data_version_path(), log_id);
+		let params: Vec<String> = Vec::new();
+		let response = self.client.get(&url, &params, &HashMap::new()).await?;
 
 		if response.status().is_success() {
 			Ok(response.text().await?)
@@ -174,7 +177,7 @@ impl ToolingApi {
 	///     Ok(())
 	/// }
 	/// ```
-	pub async fn get_trace_flags(&mut self, user_id: &str) -> Result<Vec<schema::trace_flag::TraceFlag>> {
+	pub async fn get_trace_flags(&self, user_id: &str) -> Result<Vec<schema::trace_flag::TraceFlag>> {
 		match self
 			.query(&format!(
 				"SELECT {} FROM {} WHERE TracedEntityId = '{}' AND LogType = 'DEVELOPER_LOG'",
@@ -225,7 +228,7 @@ impl ToolingApi {
 	/// }
 	/// ```
 	pub async fn create_trace_flag<T: Serialize + std::fmt::Debug + SObject + Clone>(
-		&mut self,
+		&self,
 		mut record: T,
 	) -> Result<T> {
 		match self.create("TraceFlag", record.clone()).await {
@@ -244,7 +247,7 @@ impl ToolingApi {
 	///
 	/// Uses `PATCH /services/data/{version}/tooling/sobjects/TraceFlag/{id}`.
 	pub async fn update_trace_flag<T: Serialize + std::fmt::Debug>(
-		&mut self,
+		&self,
 		id: &str, // fixme get this from the object itself
 		params: T,
 	) -> Result<()> {
@@ -271,7 +274,7 @@ impl ToolingApi {
 	///     Ok(())
 	/// }
 	/// ```
-	pub async fn get_debug_level(&mut self, developer_name: &str) -> Result<Vec<schema::debug_level::DebugLevel>> {
+	pub async fn get_debug_level(&self, developer_name: &str) -> Result<Vec<schema::debug_level::DebugLevel>> {
 		match self
 			.query(&format!(
 				"SELECT {} FROM {} WHERE DeveloperName = '{}'",
@@ -318,7 +321,7 @@ impl ToolingApi {
 	///     Ok(())
 	/// }
 	/// ```
-	pub async fn create_debug_level<T: Serialize + std::fmt::Debug>(&mut self, params: T) -> Result<Value> {
+	pub async fn create_debug_level<T: Serialize + std::fmt::Debug>(&self, params: T) -> Result<Value> {
 		self.create("DebugLevel", params).await
 	}
 
@@ -328,49 +331,50 @@ impl ToolingApi {
 	///
 	/// Queries Tooling API objects such as `ApexClass`, `ApexTrigger`,
 	/// `ApexLog`, `TraceFlag`, `DebugLevel`, etc.
-	pub async fn query<T: DeserializeOwned>(&mut self, query: &str) -> Result<QueryResponse<T>> {
+	pub async fn query<T: DeserializeOwned>(&self, query: &str) -> Result<QueryResponse<T>> {
 		let query_url = format!("{}/query/", self.base_path()?);
 		let params = vec![("q".to_string(), query.to_string())];
-		let response = self.client.get(query_url, params, vec![]).await?;
+		let response = self.client.get(&query_url, &params, &HashMap::new()).await?;
 		handle_json_response(response).await
 	}
 
 	/// Retrieve a Tooling API SObject by ID.
-	pub async fn find_by_id(&mut self, sobject_name: &str, id: &str) -> Result<Value> {
+	pub async fn find_by_id(&self, sobject_name: &str, id: &str) -> Result<Value> {
 		let url = format!("{}/sobjects/{}/{}", self.base_path()?, sobject_name, id);
-		let response = self.client.get(url, vec![], vec![]).await?;
+		let params : Vec<String> = Vec::new();
+		let response = self.client.get(&url, &params, &HashMap::new()).await?;
 		handle_json_response(response).await
 	}
 
 	/// Create a Tooling API SObject.
-	pub async fn create<T: Serialize + std::fmt::Debug>(&mut self, object_name: &str, params: T) -> Result<Value> {
+	pub async fn create<T: Serialize + std::fmt::Debug>(&self, object_name: &str, params: T) -> Result<Value> {
 		let url = format!("{}/sobjects/{}", self.base_path()?, object_name);
-		let response = self.client.post(url, params, vec![]).await?;
+		let response = self.client.post(&url, &params, &HashMap::new()).await?;
 		handle_json_response(response).await
 	}
 
 	/// Update a Tooling API SObject.
 	pub async fn update<T: Serialize + std::fmt::Debug>(
-		&mut self,
+		&self,
 		object_name: &str,
 		id: &str,
 		params: T,
 	) -> Result<()> {
 		let url = format!("{}/sobjects/{}/{}", self.base_path()?, object_name, id);
-		let response = self.client.patch(url, params).await?;
+		let response = self.client.patch(&url, &params, &HashMap::new()).await?;
 		handle_empty_response(response).await
 	}
 
 	/// Delete a Tooling API SObject.
-	pub async fn destroy(&mut self, sobject_name: &str, id: &str) -> Result<()> {
+	pub async fn destroy(&self, sobject_name: &str, id: &str) -> Result<()> {
 		let url = format!("{}/sobjects/{}/{}", self.base_path()?, sobject_name, id);
-		let response = self.client.delete(url).await?;
+		let response = self.client.delete(&url, &HashMap::new()).await?;
 		handle_empty_response(response).await
 	}
 
 	/// Returns the Tooling API base path: `{instance_url}/services/data/{version}/tooling`
 	fn base_path(&self) -> Result<String> {
-		Ok(format!("{}/tooling", self.client.base_version_path()?))
+		Ok(format!("{}/tooling", self.client.services_data_version_path()))
 	}
 }
 

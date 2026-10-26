@@ -3,7 +3,7 @@ use anyhow::Result;
 use reqwest::Response;
 use serde::Serialize;
 use crate::rest_api::builder::RestApiBuilder;
-use crate::rest_api::error::RestApiError;
+use crate::error::Error;
 use crate::rest_api::HTTPMethod;
 
 const PATH: &'static str = "composite";
@@ -40,7 +40,7 @@ impl<'a> CompositeBuilder<'a> {
 		method: HTTPMethod,
 		url: String,
 		data: &T,
-	) -> Result<Response, RestApiError> {
+	) -> Result<Response, Error> {
 		let url = format!("{}/{}", PATH, url);
 		self.builder.send(method, url, &data).await
 	}

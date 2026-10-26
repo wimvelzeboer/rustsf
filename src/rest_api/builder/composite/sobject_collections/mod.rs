@@ -20,7 +20,7 @@ use std::fmt::Debug;
 use reqwest::Response;
 use serde::Serialize;
 use crate::rest_api::builder::composite::CompositeBuilder;
-use crate::rest_api::error::RestApiError;
+use crate::error::Error;
 use crate::rest_api::HTTPMethod;
 
 const PATH: &'static str = "sobjects";
@@ -57,7 +57,7 @@ impl<'a> SObjectCollectionsBuilder<'a> {
 		method: HTTPMethod,
 		url: String,
 		data: &T,
-	) -> anyhow::Result<Response, RestApiError> {
+	) -> anyhow::Result<Response, Error> {
 		let url = format!("{}/{}", PATH, url);
 		self.builder.send(method, url, &data).await
 	}

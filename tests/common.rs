@@ -1,5 +1,5 @@
 use anyhow::Result;
-use rustsf::{RestApi, SalesforceCredentials};
+use rustsf::{RestApi, SalesforceCredentials, ToolingApi};
 use serde::{Deserialize, Serialize};
 use std::env;
 
@@ -9,6 +9,13 @@ pub async fn get_rest_api_client() -> Result<RestApi> {
 		.to_string();
 	let credentials = SalesforceCredentials::sfdx_url(url)?;
 	Ok(RestApi::new(credentials).await?)
+}
+pub async fn get_tooling_api_client() -> Result<RestApi> {
+	let url = env::var("SCRATCH_AUTH_URL")
+		.expect("SCRATCH_AUTH_URL not set")
+		.to_string();
+	let credentials = SalesforceCredentials::sfdx_url(url)?;
+	Ok(ToolingApi::new(credentials).await?)
 }
 
 #[derive(Debug, Serialize, Deserialize)]

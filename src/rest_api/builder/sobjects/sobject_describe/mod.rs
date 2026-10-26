@@ -1,5 +1,5 @@
 use crate::rest_api::builder::sobjects::SObjectsBuilder;
-use crate::rest_api::error::RestApiError;
+use crate::error::Error;
 use crate::rest_api::HTTPMethod;
 use crate::RestApi;
 use crate::rest_api::responses::describe_sobject_result::DescribeSObjectResult;
@@ -37,7 +37,7 @@ impl RestApi {
 	pub async fn sobject_describe(
 		&self,
 		sobject_name: &str,
-	) -> Result<DescribeSObjectResult, RestApiError> {
+	) -> Result<DescribeSObjectResult, Error> {
 		self.build()
 			.sobjects()
 			.describe(sobject_name)
@@ -106,7 +106,7 @@ impl<'a> SObjectDescribeBuilder<'a> {
 
 	pub async fn send(
 		&self,
-	) -> Result<DescribeSObjectResult, RestApiError> {
+	) -> Result<DescribeSObjectResult, Error> {
 		let param: Vec<(&str, &str)> = vec![];
 		let response = self.builder.send(
 			HTTPMethod::GET,

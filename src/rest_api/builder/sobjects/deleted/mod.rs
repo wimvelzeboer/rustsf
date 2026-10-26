@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use crate::rest_api::builder::sobjects::SObjectsBuilder;
-use crate::rest_api::error::RestApiError;
+use crate::error::Error;
 use crate::rest_api::HTTPMethod;
 use crate::RestApi;
 use self::sobject_deleted_response::SObjectDeletedResponse;
@@ -35,7 +35,7 @@ impl RestApi {
 		sobject_name: &str,
 		start_date: &DateTime<Utc>,
 		end_date: &DateTime<Utc>,
-	) -> Result<SObjectDeletedResponse, RestApiError> {
+	) -> Result<SObjectDeletedResponse, Error> {
 		self.build()
 			.sobjects()
 			.deleted(sobject_name, start_date, end_date)
@@ -140,7 +140,7 @@ impl<'a> SObjectDeletedBuilder<'a> {
 
 	pub async fn send(
 		&self,
-	) -> Result<SObjectDeletedResponse, RestApiError> {
+	) -> Result<SObjectDeletedResponse, Error> {
 		let url = format!("{}/deleted", self.sobject_name);
 
 		let start_formatted = DateTime::parse_from_rfc3339(&self.start_date)

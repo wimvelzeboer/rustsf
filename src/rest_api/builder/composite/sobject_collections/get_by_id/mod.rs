@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use serde::de::DeserializeOwned;
 use crate::rest_api::builder::composite::sobject_collections::SObjectCollectionsBuilder;
-use crate::rest_api::error::RestApiError;
+use crate::error::Error;
 use crate::rest_api::HTTPMethod;
 use crate::RestApi;
 
@@ -72,7 +72,7 @@ impl RestApi {
 		object_name: &str,
 		ids: &[&str],
 		fields: &[&str],
-	) -> Result<Vec<T>, RestApiError> {
+	) -> Result<Vec<T>, Error> {
 		self.build()
 			.composite()
 			.sobject_collections()
@@ -120,7 +120,7 @@ SObjectsByIdBuilder<'builder, 'api> {
 
 	pub async fn send<T: Debug + DeserializeOwned>(
 		&self,
-	) -> Result<Vec<T>, RestApiError> {
+	) -> Result<Vec<T>, Error> {
 
 		let params = vec![("fields", self.fields.join(",")), ("ids", self.ids.join(","))];
 		let response = self.builder

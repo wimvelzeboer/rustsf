@@ -29,7 +29,7 @@ use anyhow::Result;
 use reqwest::Response;
 use serde::{Serialize};
 use std::fmt::Debug;
-use crate::rest_api::error::RestApiError;
+use crate::error::Error;
 
 mod create;
 mod delete;
@@ -64,7 +64,7 @@ impl<'a> SObjectsBuilder<'a> {
 	pub(crate) async fn send_delete(
 		&self,
 		url: String,
-	) -> Result<Response, RestApiError> {
+	) -> Result<Response, Error> {
 		let url = format!("sobjects/{}", url);
 		self.builder.send_delete(url).await
 	}
@@ -74,7 +74,7 @@ impl<'a> SObjectsBuilder<'a> {
 		method: HTTPMethod,
 		url: String,
 		data: &T,
-	) -> Result<Response, RestApiError> {
+	) -> Result<Response, Error> {
 		let url = format!("sobjects/{}", url);
 		self.builder.send(method, url, &data).await
 	}

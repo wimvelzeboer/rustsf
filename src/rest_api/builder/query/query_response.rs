@@ -4,7 +4,7 @@ use serde::Deserialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use std::fmt::Debug;
-use crate::rest_api::error::RestApiError;
+use crate::error::Error;
 use crate::RestApi;
 
 pub struct QueryResponse<'a> {
@@ -24,7 +24,7 @@ impl<'a> QueryResponse<'a> {
 		self.response.done
 	}
 
-	pub fn records<T: DeserializeOwned>(self) -> Result<Vec<T>, RestApiError> {
+	pub fn records<T: DeserializeOwned>(self) -> Result<Vec<T>, Error> {
 		let records = self.response.records;
 		let sobjects: Vec<T> = serde_json::from_value(records)?;
 		Ok(sobjects)
@@ -88,7 +88,7 @@ impl<'a> QueryResponse<'a> {
 	/// # Dependencies
 	/// - The `handle_json_response` function is used to parse and handle the JSON response from the API.
 	/// - Assumes `self.client.get` performs an HTTP GET request and returns the raw HTTP response.
-	pub async fn send_query_more(&mut self) -> Result<&mut Self, RestApiError> {
+	pub async fn send_query_more(&mut self) -> Result<&mut Self, Error> {
 		match &self.response.next_records_url {
 			Some(url) => {
 				let params: Vec<(String, String)> = vec![];
@@ -108,7 +108,7 @@ impl<'a> QueryResponse<'a> {
 		self.response.next_records_url.as_deref()
 	}
 
-	pub fn take_response<T: DeserializeOwned>(self) -> Result<SalesforceQueryResponse<Vec<T>>, RestApiError> {
+	pub fn take_response<T: DeserializeOwned>(self) -> Result<SalesforceQueryResponse<Vec<T>>, Error> {
 		Ok(SalesforceQueryResponse {
 			total_size: self.response.total_size,
 			done: self.response.done,

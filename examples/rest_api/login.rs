@@ -1,12 +1,12 @@
-use rustsf::{Client, Error};
+use rustsf::{AuthUrl, Error, RestApi};
 use std::env;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    let username = env::var("SFDC_USERNAME").unwrap();
-    let password = env::var("SFDC_PASSWORD").unwrap();
+    let auth_url = env::var("SFDC_AUTH_URL").unwrap();
+    let credentials = SalesforceCredentials::sfdx_url(auth_url).unwrap();
+    let api = RestApi::new(credentials).await.unwrap();
+    println!("Successfully logged in via AuthUrl");
 
-    let mut client = Client::new();
-    client.login_by_soap(&username, &password).await?;
     Ok(())
 }

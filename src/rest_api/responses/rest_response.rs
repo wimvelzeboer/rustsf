@@ -1,7 +1,7 @@
 use log::trace;
 use serde::de::DeserializeOwned;
 use crate::ErrorResponse;
-use crate::rest_api::error::RestApiError;
+use crate::error::Error;
 
 pub struct RestResponse {
 	response: reqwest::Response,
@@ -41,14 +41,14 @@ impl RestResponse {
 		self.response
 	}
 
-	pub async fn rest_response<T: DeserializeOwned>(self) -> Result<T, RestApiError> {
+	pub async fn rest_response<T: DeserializeOwned>(self) -> Result<T, Error> {
 		if self.response.status().is_success() {
 			let json_str = self.response.text().await?;
 			trace!("RESPONSE BODY: {}", json_str);
 			Ok(serde_json::from_str(&json_str)?)
 		} else {
 			let errors: Vec<ErrorResponse> = self.response.json().await?;
-			Err(RestApiError::Salesforce(errors))
+			Err(Error::Salesforce(errors))
 		}
 	}
 

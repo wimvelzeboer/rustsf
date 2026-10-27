@@ -3,7 +3,7 @@ use crate::rest_api::HTTPMethod;
 use crate::rest_api::builder::sobjects::SObjectsBuilder;
 use chrono::{DateTime, Utc};
 use crate::rest_api::builder::sobjects::updated::sobject_updated_response::SObjectUpdatedResponse;
-use crate::error::Error;
+use crate::errors::Error;
 
 mod sobject_updated_response;
 

@@ -5,7 +5,7 @@ use serde::Serialize;
 use crate::RestApi;
 use crate::rest_api::HTTPMethod;
 use crate::rest_api::builder::sobjects::SObjectsBuilder;
-use crate::error::Error;
+use crate::errors::Error;
 
 impl RestApi {
 	///

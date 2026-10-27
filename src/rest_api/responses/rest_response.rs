@@ -1,7 +1,7 @@
 use log::trace;
 use serde::de::DeserializeOwned;
 use crate::ErrorResponse;
-use crate::error::Error;
+use crate::errors::Error;
 
 pub struct RestResponse {
 	response: reqwest::Response,

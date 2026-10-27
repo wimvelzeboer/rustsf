@@ -1,12 +1,16 @@
-use std::collections::HashMap;
-use std::fmt::Debug;
+use crate::errors::Error;
 use log::debug;
-use reqwest::header::{HeaderMap, HeaderName, HeaderValue, AUTHORIZATION};
 use reqwest::Response;
+use reqwest::header::{AUTHORIZATION, HeaderMap, HeaderName, HeaderValue};
 use rustsf_auth::{SalesforceAuthSession, SalesforceCredentials};
 use serde::Serialize;
-use crate::rest_api::DEFAULT_API_VERSION;
-use crate::error::Error;
+use std::collections::HashMap;
+use std::fmt::Debug;
+
+#[cfg(feature = "metadata-api")]
+use reqwest::multipart::Form;
+
+pub const DEFAULT_API_VERSION: &str = "68.0";
 
 pub const CONNECT_TIMEOUT: u64 = 15;
 pub const REQUEST_TIMEOUT: u64 = 30;
@@ -28,6 +32,11 @@ impl Client {
 			http_client,
 			session: session.connect().await?,
 		})
+	}
+
+	#[cfg(feature = "metadata-api")]
+	pub async fn access_token(&self) -> Result<String, Error> {
+		Ok(self.session.access_token().await?)
 	}
 
 	/// Sends an asynchronous HTTP DELETE request to a specified path.
@@ -80,7 +89,6 @@ impl Client {
 		Ok(response)
 	}
 
-
 	/// Sends an asynchronous HTTP GET request to the specified URL with the provided query parameters.
 	///
 	/// This function ensures that any necessary pre-request setup (such as refreshing tokens or credentials)
@@ -127,14 +135,13 @@ impl Client {
 	///     Ok(())
 	/// }
 	/// ```
-	pub async fn get<T: Debug + Serialize>(
+	pub async fn get<T: Debug + Serialize, S: AsRef<str> + reqwest::IntoUrl>(
 		&self,
-		url: &str,
+		url: S,
 		params: &T, // todo should be made optional, as some calls do not require this.
 		headers: &HashMap<String, String>,
 	) -> Result<Response, Error> {
-
-		debug!("GET: {} params: {:?} headers: {:?}", url, params, headers);
+		debug!("GET: {} params: {:?} headers: {:?}", url.as_ref(), params, headers);
 
 		let response = self
 			.http_client
@@ -214,7 +221,6 @@ impl Client {
 		params: T,
 		headers: &HashMap<String, String>,
 	) -> Result<Response, Error> {
-
 		debug!("PATCH: {} params: {:?} headers: {:?}", url, params, headers);
 
 		Ok(self
@@ -232,7 +238,6 @@ impl Client {
 		data: &T,
 		headers: &HashMap<String, String>,
 	) -> Result<reqwest::Response, Error> {
-
 		debug!("POST: {} params: {:?} headers: {:?}", url, data, headers);
 
 		Ok(self
@@ -244,18 +249,96 @@ impl Client {
 			.await?)
 	}
 
+	/// Asynchronously sends an HTTP POST multipart equest to the specified URL with the given parameters and headers.
+	///
+	/// This function ensures the client is refreshed before making the request.
+	/// It constructs the POST request by combining the given URL, serialization of parameters, and custom headers,
+	/// and uses the `reqwest` HTTP client to send the request.
+	///
+	/// # Type Parameters
+	///
+	/// * `T`: A type that implements the `Serialize` trait, representing the body of the POST request.
+	///
+	/// # Parameters
+	///
+	/// * `url` - A `String` representing the URL endpoint for the POST request.
+	/// * `headers` - A vector of tuples where each tuple contains a header name and its corresponding value (`Vec<(String, String)>`).
+	/// * `from` - A multipart form to include in the request.
+	///
+	/// # Returns
+	///
+	/// Returns a `Result`:
+	/// - `Ok(Response)` on success, where `Response` is the HTTP response returned by the request.
+	/// - `Err(Error)` if an error occurs during the request, such as serialization issues, header creation errors, or HTTP client errors.
+	///
+	/// Note: Ensure that the given `url` is valid and accessible and that proper error handling is implemented
+	/// for production use.
+	#[cfg(feature = "metadata-api")]
+	pub async fn post_multipart<S>(
+		&self,
+		url: S,
+		headers: &HashMap<String, String>,
+		form: Form,
+	) -> Result<Response, Error>
+	where
+		S: AsRef<str> + reqwest::IntoUrl,
+	{
+		let request = self
+			.http_client
+			.post(url)
+			.multipart(form)
+			.headers(self.create_header(headers).await?)
+			.build()?;
+
+		debug!("Request URL: {}", request.url());
+		debug!("Request Method: {}", request.method());
+
+		// Log headers
+		for (name, value) in request.headers() {
+			debug!("Header {}: {:?}", name, value);
+		}
+
+		// Log body size (reqwest hides the exact body bytes if it's a stream/json,
+		// but you can check if a body exists)
+		if let Some(body) = request.body() {
+			debug!("Body: {:?}", body.as_bytes());
+		}
+
+		let response = self.http_client.execute(request).await?;
+
+		Ok(response)
+	}
+
+	pub async fn post_soap(&self, action: &str, body: String) -> Result<Response, Error> {
+		let url = self.soap_version_path();
+		debug!("Soap Metadata API '{}' request: POST {} : {}", action, url, body);
+
+		Ok(self
+			.http_client
+			.post(url)
+			.header("Content-Type", "text/xml")
+			.header("SOAPAction", format!("'{}'", action))
+			.body(body)
+			.send()
+			.await?)
+	}
+
 	pub fn services_data_path(&self) -> String {
-		format!("{}/services/data", self.session.instance_url)
+		format!("{}/services/data", self.instance_url())
 	}
 
 	pub(crate) fn services_data_version_path(&self) -> String {
-		format!("{}/services/data/v{}", self.session.instance_url, DEFAULT_API_VERSION)
+		format!("{}/services/data/v{}", self.instance_url(), DEFAULT_API_VERSION)
+	}
+
+	pub fn soap_version_path(&self) -> String {
+		let instance_url = self.instance_url();
+		format!("{}/services/Soap/m/{}", instance_url, DEFAULT_API_VERSION)
 	}
 
 	pub fn user_id(&self) -> Option<&str> {
 		self.session.user_id.as_deref()
 	}
-
 
 	/// Generates a `HeaderMap` containing default headers, authorization, and additional custom headers.
 	///
@@ -311,4 +394,3 @@ impl Client {
 		Ok(headers)
 	}
 }
-

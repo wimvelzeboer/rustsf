@@ -12,7 +12,7 @@
 //!
 use crate::rest_api::{RestApi};
 use std::collections::HashMap;
-use crate::error::Error;
+use crate::errors::Error;
 
 impl RestApi {
 	/// Checks if a user's password has expired in the system.

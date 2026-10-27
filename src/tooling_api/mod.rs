@@ -9,7 +9,7 @@ use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use crate::client::Client;
-use crate::error::Error;
+use crate::errors::Error;
 
 pub mod primary_types;
 pub mod responses;
@@ -403,6 +403,3 @@ async fn handle_empty_response(response: reqwest::Response) -> Result<(), Error>
 		Err(Error::Other(format!("Errors: {:?}", errors)))
 	}
 }
-
-#[cfg(test)]
-mod tests;

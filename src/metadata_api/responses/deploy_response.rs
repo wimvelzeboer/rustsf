@@ -70,4 +70,8 @@ impl DeployResponse {
 	pub fn get_deploy_request_id(&self) -> &str {
 		&self.id
 	}
+
+	pub fn result(&self) -> &DeployResult {
+		&self.result
+	}
 }

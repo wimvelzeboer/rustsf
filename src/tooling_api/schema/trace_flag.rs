@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use crate::DefSObject;
 
 use crate as rustsf;
 use rustsf::tooling_api::primary_types::log_category_level::LogCategoryLevel;

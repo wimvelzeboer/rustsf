@@ -1,4 +1,4 @@
-use crate::metadata_api::errors::XmlParseError;
+use crate::errors::XmlError;
 
 /// # See
 /// <https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_asyncresult.htm>
@@ -13,7 +13,7 @@ pub struct AsyncResult {
 }
 
 impl AsyncResult {
-	pub fn from_xml(xml: &str) -> Result<Self, XmlParseError> {
+	pub fn from_xml(xml: &str) -> Result<Self, XmlError> {
 		let doc = roxmltree::Document::parse(xml)?;
 		let body = find_element(doc.root_element(), "Body")?;
 		let retrieve_response = find_element(body, "retrieveResponse")?;
@@ -34,39 +34,43 @@ impl AsyncResult {
 fn find_element<'a, 'input>(
 	root: roxmltree::Node<'a, 'input>,
 	local_name: &'static str,
-) -> Result<roxmltree::Node<'a, 'input>, XmlParseError> {
+) -> Result<roxmltree::Node<'a, 'input>, XmlError> {
 	root.descendants()
 		.find(|node| node.is_element() && node.tag_name().name() == local_name)
-		.ok_or(XmlParseError::MissingElement(local_name))
+		.ok_or(XmlError::MissingElement(local_name))
 }
 
+/*
 fn find_elements<'a, 'input>(
 	root: roxmltree::Node<'a, 'input>,
 	local_name: &'static str,
-) -> Result<Vec<roxmltree::Node<'a, 'input>>, XmlParseError> {
-	Ok(root
+) -> Vec<roxmltree::Node<'a, 'input>> {
+	root
 		.descendants()
 		.filter(|node| node.is_element() && node.tag_name().name() == local_name)
-		.collect())
+		.collect()
 }
+*/
 
 fn parse_text_child<'a, 'input>(
 	root: roxmltree::Node<'a, 'input>,
 	local_name: &'static str,
-) -> Result<String, XmlParseError> {
+) -> Result<String, XmlError> {
 	let node = find_element(root, local_name)?;
 	node.text()
 		.map(ToOwned::to_owned)
-		.ok_or(XmlParseError::MissingText(local_name))
+		.ok_or(XmlError::MissingText(local_name))
 }
 
+/*
 fn parse_bool_child<'a, 'input>(
 	root: roxmltree::Node<'a, 'input>,
 	local_name: &'static str,
-) -> Result<bool, XmlParseError> {
+) -> Result<bool, XmlError> {
 	let value = parse_text_child(root, local_name)?;
-	value.parse::<bool>().map_err(|_| XmlParseError::InvalidBool {
+	value.parse::<bool>().map_err(|_| XmlError::InvalidBool {
 		element: local_name,
 		value,
 	})
 }
+*/

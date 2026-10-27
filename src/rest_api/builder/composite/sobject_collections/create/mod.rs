@@ -3,7 +3,7 @@ use super::SObjectCollectionsBuilder;
 use crate::RestApi;
 use crate::rest_api::HTTPMethod;
 use crate::rest_api::builder::composite::sobject_collections::create::salesforce_sobjects_create_response::SalesforceSObjectsCreateResponse;
-use crate::error::Error;
+use crate::errors::Error;
 use crate::rest_api::responses::rest_response::RestResponse;
 use serde::Serialize;
 use std::fmt::Debug;

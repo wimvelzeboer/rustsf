@@ -29,7 +29,7 @@ use crate::rest_api::HTTPMethod;
 use reqwest::Response;
 use serde::{Serialize};
 use std::fmt::Debug;
-use crate::error::Error;
+use crate::errors::Error;
 
 mod create;
 mod delete;

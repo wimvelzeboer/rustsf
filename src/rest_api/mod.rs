@@ -246,12 +246,11 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use crate::client::Client;
 use crate::ErrorResponse;
-use crate::error::Error;
+use crate::errors::Error;
+use crate::client::DEFAULT_API_VERSION;
 
 pub mod builder;
 pub mod responses;
-
-pub const DEFAULT_API_VERSION: &str = "68.0";
 
 pub enum HTTPMethod {
 	GET,

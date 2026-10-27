@@ -4,7 +4,7 @@ use crate::rest_api::HTTPMethod;
 use crate::rest_api::builder::sobjects::SObjectsBuilder;
 use serde_json::{json};
 use chrono::Utc;
-use crate::error::Error;
+use crate::errors::Error;
 
 mod global_describe_response;
 

@@ -10,7 +10,7 @@
 //! - **/services/data/vXX.X/metadata/deployRequest**, for deployments, status checks, and cancellation
 //!
 
-use crate::Client;
+use crate::errors::Error;
 use crate::metadata_api::responses::deploy_options::DeployOptions;
 use crate::metadata_api::responses::deploy_request::DeployRequest;
 use crate::metadata_api::{add_file_to_package, generate_package_xml};
@@ -50,7 +50,6 @@ fn create_zip_in_memory() -> Vec<u8> {
 
 /// A `RestApi` struct that represents the core component for reparing a deployment
 pub struct MetadataDeployer {
-	version: String,
 	options: DeployOptions,
 	writer: StreamingZipWriter<Cursor<Vec<u8>>>,
 	package: HashMap<String, Vec<String>>,
@@ -82,9 +81,8 @@ impl MetadataDeployer {
 	/// let client= Client::new(Credentials::new()).await?;
 	/// let deployer = MetadataDeployer::new(&client);
 	/// ```
-	pub fn new(client: &Client) -> Self {
+	pub fn new() -> Self {
 		MetadataDeployer {
-			version: client.version_number().unwrap_or("67.0".to_string()),
 			options: DeployOptions::new(),
 			writer: StreamingZipWriter::from_writer(Cursor::new(Vec::new())).unwrap(),
 			package: HashMap::new(),
@@ -161,7 +159,7 @@ impl MetadataDeployer {
 	///         Some("MyClass.cls-meta.xml"),
 	///         Some(r#"<?xml version="1.0" encoding="UTF-8"?>
 	/// <ApexClass xmlns="http://soap.sforce.com/2006/04/metadata">
-	///     <apiVersion>66.0</apiVersion>
+	///     <apiVersion>68.0</apiVersion>
 	///     <status>Active</status>
 	/// </ApexClass>
 	/// "#.as_bytes()))?;
@@ -184,18 +182,18 @@ impl MetadataDeployer {
 		content: &[u8],              //
 		file_name_xml: Option<&str>, // e.g. "MyClass.cls-meta.xml"
 		content_xml: Option<&[u8]>,  //
-	) -> Result<&mut Self> {
+	) -> Result<&mut Self, Error> {
 		self.add_file_to_zip(folder, file_name, content)
-			.map_err(|mut e| Error::RequestError(e.to_string()))?;
+			.map_err(|e| Error::CompressionError(e.to_string()))?;
 
 		// Optionally add the xml file to the zip
 		match (file_name_xml, content_xml) {
 			(Some(file_name_xml), Some(content_xml)) => {
 				self.add_file_to_zip(folder, file_name, content)
-					.map_err(|mut e| Error::RequestError(e.to_string()))?;
+					.map_err(|e| Error::CompressionError(e.to_string()))?;
 
 				self.add_file_to_zip(folder, file_name_xml, content_xml)
-					.map_err(|mut e| Error::RequestError(e.to_string()))?;
+					.map_err(|e| Error::CompressionError(e.to_string()))?;
 			}
 			_ => {}
 		}
@@ -326,17 +324,17 @@ impl MetadataDeployer {
 	/// - `start_entry`: An error occurs while starting the entry creation process for the package.
 	/// - `write_data`: An error occurs while writing the generated package metadata to the output stream.
 	///
-	fn add_package(&mut self, name: &str, content: HashMap<String, Vec<String>>) -> Result<()> {
-		let package = generate_package_xml(&self.version, &content);
+	fn add_package(&mut self, name: &str, content: HashMap<String, Vec<String>>) -> Result<(), Error> {
+		let package = generate_package_xml(crate::client::DEFAULT_API_VERSION, &content);
 		println!("Adding package: {}\n{}", name, package);
 
 		self.writer
 			.start_entry(name)
-			.map_err(|mut e| Error::RequestError(e.to_string()))?;
+			.map_err(|e| Error::CompressionError(e.to_string()))?;
 
 		self.writer
 			.write_data(package.as_bytes())
-			.map_err(|mut e| Error::RequestError(e.to_string()))?;
+			.map_err(|e| Error::CompressionError(e.to_string()))?;
 
 		Ok(())
 	}
@@ -359,11 +357,11 @@ impl MetadataDeployer {
 	///     Err(e) => eprintln!("Error generating JSON: {}", e),
 	/// }
 	/// ```
-	pub(crate) fn get_deploy_request_json(&self) -> Result<String> {
+	pub(crate) fn get_deploy_request_json(&self) -> Result<String, Error> {
 		let request = DeployRequest {
 			options: self.options.clone(),
 		};
-		serde_json::to_string(&request).map_err(|e| Error::RequestError(e.to_string()))
+		serde_json::to_string(&request).map_err(|e| Error::Json(e))
 	}
 
 	/// Generates a ZIP file containing the specified package files and returns it as a `Vec<u8>`.
@@ -396,7 +394,7 @@ impl MetadataDeployer {
 	/// - If `pre_destructive` or `post_destructive` is empty, the corresponding file will not be added to the ZIP.
 	/// - The `finish` method on the ZIP writer is expected to finalize the ZIP and produce a writable result.
 	///
-	pub(crate) fn get_zip_file(mut self) -> Result<Vec<u8>> {
+	pub(crate) fn get_zip_file(mut self) -> Result<Vec<u8>, Error> {
 		// Add the package.xml files to the zip
 		self.add_package("package.xml", self.package.clone())?;
 		if !self.pre_destructive.is_empty() {
@@ -409,7 +407,7 @@ impl MetadataDeployer {
 		Ok(self
 			.writer
 			.finish()
-			.map_err(|e| Error::RequestError(e.to_string()))?
+			.map_err(|e| Error::CompressionError(e.to_string()))?
 			.into_inner())
 	}
 }

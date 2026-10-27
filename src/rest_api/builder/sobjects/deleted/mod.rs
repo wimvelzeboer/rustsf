@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use crate::rest_api::builder::sobjects::SObjectsBuilder;
-use crate::error::Error;
+use crate::errors::Error;
 use crate::rest_api::HTTPMethod;
 use crate::RestApi;
 use self::sobject_deleted_response::SObjectDeletedResponse;

@@ -1,5 +1,5 @@
 use crate::rest_api::builder::sobjects::SObjectsBuilder;
-use crate::error::Error;
+use crate::errors::Error;
 use crate::RestApi;
 
 impl RestApi {

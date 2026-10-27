@@ -1,6 +1,6 @@
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-use crate::error::Error;
+use crate::errors::Error;
 use super::SalesforceCreateResponse;
 
 

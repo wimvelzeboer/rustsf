@@ -5,7 +5,7 @@ use crate::RestApi;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use std::fmt::Debug;
-use crate::error::Error;
+use crate::errors::Error;
 use crate::rest_api::HTTPMethod;
 
 mod salesforce_create_response;

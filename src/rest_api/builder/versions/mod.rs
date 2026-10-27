@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::error::Error;
+use crate::errors::Error;
 use crate::rest_api::HTTPMethod;
 use crate::RestApi;
 

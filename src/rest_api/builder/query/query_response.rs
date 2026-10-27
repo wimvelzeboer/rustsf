@@ -4,7 +4,7 @@ use serde::Deserialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use std::fmt::Debug;
-use crate::error::Error;
+use crate::errors::Error;
 use crate::RestApi;
 
 pub struct QueryResponse<'a> {

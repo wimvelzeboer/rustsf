@@ -1,7 +1,5 @@
 use crate::Error;
 use base64::prelude::*;
-use s_zip::{SZipError, StreamingZipReader};
-use std::io::Seek;
 use std::io::{Cursor, Read};
 use zip::ZipArchive;
 
@@ -34,8 +32,8 @@ use zip::ZipArchive;
    </soapenv:Body>
  </soapenv:Envelope>
 */
-use crate::metadata_api::errors::XmlParseError;
 use serde::{Deserialize, Serialize};
+use crate::errors::XmlError;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CheckRetrieveStatusResponse {
@@ -74,7 +72,7 @@ pub struct CheckRetrieveStatusResponse {
 }
 
 impl CheckRetrieveStatusResponse {
-	pub fn from_xml(xml: &str) -> Result<Self, XmlParseError> {
+	pub fn from_xml(xml: &str) -> Result<Self, XmlError> {
 		let doc = roxmltree::Document::parse(xml)?;
 		let body = find_element(doc.root_element(), "Body")?;
 		let check_retrieve_status_response = find_element(body, "checkRetrieveStatusResponse")?;
@@ -96,7 +94,7 @@ impl CheckRetrieveStatusResponse {
 		let result = find_element(check_retrieve_status_response, "result")?;
 
 		let mut file_properties = vec![];
-		for element in find_elements(result, "fileProperties")? {
+		for element in find_elements(result, "fileProperties") {
 			file_properties.push(FileProperties::from_xml(element)?);
 		}
 
@@ -121,7 +119,7 @@ impl CheckRetrieveStatusResponse {
 		self.done
 	}
 
-	pub fn get_files(mut self) -> Result<Vec<FileProperties>> {
+	pub fn get_files(mut self) -> Result<Vec<FileProperties>, Error> {
 		match self.zip_file {
 			Some(zip_file) => {
 				// 1. Wrap the in-memory ZIP bytes in a Cursor (implements Read + Seek)
@@ -205,7 +203,7 @@ pub struct FileProperties {
 }
 
 impl FileProperties {
-	fn from_xml(node: roxmltree::Node) -> Result<Self, XmlParseError> {
+	fn from_xml(node: roxmltree::Node) -> Result<Self, XmlError> {
 		Ok(Self {
 			created_by_id: parse_text_child(node, "createdById")?,
 			created_by_name: parse_text_child(node, "createdByName")?,
@@ -233,43 +231,44 @@ impl FileProperties {
 fn find_element<'a, 'input>(
 	root: roxmltree::Node<'a, 'input>,
 	local_name: &'static str,
-) -> Result<roxmltree::Node<'a, 'input>, XmlParseError> {
+) -> Result<roxmltree::Node<'a, 'input>, XmlError> {
 	root.descendants()
 		.find(|node| node.is_element() && node.tag_name().name() == local_name)
-		.ok_or(XmlParseError::MissingElement(local_name))
+		.ok_or(XmlError::MissingElement(local_name))
 }
 
 fn find_elements<'a, 'input>(
 	root: roxmltree::Node<'a, 'input>,
 	local_name: &'static str,
-) -> Result<Vec<roxmltree::Node<'a, 'input>>, XmlParseError> {
-	Ok(root
+) -> Vec<roxmltree::Node<'a, 'input>> {
+	root
 		.descendants()
 		.filter(|node| node.is_element() && node.tag_name().name() == local_name)
-		.collect())
+		.collect()
 }
 
 fn parse_text_child<'a, 'input>(
 	root: roxmltree::Node<'a, 'input>,
 	local_name: &'static str,
-) -> Result<String, XmlParseError> {
+) -> Result<String, XmlError> {
 	let node = find_element(root, local_name)?;
 	node.text()
 		.map(ToOwned::to_owned)
-		.ok_or(XmlParseError::MissingText(local_name))
+		.ok_or(XmlError::MissingText(local_name))
 }
 
 fn parse_bool_child<'a, 'input>(
 	root: roxmltree::Node<'a, 'input>,
 	local_name: &'static str,
-) -> Result<bool, XmlParseError> {
+) -> Result<bool, XmlError> {
 	let value = parse_text_child(root, local_name)?;
-	value.parse::<bool>().map_err(|_| XmlParseError::InvalidBool {
+	value.parse::<bool>().map_err(|_| XmlError::InvalidBool {
 		element: local_name,
 		value,
 	})
 }
 
+/*
 fn extract_file_from_memory(zip_data: Vec<u8>, filename: &str) -> Option<Vec<u8>> {
 	// 1. Wrap the in-memory ZIP bytes in a Cursor (implements Read + Seek)
 	let mut cursor = Cursor::new(zip_data);
@@ -286,3 +285,4 @@ fn extract_file_from_memory(zip_data: Vec<u8>, filename: &str) -> Option<Vec<u8>
 
 	Some(contents)
 }
+*/

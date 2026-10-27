@@ -20,20 +20,20 @@
 //! # See
 //! <https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_rest_deploy.htm>
 //!
-
-use crate::Client;
+use crate::client::Client;
+use crate::errors::Error;
 use crate::metadata_api::metadata_retriever::MetadataRetriever;
 use crate::metadata_api::responses::async_result::AsyncResult;
 use crate::metadata_api::responses::cancel_request::CancelRequest;
 use crate::metadata_api::responses::check_retrieve_status_response::CheckRetrieveStatusResponse;
 use crate::metadata_api::responses::deploy_response::DeployResponse;
 use crate::rest_api::responses::error_response::ErrorResponse;
-use log::{debug, trace};
+use log::trace;
 use metadata_deployer::MetadataDeployer;
 use reqwest::{Response, multipart};
-use serde::Serialize;
 use serde::de::DeserializeOwned;
 use std::collections::HashMap;
+use rustsf_auth::SalesforceCredentials;
 
 pub mod metadata_deployer;
 pub mod metadata_retriever;
@@ -41,8 +41,6 @@ pub mod responses;
 
 const METADATA_NAMESPACE: &str = "http://soap.sforce.com/2006/04/metadata";
 const ENVELOPE_NAMESPACE: &str = "http://schemas.xmlsoap.org/soap/envelope/";
-
-pub(crate) mod errors;
 
 /// A `MetadataApi` that represents the core component for interacting with a Metadata API.
 ///
@@ -85,8 +83,10 @@ impl MetadataApi {
 	///     Ok(())
 	/// }
 	/// ```
-	pub fn new(client: Client) -> Self {
-		MetadataApi { client }
+	pub async fn new(credentials: SalesforceCredentials) -> Result<Self, Error> {
+		Ok(Self {
+			client: Client::new(credentials).await?
+		})
 	}
 
 	/// Cancels a deployment request with the specified `deploy_request_id`.
@@ -124,17 +124,18 @@ impl MetadataApi {
 	///     Ok(())
 	/// }
 	/// ```
-	pub async fn cancel(&self, deploy_request_id: &str) -> Result<DeployResponse> {
+	pub async fn cancel(&self, deploy_request_id: &str) -> Result<DeployResponse, Error> {
+		let url = format!(
+			"{}/metadata/deployRequest/{}",
+			self.client.services_data_version_path(),
+			deploy_request_id,
+		);
 		let response = self
 			.client
 			.patch(
-				// "http://localhost:3000".to_string(),
-				format!(
-					"{}/metadata/deployRequest/{}",
-					self.client.base_version_path()?,
-					deploy_request_id,
-				),
+				&url,
 				CancelRequest::new(),
+				&HashMap::new()
 			)
 			.await?;
 		handle_json_response(response).await
@@ -174,7 +175,7 @@ impl MetadataApi {
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_rest_deploy.htm>
-	pub async fn deploy(&self, request: MetadataDeployer) -> Result<DeployResponse> {
+	pub async fn deploy(&self, request: MetadataDeployer) -> Result<DeployResponse, Error> {
 		// create the form
 		let form = multipart::Form::new()
 			.part(
@@ -192,9 +193,8 @@ impl MetadataApi {
 		let response = self
 			.client
 			.post_multipart(
-				// "http://localhost:3000".to_string(),
-				format!("{}/metadata/deployRequest", self.client.base_version_path()?),
-				vec![],
+				format!("{}/metadata/deployRequest", self.client.services_data_version_path()),
+				&HashMap::new(),
 				form,
 			)
 			.await?;
@@ -229,14 +229,14 @@ impl MetadataApi {
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_rest_deploy.htm>
 	pub fn new_deployment_request(&self) -> MetadataDeployer {
-		MetadataDeployer::new(&self.client)
+		MetadataDeployer::new()
 	}
 
 	pub fn new_retrieval_request(&self) -> MetadataRetriever {
 		MetadataRetriever::new()
 	}
 
-	pub async fn retrieve(&self, request: MetadataRetriever) -> Result<AsyncResult> {
+	pub async fn retrieve(&self, request: MetadataRetriever) -> Result<AsyncResult, Error> {
 		let body = format!(
 			r#"<?xml version="1.0" encoding="UTF-8"?>
 <soapenv:Envelope xmlns:soapenv="{}" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="{}">
@@ -252,8 +252,8 @@ impl MetadataApi {
 </soapenv:Envelope>"#,
 			ENVELOPE_NAMESPACE,
 			METADATA_NAMESPACE,
-			escape_xml(self.session_id()?),
-			self.client.version_number()?,
+			escape_xml(self.client.access_token().await?),
+			crate::client::DEFAULT_API_VERSION,
 			request.get_package(),
 		);
 
@@ -265,7 +265,7 @@ impl MetadataApi {
 		Ok(AsyncResult::from_xml(&xml)?)
 	}
 
-	pub async fn retrieve_status(&self, id: &str) -> Result<CheckRetrieveStatusResponse> {
+	pub async fn retrieve_status(&self, id: &str) -> Result<CheckRetrieveStatusResponse, Error> {
 		let body = format!(
 			r#"<?xml version="1.0" encoding="UTF-8"?>
 <soapenv:Envelope xmlns:soapenv="{}" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="{}">
@@ -279,7 +279,7 @@ impl MetadataApi {
 </soapenv:Envelope>"#,
 			ENVELOPE_NAMESPACE,
 			METADATA_NAMESPACE,
-			escape_xml(self.session_id()?),
+			escape_xml(self.client.access_token().await?),
 			id,
 		);
 
@@ -350,8 +350,7 @@ impl MetadataApi {
 		&self,
 		deploy_request_id: &str,
 		include_details: bool,
-		// ) -> Result<Value> {
-	) -> Result<DeployResponse> {
+	) -> Result<DeployResponse, Error> {
 		let mut params: Vec<(String, String)> = vec![];
 		if include_details {
 			params.push(("includeDetails".to_string(), "true".to_string()));
@@ -362,39 +361,35 @@ impl MetadataApi {
 			.get(
 				format!(
 					"{}/metadata/deployRequest/{}",
-					self.client.base_version_path()?,
+					self.client.services_data_version_path(),
 					deploy_request_id
 				),
-				params,
-				vec![],
+				&params,
+				&HashMap::new(),
 			)
 			.await?;
 
 		handle_json_response(response).await
 	}
-
-	fn session_id(&self) -> Result<&str> {
-		self.client.access_token_value().ok_or(Error::NotLoggedIn)
-	}
 }
 
-async fn handle_json_response<T: DeserializeOwned>(response: Response) -> Result<T> {
+async fn handle_json_response<T: DeserializeOwned>(response: Response) -> Result<T, Error> {
 	if response.status().is_success() {
 		Ok(response.json().await?)
 	} else {
 		let errors: Vec<ErrorResponse> = response.json().await?;
-		Err(Error::ErrorResponses(errors))
+		Err(Error::Salesforce(errors))
 	}
 }
 
-async fn handle_raw_response(response: Response) -> Result<String> {
+/*async fn handle_raw_response(response: Response) -> Result<String, Error> {
 	if response.status().is_success() {
 		Ok(response.text().await?)
 	} else {
 		let errors: Vec<ErrorResponse> = response.json().await?;
-		Err(Error::ErrorResponses(errors))
+		Err(Error::Salesforce(errors))
 	}
-}
+}*/
 
 fn generate_package_xml(version: &str, elements: &HashMap<String, Vec<String>>) -> String {
 	let header = r#"<?xml version="1.0" encoding="UTF-8"?>
@@ -432,8 +427,9 @@ fn add_file_to_package(package: &mut HashMap<String, Vec<String>>, metadata_type
 
 pub struct Deployment {}
 
-fn escape_xml(value: &str) -> String {
+fn escape_xml<S: AsRef<str>>(value: S) -> String {
 	value
+		.as_ref()
 		.replace('&', "&amp;")
 		.replace('<', "&lt;")
 		.replace('>', "&gt;")

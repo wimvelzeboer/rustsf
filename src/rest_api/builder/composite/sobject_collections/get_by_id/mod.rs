@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use serde::de::DeserializeOwned;
 use crate::rest_api::builder::composite::sobject_collections::SObjectCollectionsBuilder;
-use crate::error::Error;
+use crate::errors::Error;
 use crate::rest_api::HTTPMethod;
 use crate::RestApi;
 

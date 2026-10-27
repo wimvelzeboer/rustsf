@@ -2,7 +2,7 @@ use self::sobject_basic_info_response::SObjectBasicInfoResponse;
 use crate::RestApi;
 use crate::rest_api::builder::sobjects::SObjectsBuilder;
 use serde_json::json;
-use crate::error::Error;
+use crate::errors::Error;
 use crate::rest_api::HTTPMethod;
 
 mod sobject_basic_info_response;

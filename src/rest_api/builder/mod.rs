@@ -3,7 +3,7 @@ use crate::rest_api::HTTPMethod;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::fmt::Debug;
-use crate::error::Error;
+use crate::errors::Error;
 
 mod composite;
 mod headers;

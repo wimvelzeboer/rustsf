@@ -28,10 +28,10 @@ pub mod bulk_api_v2;
 
 pub mod primary_types;
 pub mod client;
-pub mod error;
+pub(crate) mod errors;
 
 pub use rustsf_auth::SalesforceCredentials;
-
+pub use errors::Error;
 pub use primary_types::{SObject, SObjectOwner};
 pub use rest_api::responses::error_response::ErrorResponse;
 

@@ -1,9 +1,26 @@
 use anyhow::Result;
-use rustsf::{RestApi, SalesforceCredentials, ToolingApi};
+use rustsf::{RestApi, SalesforceCredentials};
+
+#[cfg(feature = "metadata-api")]
+use rustsf::MetadataApi;
+
+#[cfg(feature = "tooling-api")]
+use rustsf::ToolingApi;
+
 use serde::{Deserialize, Serialize};
 use std::env;
 
 #[allow(dead_code)]
+pub async fn get_metadata_api_client() -> Result<MetadataApi> {
+	let url = env::var("SCRATCH_AUTH_URL")
+		.expect("SCRATCH_AUTH_URL not set")
+		.to_string();
+	let credentials = SalesforceCredentials::sfdx_url(url)?;
+	Ok(MetadataApi::new(credentials).await?)
+}
+
+#[allow(dead_code)]
+#[cfg(feature = "rest-api")]
 pub async fn get_rest_api_client() -> Result<RestApi> {
 	let url = env::var("SCRATCH_AUTH_URL")
 		.expect("SCRATCH_AUTH_URL not set")
@@ -13,6 +30,7 @@ pub async fn get_rest_api_client() -> Result<RestApi> {
 }
 
 #[allow(dead_code)]
+#[cfg(feature = "tooling-api")]
 pub async fn get_tooling_api_client() -> Result<ToolingApi> {
 	let url = env::var("SCRATCH_AUTH_URL")
 		.expect("SCRATCH_AUTH_URL not set")
@@ -52,7 +70,9 @@ pub struct Account {
 impl Account {
 	pub fn new() -> Self {
 		Self {
-			attributes: Attribute { sobject_type: "Account".to_string() },
+			attributes: Attribute {
+				sobject_type: "Account".to_string(),
+			},
 			id: None,
 			description: None,
 			name: None,
@@ -74,4 +94,3 @@ impl Account {
 		self.name.as_deref()
 	}
 }
-

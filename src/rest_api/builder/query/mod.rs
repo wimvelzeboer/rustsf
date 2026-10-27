@@ -22,7 +22,7 @@ use crate::rest_api::HTTPMethod;
 use crate::rest_api::builder::RestApiBuilder;
 use serde::de::DeserializeOwned;
 use crate::rest_api::builder::query::query_response::SalesforceQueryResponse;
-use crate::error::Error;
+use crate::errors::Error;
 
 mod query_response;
 

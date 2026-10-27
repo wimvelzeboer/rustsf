@@ -92,6 +92,7 @@ impl DeployOptions {
 			test_level: Some(TestLevel::RunLocalTests),
 		}
 	}
+
 	pub fn set_run_tests(&mut self, test_level: TestLevel) -> &mut Self {
 		self.test_level = Some(test_level);
 		self

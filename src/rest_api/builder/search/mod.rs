@@ -14,7 +14,7 @@
 
 use crate::rest_api::builder::RestApiBuilder;
 use crate::rest_api::builder::search::sosl_response::SearchResponse;
-use crate::error::Error;
+use crate::errors::Error;
 use crate::rest_api::HTTPMethod;
 use crate::RestApi;
 use self::sosl_response::SoslResponse;

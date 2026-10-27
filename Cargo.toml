@@ -51,3 +51,7 @@ html-escape = "0.2.15"
 [[test]]
 name = "tooling_api_integration_test"
 required-features = ["tooling-api"]
+
+[[test]]
+name = "metadata_api_integration_test"
+required-features = ["metadata-api"]

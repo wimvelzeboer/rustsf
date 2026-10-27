@@ -1,5 +1,4 @@
 use std::fmt::Debug;
-use anyhow::Result;
 use reqwest::Response;
 use serde::Serialize;
 use crate::rest_api::builder::RestApiBuilder;

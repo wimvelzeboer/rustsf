@@ -3,6 +3,7 @@ use rustsf::{RestApi, SalesforceCredentials, ToolingApi};
 use serde::{Deserialize, Serialize};
 use std::env;
 
+#[allow(dead_code)]
 pub async fn get_rest_api_client() -> Result<RestApi> {
 	let url = env::var("SCRATCH_AUTH_URL")
 		.expect("SCRATCH_AUTH_URL not set")
@@ -10,7 +11,9 @@ pub async fn get_rest_api_client() -> Result<RestApi> {
 	let credentials = SalesforceCredentials::sfdx_url(url)?;
 	Ok(RestApi::new(credentials).await?)
 }
-pub async fn get_tooling_api_client() -> Result<RestApi> {
+
+#[allow(dead_code)]
+pub async fn get_tooling_api_client() -> Result<ToolingApi> {
 	let url = env::var("SCRATCH_AUTH_URL")
 		.expect("SCRATCH_AUTH_URL not set")
 		.to_string();
@@ -18,6 +21,7 @@ pub async fn get_tooling_api_client() -> Result<RestApi> {
 	Ok(ToolingApi::new(credentials).await?)
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Attribute {
@@ -25,6 +29,7 @@ pub struct Attribute {
 	pub sobject_type: String,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Account {
@@ -43,6 +48,7 @@ pub struct Account {
 	pub owner_id: Option<String>,
 }
 
+#[allow(dead_code)]
 impl Account {
 	pub fn new() -> Self {
 		Self {

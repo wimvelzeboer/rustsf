@@ -416,9 +416,3 @@ impl RestApi {
 
 	// todo add method for unsupported paths
 }
-
-
-
-#[cfg(test)]
-mod test;
-

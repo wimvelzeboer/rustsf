@@ -2,10 +2,10 @@ use self::salesforce_create_response::SalesforceCreateResponse;
 use self::sobject_create_result::SObjectsCreateResult;
 use super::SObjectsBuilder;
 use crate::RestApi;
-use anyhow::Result;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use std::fmt::Debug;
+use crate::error::Error;
 use crate::rest_api::HTTPMethod;
 
 mod salesforce_create_response;
@@ -117,7 +117,7 @@ impl RestApi {
 		&self,
 		sobject_type: &str,
 		record: T,
-	) -> Result<SalesforceCreateResponse> {
+	) -> Result<SalesforceCreateResponse, Error> {
 		Ok(self
 			.build()
 			.most_recently_used_header(false)
@@ -173,7 +173,7 @@ impl<'a, T: Debug + DeserializeOwned + Serialize> SObjectCreateBuilder<'a, T> {
 	///     }
 	/// }
 	/// ```
-	pub async fn send(self) -> Result<SObjectsCreateResult<T>> {
+	pub async fn send(self) -> Result<SObjectsCreateResult<T>, Error> {
 		let http_response = self
 			.builder
 			.send(HTTPMethod::POST, format!("{}", self.sobject_type), &self.record)

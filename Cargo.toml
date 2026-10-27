@@ -41,8 +41,13 @@ chrono = { version = "0.4.45", features = ["serde"] }
 
 [dev-dependencies]
 #cargo-license = "0.6.1"
+chrono = { version = "0.4.45", features = ["serde"] }
 mockito = "1.7.2"
 tokio = { version = "1.53.1", features = ["rt-multi-thread", "macros"] }
 env_logger = "0.11.3"
 anyhow = "1.0.32"
 html-escape = "0.2.15"
+
+[[test]]
+name = "tooling_api_integration_test"
+required-features = ["tooling-api"]

@@ -25,7 +25,7 @@
 
 use super::RestApiBuilder;
 use crate::rest_api::HTTPMethod;
-use anyhow::Result;
+
 use reqwest::Response;
 use serde::{Serialize};
 use std::fmt::Debug;

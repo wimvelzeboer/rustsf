@@ -1,10 +1,14 @@
-use crate::DefSObject;
-
+use serde::{Deserialize, Serialize};
 use crate as rustsf;
 use rustsf::tooling_api::primary_types::log_category_level::LogCategoryLevel;
 
-#[DefSObject(sobject_type = "DebugLevel")]
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct DebugLevel {
+
+	#[serde(rename = "Id")]
+	pub id: Option<String>,
+
 	#[serde(rename = "ApexCode")]
 	pub apex_code: LogCategoryLevel,
 
@@ -37,6 +41,13 @@ pub struct DebugLevel {
 
 	#[serde(rename = "Workflow")]
 	pub workflow: LogCategoryLevel,
+}
+
+impl DebugLevel {
+
+	pub fn id(&self) -> Option<&str> {
+		self.id.as_deref()
+	}
 }
 
 pub const SOBJECT_NAME: &'static str = "DebugLevel";

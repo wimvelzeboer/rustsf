@@ -1,6 +1,6 @@
-use anyhow::{Context, Result};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use crate::error::Error;
 use super::SalesforceCreateResponse;
 
 
@@ -25,14 +25,11 @@ where
 		&self.response
 	}
 
-	pub fn take_stamped_record(self) -> Result<T> {
-		let mut data = serde_json::to_value(&self.record)
-			.context("Unable to serialize record")?;
-		data["Id"] = serde_json::to_value(&self.response.id)
-			.context("Unable to serialize Id value from response")?;
+	pub fn take_stamped_record(self) -> Result<T, Error> {
+		let mut data = serde_json::to_value(&self.record)?;
+		data["Id"] = serde_json::to_value(&self.response.id)?;
 
-		Ok(serde_json::from_value(data)
-			.context("Unable to deserialize record")?)
+		Ok(serde_json::from_value(data)?)
 	}
 
 	pub fn take_id(self) -> Option<String> {

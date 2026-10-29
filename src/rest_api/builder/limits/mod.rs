@@ -10,12 +10,14 @@ impl RestApi {
 	/// # Example
 	///
 	/// ```rust
-	/// use rustsf::{RestApi, AuthUrl};
-	/// use anyhow::Result;
+	/// use rustsf::{RestApi, SalesforceCredentials};
+	/// use chrono::Utc;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
-	///     let api = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	/// async fn main() {
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com").unwrap();
+	///     let api = RestApi::new(credentials).await.unwrap();
+	///
 	///     match api.list_limits().await {
 	///         Ok(limits) => {
 	///             println!("Daily API Requests: Max {}, Remaining: {}",
@@ -24,7 +26,6 @@ impl RestApi {
 	///         },
 	///         Err(e) => println!("Error retrieving limits: {:?}", e),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///

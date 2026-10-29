@@ -41,19 +41,20 @@ impl RestApi {
 	///
 	/// # Examples
 	/// ```rust
-	/// use rustsf::{RestApi, AuthUrl};
-	/// use anyhow::Result;
+	/// use rustsf::{RestApi, SalesforceCredentials};
+	/// use chrono::Utc;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
-	///     let api = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	/// async fn main() {
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com").unwrap();
+	///     let api = RestApi::new(credentials).await.unwrap();
+	///
 	///     let query = "FIND {test} RETURNING Account(Name)";
 	///
 	///     match api.search_sosl(query).await {
 	///         Ok(response) => println!("Search results: {:?}", response),
 	///         Err(error) => println!("Error executing SOSL query: {:?}", error),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///

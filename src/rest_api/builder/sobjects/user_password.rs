@@ -28,17 +28,17 @@ impl RestApi {
 	///
 	/// # Example
 	/// ```rust
-	/// use rustsf::{RestApi, AuthUrl};
+	/// use rustsf::{RestApi, SalesforceCredentials};
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
-	///     let api = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	/// async fn main() {
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com").unwrap();
+	///     let api = RestApi::new(credentials).await.unwrap();
 	///     match api.is_user_password_expired("user_id").await {
 	///         Ok(is_expired) => println!("Is password expired?: {}", is_expired),
 	///         Err(e) => println!("Failed to check password status: {}", e),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///
@@ -79,23 +79,24 @@ impl RestApi {
 	/// # Example
 	///
 	/// ```rust
-	/// use rustsf::{RestApi, AuthUrl};
+	/// use rustsf::{RestApi, SalesforceCredentials};
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
-	///     let mut api = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	/// async fn main() {
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com").unwrap();
+	///     let api = RestApi::new(credentials).await.unwrap();
+	///
 	///     match api.user_password_reset("user_id").await {
 	///         Ok(new_password) => println!("The new password is: {}", new_password),
 	///         Err(e) => println!("Failed to reset password: {}", e),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/dome_sobject_user_password.htm>
-	pub async fn user_password_reset(&mut self, user_id: &str) -> Result<String, Error> {
+	pub async fn user_password_reset(&self, user_id: &str) -> Result<String, Error> {
 		let url = format!(
 			"{}/sobjects/User/{}/password",
 			self.client.services_data_version_path(),
@@ -126,17 +127,17 @@ impl RestApi {
 	/// # Example
 	///
 	/// ```rust
-	/// use rustsf::{RestApi, AuthUrl};
-	/// use anyhow::Result;
+	/// use rustsf::{RestApi, SalesforceCredentials};
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
-	///     let mut api = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	/// async fn main() {
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com").unwrap();
+	///     let api = RestApi::new(credentials).await.unwrap();
+	///
 	///     match api.set_user_password("user_id", "password").await {
 	///         Ok(_) => println!("Successful password change"),
 	///         Err(e) => println!("Failed to set password: {:?}", e),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///
@@ -149,7 +150,7 @@ impl RestApi {
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/dome_sobject_user_password.htm>
-	pub async fn set_user_password(&mut self, user_id: &str, password: &str) -> Result<(), Error> {
+	pub async fn set_user_password(&self, user_id: &str, password: &str) -> Result<(), Error> {
 		let url = format!(
 			"{}/sobjects/User/{}/password",
 			self.client.services_data_version_path(),

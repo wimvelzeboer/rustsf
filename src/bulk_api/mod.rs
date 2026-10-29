@@ -85,11 +85,10 @@ impl BulkApi {
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let mut client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///     let bulk_api = BulkApi::new(client);
-	///     Ok(())
 	/// }
 	/// ```
 	pub fn new(client: Client) -> Self {
@@ -156,7 +155,7 @@ impl BulkApi {
 	/// }
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -171,7 +170,6 @@ impl BulkApi {
 	///         Ok(resp) => println!("Job created successfully: {:?}", resp),
 	///         Err(err) => eprintln!("Failed to create job: {}", err),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///
@@ -214,7 +212,7 @@ impl BulkApi {
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let mut client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -229,7 +227,6 @@ impl BulkApi {
 	///             eprintln!("Failed to add batch job: {:?}", error);
 	///         }
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///
@@ -276,7 +273,7 @@ impl BulkApi {
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let mut client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -286,7 +283,6 @@ impl BulkApi {
 	///         Ok(data) => println!("Batch details: {:?}", data),
 	///         Err(e) => eprintln!("Error fetching batch: {:?}", e),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	/// # See
@@ -320,7 +316,7 @@ impl BulkApi {
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let mut client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -370,7 +366,7 @@ impl BulkApi {
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let mut client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -379,7 +375,6 @@ impl BulkApi {
 	///         Ok(response) => println!("Job details: {:?}", response),
 	///         Err(e) => eprintln!("Failed to fetch job details: {:?}", e),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///
@@ -421,7 +416,7 @@ impl BulkApi {
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let mut client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -437,7 +432,6 @@ impl BulkApi {
 	///             eprintln!("Error occurred while retrieving batches: {:?}", e);
 	///         },
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///
@@ -473,7 +467,7 @@ impl BulkApi {
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let mut client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -490,7 +484,6 @@ impl BulkApi {
 	///             eprintln!("Error retrieving results: {:?}", err);
 	///         }
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///
@@ -544,7 +537,7 @@ impl BulkApi {
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let mut client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -553,7 +546,6 @@ impl BulkApi {
 	///         Ok(response) => println!("Result fetched: {:?}", response),
 	///         Err(error) => println!("Failed to fetch result: {:?}", error),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///
@@ -608,7 +600,7 @@ impl BulkApi {
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let mut client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -617,7 +609,6 @@ impl BulkApi {
 	///         Ok(response) => println!("Job aborted successfully: {:?}", response),
 	///         Err(error) => eprintln!("Failed to abort job: {:?}", error),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///

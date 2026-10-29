@@ -29,12 +29,12 @@ impl RestApi {
 	/// # Examples
 	///
 	/// ```rust
-	/// use rustsf::{RestApi, AuthUrl};
-	/// use anyhow::Result;
+	/// use rustsf::{RestApi, SalesforceCredentials};
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
-	///     let api = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	/// async fn main() {
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com").unwrap();
+	///     let api = RestApi::new(credentials).await.unwrap();
 	///
 	///     let result = api.delete_sobject("Account", "001D000000IqhSLIAZ").await;
 	///
@@ -42,7 +42,6 @@ impl RestApi {
 	///         Ok(()) => println!("Record deleted successfully."),
 	///         Err(e) => eprintln!("Failed to delete record: {:?}", e),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///
@@ -89,20 +88,19 @@ impl<'a> SObjectsBuilder<'a> {
 	/// # Examples
 	///
 	/// ```rust
-	/// use rustsf::{RestApi, AuthUrl};
-	/// use anyhow::Result;
+	/// use rustsf::{RestApi, SalesforceCredentials};
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
-	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	/// async fn main() {
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com").unwrap();
+	///     let api = RestApi::new(credentials).await.unwrap();
 	///
-	///     let result = client.build().sobjects().delete("Account", "001D000000IqhSLIAZ").send().await;
+	///     let result = api.build().sobjects().delete("Account", "001D000000IqhSLIAZ").send().await;
 	///
 	///     match result {
 	///         Ok(()) => println!("Record deleted successfully."),
 	///         Err(e) => eprintln!("Failed to delete record: {:?}", e),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///
@@ -145,14 +143,15 @@ impl<'a> SObjectDeleteBuilder<'a> {
 	///
 	/// # Example
 	/// ```rust
-	/// use rustsf::{RestApi, AuthUrl};
+	/// use rustsf::{RestApi, SalesforceCredentials};
 	///
 	/// #[tokio::main]
 	/// async fn main() {
-	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com").unwrap()).await.unwrap();
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com").unwrap();
+	///     let api = RestApi::new(credentials).await.unwrap();
 	///
 	///     let account_id = "0012F00002h5G8V";
-	///     match client.build()
+	///     match api.build()
 	/// 			.sobjects()
 	/// 			.delete("Account", account_id)
 	/// 			.send()

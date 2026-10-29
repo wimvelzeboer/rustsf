@@ -31,14 +31,15 @@ impl RestApi {
 	/// information about the global objects available in Salesforce.
 	/// # Example
 	/// ```rust
-	/// use rustsf::{RestApi, AuthUrl};
+	/// use rustsf::{RestApi, SalesforceCredentials};
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
-	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	/// async fn main() {
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com").unwrap();
+	///     let api = RestApi::new(credentials).await.unwrap();
 	///
-	///     match client.describe_global().await {
+	///     match api.describe_global().await {
 	///         Ok(response) => {
 	///             println!("Successfully retrieved global objects: {:?}", response);
 	///         }
@@ -46,7 +47,6 @@ impl RestApi {
 	///             eprintln!("Error retrieving global objects: {:?}", e);
 	///         }
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///
@@ -84,26 +84,25 @@ impl RestApi {
 	///
 	/// # Example
 	/// ```rust
-	/// use rustsf::{RestApi, AuthUrl};
-	/// use anyhow::Result;
+	/// use rustsf::{RestApi, SalesforceCredentials};
 	/// use chrono::{Utc, TimeZone};
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
-	///     let api = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	/// async fn main() {
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com").unwrap();
+	///     let api = RestApi::new(credentials).await.unwrap();
 	///
 	///     let since = Utc.with_ymd_and_hms(2015, 10, 21, 7, 28, 0).unwrap();
 	///     match api.describe_global_modified(since).await {
 	///         Ok(response) => println!("Retrieved modified sObjects: {:?}", response),
 	///         Err(err) => println!("Failed to retrieve modified sObjects: {:?}", err),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_describeGlobal.htm>
-	pub async fn describe_global_modified(&mut self, datetime: chrono::DateTime<Utc>) -> Result<GlobalDescribeResponse, Error> {
+	pub async fn describe_global_modified(&self, datetime: chrono::DateTime<Utc>) -> Result<GlobalDescribeResponse, Error> {
 		Ok(self.build()
 			.if_modified_since_header(&datetime)
 			.sobjects()
@@ -137,25 +136,25 @@ impl RestApi {
 	///
 	/// # Example
 	/// ```rust
-	/// use rustsf::{RestApi, AuthUrl};
+	/// use rustsf::{RestApi, SalesforceCredentials};
 	/// use anyhow::Result;
 	/// use chrono::{Utc, TimeZone};
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
-	///     let api = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	/// async fn main() {
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com").unwrap();
+	///     let api = RestApi::new(credentials).await.unwrap();
 	///
 	///     let since = Utc.with_ymd_and_hms(2015, 10, 21, 7, 28, 0).unwrap();
 	///     match api.describe_global_unmodified(since).await {
 	///         Ok(response) => println!("Retrieved unmodified sObjects: {:?}", response),
 	///         Err(err) => println!("Failed to retrieve unmodified sObjects: {:?}", err),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_describeGlobal.htm>
-	pub async fn describe_global_unmodified(&mut self, datetime: chrono::DateTime<Utc>) -> Result<GlobalDescribeResponse, Error> {
+	pub async fn describe_global_unmodified(&self, datetime: chrono::DateTime<Utc>) -> Result<GlobalDescribeResponse, Error> {
 		let since = datetime.format("%a, %d %b %Y %H:%M:%S %:z").to_string();
 		Ok(self.build()
 			.if_unmodified_since_header(&since)
@@ -191,16 +190,17 @@ impl<'a> SObjectsBuilder<'a> {
 	///
 	/// # Example
 	/// ```rust
-	/// use rustsf::{RestApi, AuthUrl};
-	/// use anyhow::Result;
+	/// use rustsf::{RestApi, SalesforceCredentials};
 	/// use chrono::{Utc, TimeZone};
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
-	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	/// async fn main() {
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com").unwrap();
+	///     let api = RestApi::new(credentials).await.unwrap();
+	///
 	///     let since = Utc.with_ymd_and_hms(2015, 10, 21, 7, 28, 0).unwrap();
 	///
-	///     match client.build()
+	///     match api.build()
 	///         .if_modified_since_header(&since)
 	/// 		.sobjects()
 	/// 		.describe_global()
@@ -213,7 +213,6 @@ impl<'a> SObjectsBuilder<'a> {
 	///             eprintln!("Error retrieving global objects: {:?}", e);
 	///         }
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///
@@ -250,18 +249,17 @@ impl<'a> GlobalDescribeBuilder<'a> {
 	///
 	/// # Example
 	/// ```rust
-	/// use rustsf::{Credentials, RestApi, AuthUrl};
-	/// use anyhow::Result;
+	/// use rustsf::{RestApi, SalesforceCredentials};
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
-	///     let mut client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	/// async fn main() {
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com").unwrap();
+	///     let api = RestApi::new(credentials).await.unwrap();
 	///
-	///     match client.build().sobjects().describe_global().send().await {
+	///     match api.build().sobjects().describe_global().send().await {
 	///         Ok(response) => println!("Describe result: {:?}", response),
 	///         Err(e) => println!("Error retrieving object description: {:?}", e),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	pub async fn send(self) -> Result<GlobalDescribeResponse, Error> {

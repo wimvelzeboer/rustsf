@@ -56,7 +56,7 @@ impl ToolingApi {
 	/// use rustsf::{Client, Credentials, ToolingApi, DefSObject};
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -66,7 +66,6 @@ impl ToolingApi {
 	///         Ok(response) => println!("Query response: {:?}", response),
 	///         Err(error) => println!("Error executing query: {:?}", error),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///
@@ -95,7 +94,7 @@ impl ToolingApi {
 	/// use rustsf::tooling_api::schema::apex_log::ApexLog;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -103,7 +102,6 @@ impl ToolingApi {
 	///     let apex_str = "System.debug('Hello, World!');";
 	///     let response: Vec<ApexLog> = api.get_latest_apex_logs(10).await?;
 	///     println!("Apex logs: {:?}", response),
-	///     Ok(())
 	/// }
 	/// ```
 	pub async fn get_latest_apex_logs(&self, limit: u32) -> Result<Vec<schema::apex_log::ApexLog>, Error> {
@@ -138,7 +136,7 @@ impl ToolingApi {
 	/// use rustsf::tooling_api::schema::apex_log::ApexLog;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -148,7 +146,6 @@ impl ToolingApi {
 	///     let log_id = logs.first().unwrap().id().unwrap();
 	///     let body: String = api.get_apex_log_body(&log_id).await?;
 	///     println!("Apex log: {:?}", body),
-	///     Ok(())
 	/// }
 	/// ```
 	pub async fn get_apex_log_body(&self, log_id: &str) -> Result<String, Error> {
@@ -175,7 +172,7 @@ impl ToolingApi {
 	/// use rustsf::tooling_api::schema::trace_flag::TraceFlag;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -183,7 +180,6 @@ impl ToolingApi {
 	///     let mut api = ToolingApi::new(client);
 	///     let response: Vec<TraceFlag> = api.get_trace_flags(&user_id).await?;
 	///     println!("Apex trace flags: {:?}", response),
-	///     Ok(())
 	/// }
 	/// ```
 	pub async fn get_trace_flags(&self, user_id: &str) -> Result<Vec<schema::trace_flag::TraceFlag>, Error> {
@@ -217,7 +213,7 @@ impl ToolingApi {
 	/// use rustsf::tooling_api::schema::trace_flag::TraceFlag;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -233,7 +229,6 @@ impl ToolingApi {
 	///
 	///     let response = api.create_trace_flag(trace_flag).await?;
 	///     println!("Apex trace flag: {:?}", response),
-	///     Ok(())
 	/// }
 	/// ```
 	pub async fn create_trace_flag<T: Serialize + std::fmt::Debug>(
@@ -270,14 +265,13 @@ impl ToolingApi {
 	/// use rustsf::tooling_api::schema::debug_level::DebugLevel;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
 	///     let mut api = ToolingApi::new(client);
 	///     let response: Vec<DebugLevel> = api.get_debug_level("SFDC_DevConsole").await?;
 	///     println!("Debug Level: {:?}", response),
-	///     Ok(())
 	/// }
 	/// ```
 	pub async fn get_debug_level(&self, developer_name: &str) -> Result<Vec<schema::debug_level::DebugLevel>, Error> {
@@ -311,7 +305,7 @@ impl ToolingApi {
 	/// use std::collections::HashMap;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -324,7 +318,6 @@ impl ToolingApi {
 	///     params.insert("Visualforce", "NONE");
 	///     let response = tooling.create_debug_level(params).await?;
 	///     println!("Debug Level: {:?}", response),
-	///     Ok(())
 	/// }
 	/// ```
 	pub async fn create_debug_level<T: Serialize + std::fmt::Debug>(&self, params: T) -> Result<String, Error> {

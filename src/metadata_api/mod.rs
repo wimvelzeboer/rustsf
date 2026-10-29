@@ -72,7 +72,7 @@ impl MetadataApi {
 	/// use rustsf::{Client, Credentials, MetadataApi};
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -80,7 +80,6 @@ impl MetadataApi {
 	///
 	///     // ... add your logic here...
 	///
-	///     Ok(())
 	/// }
 	/// ```
 	pub async fn new(credentials: SalesforceCredentials) -> Result<Self, Error> {
@@ -108,7 +107,7 @@ impl MetadataApi {
 	/// use rustsf::{Client, Credentials, MetadataApi};
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -121,7 +120,6 @@ impl MetadataApi {
 	///     // Cancel the deployment
 	///     let response = api.cancel(response.get_deploy_request_id()).await?;
 	///     println!("Cancel response {:?}", response);
-	///     Ok(())
 	/// }
 	/// ```
 	pub async fn cancel(&self, deploy_request_id: &str) -> Result<DeployResponse, Error> {
@@ -156,7 +154,7 @@ impl MetadataApi {
 	/// use rustsf::{Client, Credentials, MetadataApi};
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -165,7 +163,6 @@ impl MetadataApi {
 	///     // ... add your logic here to add things to the deployment
 	///     let response = api.deploy(request).await?;
 	///     println!("Deployment response {:?}", response);
-	///     Ok(())
 	/// }
 	/// ```
 	///
@@ -212,7 +209,7 @@ impl MetadataApi {
 	/// use rustsf::{Client, Credentials, MetadataApi};
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -222,7 +219,6 @@ impl MetadataApi {
 	///     // ... add your logic here to all things to the deployment
 	///     // e.g. request.add(....)?;
 	///     let response = api.deploy(deployer).await?;
-	///     Ok(())
 	/// }
 	/// ```
 	///
@@ -315,7 +311,7 @@ impl MetadataApi {
 	/// use rustsf::{Client, Credentials, MetadataApi};
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -328,7 +324,6 @@ impl MetadataApi {
 	///     // Cancel the deployment
 	///     let response = api.status(response.get_deploy_request_id(), true).await?;
 	///     println!("Status response {:?}", response);
-	///     Ok(())
 	/// }
 	/// ```
 	///

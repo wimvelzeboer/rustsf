@@ -59,24 +59,22 @@ impl<'a> QueryResponse<'a> {
 	///
 	/// # Examples
 	/// ```rust
-	/// use rustsf::{Client, Credentials, RestApi, DefSObject};
-	/// use anyhow::Result;
+	/// use rustsf::{RestApi, SalesforceCredentials, DefSObject};
+	/// use chrono::Utc;
 	///
 	/// #[DefSObject(sobject_type = "Account", fields="system,type,audit,name")]
 	/// struct Account { }
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
-	///     let mut client= Client::new(Credentials::new()).await?;
-	///     // Authentication logic...
+	/// async fn main() {
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com").unwrap();
+	///     let api = RestApi::new(credentials).await.unwrap();
 	///
-	///     let mut api = RestApi::new(client);
 	///     let next_url = "/services/data/v60.0/query/01gB0000003mzKJQAY-2000";
 	///     match api.query_more::<Account>(&next_url).await {
 	///         Ok(response) => println!("Query response: {:?}", response),
 	///         Err(error) => println!("Error executing query: {:?}", error),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///

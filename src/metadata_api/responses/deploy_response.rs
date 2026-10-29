@@ -52,7 +52,7 @@ impl DeployResponse {
 	/// use rustsf::{Client, Credentials, MetadataApi};
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -62,7 +62,6 @@ impl DeployResponse {
 	///
 	///     let response = api.deploy(request).await?;
 	///     println!("Deploy Id {:?}", response.get_deploy_request_id();
-	///     Ok(())
 	/// }
 	/// ```
 	///

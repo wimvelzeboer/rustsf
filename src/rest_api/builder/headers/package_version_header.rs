@@ -28,8 +28,16 @@ impl<'a> RestApiBuilder<'a> {
 	///
 	/// # Example
 	/// ```
-	/// let mut client = MyClient::new();
-	/// client.package_version_header("my_namespace", "1.0.0");
+	/// use rustsf::{RestApi, SalesforceCredentials};
+	/// use chrono::Utc;
+	///
+	/// #[tokio::main]
+	/// async fn main() {
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com").unwrap();
+	///     let api = RestApi::new(credentials).await.unwrap();
+	///
+	/// 	let mut request = api.build().package_version_header("my_namespace", "1.0.0");
+	/// }
 	/// ```
 	///
 	/// In this example, a header with the key `x-sfdc-packageversion-my_namespace` and the value `1.0.0`

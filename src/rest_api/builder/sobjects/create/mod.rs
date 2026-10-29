@@ -35,19 +35,20 @@ impl<'a> SObjectsBuilder<'a> {
 	///
 	/// # Example
 	/// ```rust
-	/// use rustsf::{RestApi, AuthUrl};
+	/// use rustsf::{RestApi, SalesforceCredentials};
 	/// use serde_json::json;
 	///
 	/// #[tokio::main]
 	/// async fn main() {
-	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com").unwrap()).await.unwrap();
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com").unwrap();
+	///     let api = RestApi::new(credentials).await.unwrap();
 	///
-	///     match client.build()
+	///     match api.build()
 	/// 			.sobjects()
 	/// 			.create("Account", json!({"Name": "Acme"}))
 	/// 			.send()
 	/// 			.await {
-	///         Ok(response) => println!("Record ID: {:?}", response.id),
+	///         Ok(response) => println!("Record ID: {:?}", response.take_id()),
 	///         Err(error) => println!("Error creating account: {:?}", error),
 	///     }
 	/// }
@@ -90,16 +91,17 @@ impl RestApi {
 	///
 	/// # Example
 	/// ```rust
-	/// use rustsf::{RestApi, AuthUrl};
+	/// use rustsf::{RestApi, SalesforceCredentials};
 	/// use serde_json::json;
 	///
 	/// #[tokio::main]
 	/// async fn main() {
-	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com").unwrap()).await.unwrap();
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com").unwrap();
+	///     let api = RestApi::new(credentials).await.unwrap();
 	///
-	///     match client.create("Account", json!({"Name": "Acme"})).await {
-	///         Ok(response) => println!("Created record with ID: {}", response.id),
-	///         Err(err) => eprintln!("Failed to create record: {}", err),
+	///     match api.create("Account", json!({"Name": "Acme"})).await {
+	///         Ok(response) => println!("Created record with ID: {:?}", response.id),
+	///         Err(err) => eprintln!("Failed to create record: {:?}", err),
 	///     }
 	/// }
 	/// ```
@@ -156,19 +158,20 @@ impl<'a, T: Debug + DeserializeOwned + Serialize> SObjectCreateBuilder<'a, T> {
 	///
 	/// # Example
 	/// ```rust
-	/// use rustsf::{RestApi, AuthUrl};
+	/// use rustsf::{RestApi, SalesforceCredentials};
 	/// use serde_json::json;
 	///
 	/// #[tokio::main]
 	/// async fn main() {
-	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com").unwrap()).await.unwrap();
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com").unwrap();
+	///     let api = RestApi::new(credentials).await.unwrap();
 	///
-	///     match client.build()
+	///     match api.build()
 	/// 			.sobjects()
 	/// 			.create("Account", json!({"Name": "Acme"}))
 	/// 			.send()
 	/// 			.await {
-	///         Ok(response) => println!("Record ID: {:?}", response.id),
+	///         Ok(response) => println!("Record ID: {:?}", response.take_id()),
 	///         Err(error) => println!("Error creating account: {:?}", error),
 	///     }
 	/// }

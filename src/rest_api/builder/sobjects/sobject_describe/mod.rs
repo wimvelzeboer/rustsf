@@ -16,18 +16,18 @@ impl RestApi {
 	///
 	/// # Example
 	/// ```rust
-	/// use rustsf::{RestApi, AuthUrl};
+	/// use rustsf::{RestApi, SalesforceCredentials};
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
-	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	/// async fn main() {
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com").unwrap();
+	///     let api = RestApi::new(credentials).await.unwrap();
 	///
-	///     match client.sobject_describe("Account").await {
+	///     match api.sobject_describe("Account").await {
 	///         Ok(response) => println!("Describe result: {:?}", response),
 	///         Err(e) => println!("Error retrieving object description: {:?}", e),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///
@@ -64,18 +64,18 @@ impl<'a> SObjectsBuilder<'a> {
 	///
 	/// # Example
 	/// ```rust
-	/// use rustsf::{RestApi, AuthUrl};
+	/// use rustsf::{RestApi, SalesforceCredentials};
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
-	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	/// async fn main() {
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com").unwrap();
+	///     let api = RestApi::new(credentials).await.unwrap();
 	///
-	///     match client.build().sobjects().describe("Account").send().await {
+	///     match api.build().sobjects().describe("Account").send().await {
 	///         Ok(response) => println!("Describe result: {:?}", response),
 	///         Err(e) => println!("Error retrieving object description: {:?}", e),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///

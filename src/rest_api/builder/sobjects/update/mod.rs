@@ -31,19 +31,17 @@ impl RestApi {
 	///
 	/// # Example
 	/// ```
-	/// use rustsf::{Client, Credentials, RestApi, DefSObject};
+	/// use rustsf::{SalesforceCredentials, RestApi, DefSObject};
 	/// use serde::{Deserialize, Serialize};
-	/// use anyhow::Result;
 	///
 	/// #[DefSObject(sobject_type = "Account", fields="system,type,name")]
 	/// struct Account { }
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
-	///     let mut client= Client::new(Credentials::new()).await?;
-	///     // Authentication logic...
+	/// async fn main() {
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com").unwrap();
+	///     let api = RestApi::new(credentials).await.unwrap();
 	///
-	///     let mut api = RestApi::new(client);
 	///     let mut account = Account::new();
 	///     account.id = Some("001D000000IqhSLIAZ".to_string());
 	///     account.name = Some("Updated Account Name".to_string());
@@ -52,7 +50,6 @@ impl RestApi {
 	///         Ok(()) => println!("Account updated successfully."),
 	///         Err(error) => println!("Error updating account: {:?}", error),
 	///     };
-	///     Ok(())
 	/// }
 	/// ```
 	///

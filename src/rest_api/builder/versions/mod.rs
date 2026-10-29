@@ -32,12 +32,13 @@ impl RestApi {
 	/// # Example
 	///
 	/// ```rust
-	/// use rustsf::{RestApi, AuthUrl};
+	/// use rustsf::{RestApi, SalesforceCredentials};
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
-	///     let api = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	/// async fn main() {
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com").unwrap();
+	///     let api = RestApi::new(credentials).await.unwrap();
 	///     match api.versions().await {
 	///         Ok(versions) => {
 	///             for version in versions {
@@ -46,7 +47,6 @@ impl RestApi {
 	///         }
 	///         Err(error) => eprintln!("Error retrieving versions: {:?}", error),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///

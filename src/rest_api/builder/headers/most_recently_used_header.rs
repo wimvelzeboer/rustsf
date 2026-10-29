@@ -26,12 +26,15 @@ impl<'a> RestApiBuilder<'a> {
 	///
 	/// # Example
 	/// ```rust
-	/// use rustsf::{RestApi, AuthUrl};
+	/// use rustsf::{RestApi, SalesforceCredentials};
+	/// use chrono::Utc;
 	///
 	/// #[tokio::main]
 	/// async fn main() {
-	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com").unwrap()).await.unwrap();
-	///     let builder = client.build().most_recently_used_header(true);
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com").unwrap();
+	///     let api = RestApi::new(credentials).await.unwrap();
+	///
+	/// 	let mut request = api.build().most_recently_used_header(true);
 	/// }
 	/// ```
 	///

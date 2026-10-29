@@ -27,19 +27,19 @@ impl RestApi {
 	///
 	/// # Example
 	/// ```rust
-	/// use rustsf::{RestApi, AuthUrl};
+	/// use rustsf::{RestApi, SalesforceCredentials};
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
-	///     let api = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	/// async fn main() {
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com").unwrap();
+	///     let api = RestApi::new(credentials).await.unwrap();
 	///
 	///     // Using a custom struct or serde_json::Value
 	///     match api.sobject_by_id::<serde_json::Value>("Account", "001D000000IqhSLIAZ").await {
 	///         Ok(record) => println!("Account Data: {:?}", record),
 	///         Err(error) => println!("Error retrieving account: {:?}", error),
 	///     };
-	///     Ok(())
 	/// }
 	/// ```
 	///
@@ -97,9 +97,18 @@ impl<'a> SObjectsBuilder<'a> {
    ///
    /// # Example
    /// ```rust
-   /// let account: Account = client
-   ///     .sobject_by_id("Account", "001D000000IqhSLIAZ")
-   ///     .await?;
+   /// use rustsf::{RestApi, SalesforceCredentials};
+   /// use serde_json::Value;
+   ///
+   /// #[tokio::main]
+   /// async fn main() {
+   ///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com").unwrap();
+   ///     let api = RestApi::new(credentials).await.unwrap();
+   ///     match api.sobject_by_id::<Value>("Account", "001D000000IqhSLIAZ").await {
+   ///         Ok(response) => println!("Record: {:?}", response),
+   ///         Err(error) => println!("Error creating account: {:?}", error),
+   ///     }
+   /// }
    /// ```
    ///
    /// This example retrieves an `Account` object with the given ID and deserializes it into the `Account` struct.

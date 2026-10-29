@@ -84,13 +84,13 @@ impl<'a> SObjectsBuilder<'a> {
 	///   You can correct the error by choosing start and end dates that are closer together.
 	/// # Example
 	/// ```rust
-	/// use rustsf::{RestApi, AuthUrl};
-	/// use anyhow::Result;
+	/// use rustsf::{RestApi, SalesforceCredentials};
 	/// use chrono::{Utc, TimeZone};
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
-	///     let api = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	/// async fn main() {
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com").unwrap();
+	///     let api = RestApi::new(credentials).await.unwrap();
 	///
 	///     let start_date = Utc.with_ymd_and_hms(2023, 1, 1, 0, 0, 0).unwrap();
 	///     let end_date = Utc.with_ymd_and_hms(2023, 1, 31, 23, 59, 59).unwrap();
@@ -104,7 +104,6 @@ impl<'a> SObjectsBuilder<'a> {
 	///             eprintln!("Error fetching deleted objects: {:?}", e);
 	///         }
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///

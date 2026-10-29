@@ -145,7 +145,7 @@ impl MetadataDeployer {
 	/// use rustsf::{Client, Credentials, MetadataApi};
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -166,7 +166,6 @@ impl MetadataDeployer {
 	///
 	///     let response = api.deploy(request).await?;
 	///     println!("Deploy response {:?}", response);
-	///     Ok(())
 	/// }
 	/// ```
 	///
@@ -225,7 +224,7 @@ impl MetadataDeployer {
 	/// use rustsf::{Client, Credentials, MetadataApi};
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -235,7 +234,6 @@ impl MetadataDeployer {
 	///
 	///     let response = api.deploy(request).await?;
 	///     println!("Deploy response {:?}", response);
-	///     Ok(())
 	/// }
 	/// ```
 	pub fn delete_post(&mut self, metadata_type: &str, objects: Vec<&str>) -> &mut Self {
@@ -267,7 +265,7 @@ impl MetadataDeployer {
 	/// use rustsf::{Client, Credentials, MetadataApi};
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -277,7 +275,6 @@ impl MetadataDeployer {
 	///
 	///     let response = api.deploy(request).await?;
 	///     println!("Deploy response {:?}", response);
-	///     Ok(())
 	/// }
 	/// ```
 	pub fn delete_pre(&mut self, metadata_type: &str, objects: Vec<&str>) -> &mut Self {

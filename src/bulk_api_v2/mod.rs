@@ -145,12 +145,11 @@ impl BulkApiV2 {
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let mut client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
 	///     let mut bulk_api = BulkApiV2::new(client);
-	///     Ok(())
 	/// }
 	/// ```
 	pub fn new(client: Client) -> Self {
@@ -182,7 +181,7 @@ impl BulkApiV2 {
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let mut client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///     let params = json!({
@@ -195,7 +194,6 @@ impl BulkApiV2 {
 	///         Ok(res) => println!("Job created successfully: {:?}", res),
 	///         Err(err) => eprintln!("Failed to create job: {:?}", err),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///
@@ -233,7 +231,7 @@ impl BulkApiV2 {
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let mut client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -244,7 +242,6 @@ impl BulkApiV2 {
 	///         Ok(message) => println!("Success: {}", message),
 	///         Err(e) => eprintln!("Error: {:?}", e),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///
@@ -290,7 +287,7 @@ impl BulkApiV2 {
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let mut client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -304,7 +301,6 @@ impl BulkApiV2 {
 	///             eprintln!("Failed to retrieve jobs: {:?}", e);
 	///         },
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///
@@ -340,7 +336,7 @@ impl BulkApiV2 {
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let mut client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -350,7 +346,6 @@ impl BulkApiV2 {
 	///         Ok(response) => println!("Job info retrieved: {:?}", response),
 	///         Err(e) => eprintln!("Failed to retrieve job info: {:?}", e),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///
@@ -400,7 +395,7 @@ impl BulkApiV2 {
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let mut client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -419,7 +414,6 @@ impl BulkApiV2 {
 	///             eprintln!("Error fetching job records: {:?}", err);
 	///         }
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///
@@ -461,7 +455,7 @@ impl BulkApiV2 {
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let mut client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -471,7 +465,6 @@ impl BulkApiV2 {
 	///         Ok(response) => println!("Job aborted successfully: {:?}", response),
 	///         Err(e) => eprintln!("Failed to abort job: {:?}", e),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///
@@ -516,7 +509,7 @@ impl BulkApiV2 {
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let mut client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -530,7 +523,6 @@ impl BulkApiV2 {
 	///         Ok(response) => println!("Upload state set successfully: {:?}", response),
 	///         Err(e) => eprintln!("Failed to set upload state: {:?}", e),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///
@@ -566,7 +558,7 @@ impl BulkApiV2 {
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let mut client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -582,7 +574,6 @@ impl BulkApiV2 {
 	///             eprintln!("Error checking job status: {:?}", error);
 	///         }
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///

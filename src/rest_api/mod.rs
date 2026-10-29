@@ -295,16 +295,15 @@ impl RestApi {
 	/// # Examples
 	///
 	/// ```
-	/// use rustsf::{AuthUrl, RestApi};
-	/// use anyhow::Result;
+	/// use rustsf::{SalesforceCredentials, RestApi};
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com").unwrap();
+	///     let api = RestApi::new(credentials).await.unwrap();
 	///
-	///     let mut api = RestApi::new(SalesforceCredentials::sfdx_url("force://....my.salesforce.comm")?).await?;
 	///     // you call the api here..
 	///
-	///     Ok(())
 	/// }
 	/// ```
 	pub async fn new(credentials: SalesforceCredentials) -> Result<Self, Error> {
@@ -336,15 +335,14 @@ impl RestApi {
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
-	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@org-name.my.salesforce.com").unwrap();
+	/// async fn main() {
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com").unwrap();
+	///     let api = RestApi::new(credentials).await.unwrap();
 	///
-	///     let api = RestApi::new(credentials).await?;
 	///     match api.list_resources().await {
 	///         Ok(data) => println!("Resources: {:?}", data),
 	///         Err(e) => eprintln!("Failed to list resources: {}", e),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///

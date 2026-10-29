@@ -94,14 +94,16 @@ impl<'a> RestApiBuilder<'a> {
 	///
 	/// # Example
 	/// ```rust
-	/// use rustsf::{RestApi, AuthUrl};
+	/// use rustsf::{RestApi, SalesforceCredentials};
 	/// use chrono::Utc;
 	///
 	/// #[tokio::main]
 	/// async fn main() {
-	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com").unwrap()).await.unwrap();
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com").unwrap();
+	///     let api = RestApi::new(credentials).await.unwrap();
+	///
 	///     let datetime = Utc::now();
-	///     let builder = client.build().if_modified_since_header(&datetime);
+	///     let builder = api.build().if_modified_since_header(&datetime);
 	/// }
 	/// ```
 	///
@@ -132,15 +134,17 @@ impl<'a> RestApiBuilder<'a> {
 	///
 	/// # Example
 	/// ```rust
-	/// use rustsf::{RestApi, AuthUrl};
+	/// use rustsf::{RestApi, SalesforceCredentials};
 	/// use chrono::Utc;
 	///
 	/// #[tokio::main]
 	/// async fn main() {
-	///     let client = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com").unwrap()).await.unwrap();
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com").unwrap();
+	///     let api = RestApi::new(credentials).await.unwrap();
+	///
 	///     let datetime = Utc::now();
 	///     let since = datetime.format("%a, %d %b %Y %H:%M:%S %:z").to_string();
-	///     let builder = client.build().if_unmodified_since_header(&since);
+	///     let builder = api.build().if_unmodified_since_header(&since);
 	/// }
 	/// ```
 	///

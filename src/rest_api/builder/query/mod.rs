@@ -48,12 +48,14 @@ impl RestApi {
 	///
 	/// # Example
 	/// ```rust
-	/// use rustsf::{RestApi, AuthUrl};
-	/// use anyhow::Result;
+	/// use rustsf::{RestApi, SalesforceCredentials};
+	/// use chrono::Utc;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
-	///     let mut api = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	/// async fn main() {
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com").unwrap();
+	///     let api = RestApi::new(credentials).await.unwrap();
+	///
 	///     let query_str = "SELECT Id, Name FROM Account WHERE Id = '001D000000IqhSLIAZ'";
 	///
 	///     // Using a custom struct or serde_json::Value
@@ -61,11 +63,10 @@ impl RestApi {
 	///         Ok(response) => println!("Query response: {:?}", response),
 	///         Err(error) => println!("Error executing query: {:?}", error),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	/// - tag query
-	pub async fn query<T: DeserializeOwned>(&mut self, query: &str) -> Result<SalesforceQueryResponse<Vec<T>>, Error> {
+	pub async fn query<T: DeserializeOwned>(&self, query: &str) -> Result<SalesforceQueryResponse<Vec<T>>, Error> {
 		Ok(self.build()
 			.query(query)
 			.send()
@@ -97,19 +98,20 @@ impl RestApi {
 	///
 	/// # Example
 	/// ```rust
-	/// use rustsf::{RestApi, AuthUrl};
-	/// use anyhow::Result;
+	/// use rustsf::{RestApi, SalesforceCredentials};
+	/// use chrono::Utc;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
-	///     let api = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	/// async fn main() {
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com").unwrap();
+	///     let api = RestApi::new(credentials).await.unwrap();
+	///
 	///     let query = "SELECT Id, Name FROM Account";
 	///
 	///     match api.query_all::<serde_json::Value>(query).await {
 	///         Ok(response) => println!("Query response: {:?}", response),
 	///         Err(error) => println!("Error executing query: {:?}", error),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	pub async fn query_all<T: DeserializeOwned>(&self, query: &str) -> Result<SalesforceQueryResponse<Vec<T>>, Error> {
@@ -154,19 +156,20 @@ impl RestApi {
 	///
 	/// # Examples
 	/// ```rust
-	/// use rustsf::{RestApi, AuthUrl};
-	/// use anyhow::Result;
+	/// use rustsf::{RestApi, SalesforceCredentials};
+	/// use chrono::Utc;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
-	///     let mut api = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	/// async fn main() {
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com").unwrap();
+	///     let api = RestApi::new(credentials).await.unwrap();
+	///
 	///     let next_url = "/services/data/v60.0/query/01gB0000003mzKJQAY-2000";
 	///
 	///     match api.query_more::<serde_json::Value>(&next_url).await {
 	///         Ok(response) => println!("Query response: {:?}", response),
 	///         Err(error) => println!("Error executing query: {:?}", error),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///
@@ -178,7 +181,7 @@ impl RestApi {
 	/// # Dependencies
 	/// - The `handle_json_response` function is used to parse and handle the JSON response from the API.
 	/// - Assumes `self.client.get` performs an HTTP GET request and returns the raw HTTP response.
-	pub async fn query_more<T: DeserializeOwned>(&mut self, next_records_url: &str) -> Result<SalesforceQueryResponse<Vec<T>>, Error> {
+	pub async fn query_more<T: DeserializeOwned>(&self, next_records_url: &str) -> Result<SalesforceQueryResponse<Vec<T>>, Error> {
 		let instance_url = self.client.instance_url();
 		let query_url = format!("{}/{}", instance_url, next_records_url);
 		let params: Vec<(String, String)> = vec![];

@@ -559,7 +559,7 @@ async fn test_create_account() -> Result<()> {
 async fn test_sobject_get_deleted_account() -> Result<()> {
 	let api = common::get_rest_api_client().await?;
 
-	let start_date = chrono::Utc::now() - chrono::Duration::minutes(5);
+	let start_date = chrono::Utc::now();
 
 	let account = common::Account::new()
 		.set_name("Get Deleted Test Account")
@@ -768,7 +768,7 @@ async fn test_update_sobject_account() -> Result<()> {
 async fn test_sobject_get_updated_account() -> Result<()> {
 	let api = common::get_rest_api_client().await?;
 
-	let start_date = chrono::Utc::now() - chrono::Duration::minutes(5);
+	let start_date = chrono::Utc::now();
 
 	let account = common::Account::new()
 		.set_name("Get Updated Test Account")

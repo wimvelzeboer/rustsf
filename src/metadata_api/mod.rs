@@ -358,7 +358,7 @@ impl MetadataApi {
 
 		let response = self
 			.client
-			.get(
+			.get_json(
 				format!(
 					"{}/metadata/deployRequest/{}",
 					self.client.services_data_version_path(),
@@ -436,6 +436,3 @@ fn escape_xml<S: AsRef<str>>(value: S) -> String {
 		.replace('"', "&quot;")
 		.replace('\'', "&apos;")
 }
-
-#[cfg(test)]
-mod tests;

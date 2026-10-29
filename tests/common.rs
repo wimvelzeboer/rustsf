@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 use std::env;
 
 #[allow(dead_code)]
+#[cfg(feature = "metadata-api")]
 pub async fn get_metadata_api_client() -> Result<MetadataApi> {
 	let url = env::var("SCRATCH_AUTH_URL")
 		.expect("SCRATCH_AUTH_URL not set")

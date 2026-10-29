@@ -182,7 +182,7 @@ impl RestApi {
 		let instance_url = self.client.instance_url();
 		let query_url = format!("{}/{}", instance_url, next_records_url);
 		let params: Vec<(String, String)> = vec![];
-		let response = self.client.get(&query_url, &params, &HashMap::new()).await?;
+		let response = self.client.get_json(&query_url, &params, &HashMap::new()).await?;
 		RestApi::handle_json_response(response).await
 	}
 }

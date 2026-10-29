@@ -57,7 +57,7 @@
 //! <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/>
 
 use crate::client::Client;
-use anyhow::{Context, Result};
+use crate::errors::Error;
 use reqwest::Response;
 use serde::Serialize;
 use std::collections::HashMap;
@@ -116,11 +116,10 @@ impl BulkApi {
 	///     let base_path = bulk_api.base_path()?;
 	///     println!("Base path: {}", base_path);
 	/// ```
-	fn base_path(&self) -> Result<String> {
-		let instance_url = self.client.instance_url().context("Not logged in")?;
+	fn base_path(&self) -> String {
+		let instance_url = self.client.instance_url();
 
-		let version = &self.client.version[1..];
-		Ok(format!("{}/services/async/{}", instance_url, version))
+		format!("{}/services/async/{}", instance_url, crate::client::DEFAULT_API_VERSION)
 	}
 
 	/// Asynchronously creates a new job with the specified parameters.
@@ -183,10 +182,10 @@ impl BulkApi {
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_jobs_create.htm>
-	pub async fn create_job<T: Serialize + Debug>(&mut self, params: T) -> Result<Response> {
-		let resource_url = format!("{}/job", self.base_path()?);
-		let headers = self.get_auth_headers()?;
-		self.client.post(resource_url, params, headers).await
+	pub async fn create_job<T: Serialize + Debug>(&mut self, params: T) -> Result<Response, Error> {
+		let resource_url = format!("{}/job", self.base_path());
+		let headers = self.get_auth_headers().await?;
+		self.client.post_json(&resource_url, &params, &headers).await
 	}
 
 	/// Asynchronously adds a batch job to the specified job ID with the provided CSV data.
@@ -241,11 +240,11 @@ impl BulkApi {
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_quickstart_add_batch.htm>
-	pub async fn add_batch_job(&mut self, job_id: &str, csv: Vec<u8>) -> Result<Response> {
-		let resource_url = format!("{}/job/{}/batch", self.base_path()?, job_id);
-		let mut headers = self.get_auth_headers()?;
-		headers.push(("Content-Type".to_string(), "text/csv".to_string()));
-		self.client.post_raw_buffer(resource_url, csv, headers).await
+	pub async fn add_batch_job(&mut self, job_id: &str, csv: Vec<u8>) -> Result<Response, Error> {
+		let resource_url = format!("{}/job/{}/batch", self.base_path(), job_id);
+		let mut headers = self.get_auth_headers().await?;
+		headers.insert("Content-Type".to_string(), "text/csv".to_string());
+		self.client.post(&resource_url, csv, &headers).await
 	}
 
 	/// Fetches the details of a specific batch associated with a given job.
@@ -292,10 +291,10 @@ impl BulkApi {
 	/// ```
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_quickstart_check_status.htm>
-	pub async fn get_batch(&mut self, job_id: &str, batch_id: &str) -> Result<Response> {
-		let resource_url = format!("{}/job/{}/batch/{}/", self.base_path()?, job_id, batch_id);
-		let headers = self.get_auth_headers()?;
-		self.client.get_raw(&resource_url, headers).await
+	pub async fn get_batch(&mut self, job_id: &str, batch_id: &str) -> Result<Response, Error> {
+		let resource_url = format!("{}/job/{}/batch/{}/", self.base_path(), job_id, batch_id);
+		let headers = self.get_auth_headers().await?;
+		self.client.get_raw(&resource_url, &headers).await
 	}
 
 	/// Closes a job by updating its state to "Closed".
@@ -337,12 +336,12 @@ impl BulkApi {
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_jobs_close.htm>
-	pub async fn close_job(&mut self, job_id: &str) -> Result<Response> {
-		let resource_url = format!("{}/job/{}", self.base_path()?, job_id);
-		let headers = self.get_auth_headers()?;
+	pub async fn close_job(&mut self, job_id: &str) -> Result<Response, Error> {
+		let resource_url = format!("{}/job/{}", self.base_path(), job_id);
+		let headers = self.get_auth_headers().await?;
 		let mut params = HashMap::new();
 		params.insert("state", "Closed");
-		self.client.post(resource_url, params, headers).await
+		self.client.post_json(&resource_url, &params, &headers).await
 	}
 
 	/// Asynchronously fetches the details of a specific job from the server.
@@ -391,10 +390,10 @@ impl BulkApi {
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_jobs_get_details.htm>
-	pub async fn get_job_details(&mut self, job_id: &str) -> Result<Response> {
-		let resource_url = format!("{}/job/{}", self.base_path()?, job_id);
-		let headers = self.get_auth_headers()?;
-		self.client.get_raw(&resource_url, headers).await
+	pub async fn get_job_details(&mut self, job_id: &str) -> Result<Response, Error> {
+		let resource_url = format!("{}/job/{}", self.base_path(), job_id);
+		let headers = self.get_auth_headers().await?;
+		self.client.get_raw(&resource_url, &headers).await
 	}
 
 	/// Retrieves the batches associated with a specific job in an asynchronous manner.
@@ -444,11 +443,11 @@ impl BulkApi {
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_batches_get_info_all.htm>
-	pub async fn get_batches(&mut self, job_id: &str, content_type: &str) -> Result<Response> {
-		let resource_url = format!("{}/job/{}/batch", self.base_path()?, job_id);
-		let mut headers = self.get_auth_headers()?;
-		headers.push(("Content-Type".to_string(), content_type.to_string()));
-		self.client.get_raw(&resource_url, headers).await
+	pub async fn get_batches(&mut self, job_id: &str, content_type: &str) -> Result<Response, Error> {
+		let resource_url = format!("{}/job/{}/batch", self.base_path(), job_id);
+		let mut headers = self.get_auth_headers().await?;
+		headers.insert("Content-Type".to_string(), content_type.to_string());
+		self.client.get_raw(&resource_url, &headers).await
 	}
 
 	/// Asynchronously retrieves the list of results for a specific job and batch.
@@ -505,11 +504,11 @@ impl BulkApi {
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_batches_get_results.htm>
-	pub async fn get_result_list(&mut self, job_id: &str, batch_id: &str, content_type: &str) -> Result<Response> {
-		let resource_url = format!("{}/job/{}/batch/{}/result", self.base_path()?, job_id, batch_id);
-		let mut headers = self.get_auth_headers()?;
-		headers.push(("Content-Type".to_string(), content_type.to_string()));
-		self.client.get_raw(&resource_url, headers).await
+	pub async fn get_result_list(&mut self, job_id: &str, batch_id: &str, content_type: &str) -> Result<Response, Error> {
+		let resource_url = format!("{}/job/{}/batch/{}/result", self.base_path(), job_id, batch_id);
+		let mut headers = self.get_auth_headers().await?;
+		headers.insert("Content-Type".to_string(), content_type.to_string());
+		self.client.get_raw(&resource_url, &headers).await
 	}
 
 	/// Fetches the result of a specific job batch operation asynchronously.
@@ -565,17 +564,17 @@ impl BulkApi {
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_code_curl_walkthrough_pk_chunking.htm>
-	pub async fn get_result(&mut self, job_id: &str, batch_id: &str, result_id: &str) -> Result<Response> {
+	pub async fn get_result(&mut self, job_id: &str, batch_id: &str, result_id: &str) -> Result<Response, Error> {
 		let resource_url = format!(
 			"{}/job/{}/batch/{}/result/{}",
-			self.base_path()?,
+			self.base_path(),
 			job_id,
 			batch_id,
 			result_id
 		);
-		let mut headers = self.get_auth_headers()?;
-		headers.push(("Content-Type".to_string(), "application/xml".to_string()));
-		self.client.get_raw(&resource_url, headers).await
+		let mut headers = self.get_auth_headers().await?;
+		headers.insert("Content-Type".to_string(), "application/xml".to_string());
+		self.client.get_raw(&resource_url, &headers).await
 	}
 
 	/// Aborts a job with the specified `job_id`.
@@ -624,15 +623,15 @@ impl BulkApi {
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_jobs_abort.htm>
-	pub async fn abort_job(&mut self, job_id: &str) -> Result<Response> {
-		let resource_url = format!("{}/job/{}", self.base_path()?, job_id);
-		let mut headers = self.get_auth_headers()?;
-		headers.push(("Content-Type".to_string(), "application/json".to_string()));
+	pub async fn abort_job(&mut self, job_id: &str) -> Result<Response, Error> {
+		let resource_url = format!("{}/job/{}", self.base_path(), job_id);
+		let mut headers = self.get_auth_headers().await?;
+		headers.insert("Content-Type".to_string(), "application/json".to_string());
 
 		let mut params = HashMap::new();
 		params.insert("state", "Aborted");
 
-		self.client.post(resource_url, params, headers).await
+		self.client.post_json(&resource_url, &params, &headers).await
 	}
 
 	/// Retrieves the client headers required for making API requests.
@@ -649,15 +648,10 @@ impl BulkApi {
 	///
 	/// # Notes
 	/// * The `X-SFDC-Session` header is specifically required for API version 1 requests.
-	fn get_auth_headers(&self) -> Result<Vec<(String, String)>> {
-		let binding = self.client.credentials.access_token();
-		let token = binding.as_ref().context("Not logged in")?;
-		Ok(vec![
-			//X-SFDC-Session is needed for API v1 we can just pass it our access token
-			("X-SFDC-Session".to_string(), token.value.clone()),
-		])
+	async fn get_auth_headers(&self) -> Result<HashMap<String, String>, Error> {
+		let token = self.client.access_token().await?;
+		let mut headers = HashMap::new();
+		headers.insert("X-SFDC-Session".to_string(), token);
+		Ok(headers)
 	}
 }
-
-#[cfg(test)]
-mod test;

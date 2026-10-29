@@ -1,8 +1,9 @@
+use crate::ErrorResponse;
+use reqwest::header::{InvalidHeaderName, InvalidHeaderValue};
 use rustsf_auth::SalesforceAuthError;
 use std::fmt;
-use reqwest::header::{InvalidHeaderName, InvalidHeaderValue};
+#[cfg(feature = "metadata-api")]
 use zip::result::ZipError;
-use crate::ErrorResponse;
 
 #[cfg(feature = "metadata-api")]
 mod xml_error;
@@ -39,13 +40,12 @@ impl fmt::Display for Error {
 			Error::Xml(e) => write!(f, "XML Error: {}", e),
 
 			#[cfg(feature = "metadata-api")]
-			Error::CompressionError(e) => write!(f, "Zip Error: {}", e)
+			Error::CompressionError(e) => write!(f, "Zip Error: {}", e),
 		}
 	}
 }
 
 impl std::error::Error for Error {}
-
 
 impl From<chrono::ParseError> for Error {
 	fn from(err: chrono::ParseError) -> Self {
@@ -77,7 +77,6 @@ impl From<serde_json::Error> for Error {
 	}
 }
 
-
 #[cfg(feature = "metadata-api")]
 impl From<XmlError> for Error {
 	fn from(err: XmlError) -> Self {
@@ -91,9 +90,9 @@ impl From<SalesforceAuthError> for Error {
 	}
 }
 
+#[cfg(feature = "metadata-api")]
 impl From<ZipError> for Error {
 	fn from(err: ZipError) -> Self {
 		Error::CompressionError(err.to_string())
 	}
 }
-

@@ -353,7 +353,7 @@ impl RestApi {
 	pub async fn list_resources(&self) -> Result<HashMap<String, String>, Error> {
 		let url = self.client.services_data_version_path();
 		let params: Vec<(String, String)> = vec![];
-		let response = self.client.get(&url, &params, &HashMap::new()).await?;
+		let response = self.client.get_json(&url, &params, &HashMap::new()).await?;
 		RestApi::handle_json_response(response).await
 	}
 
@@ -383,8 +383,8 @@ impl RestApi {
 	) -> Result<reqwest::Response, Error> {
 		let url = format!("{}/{}", self.client.instance_url(), url);
 		match method {
-			HTTPMethod::GET => Ok(self.client.get(&url, data, &headers).await?),
-			HTTPMethod::POST => Ok(self.client.post(&url, data, &headers).await?),
+			HTTPMethod::GET => Ok(self.client.get_json(&url, data, &headers).await?),
+			HTTPMethod::POST => Ok(self.client.post_json(&url, data, &headers).await?),
 			HTTPMethod::PATCH => Ok(self.client.patch(&url, data, &headers).await?),
 		}
 	}

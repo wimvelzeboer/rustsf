@@ -75,7 +75,7 @@ impl ToolingApi {
 	pub async fn execute_anonymous(&self, apex_code: &str) -> Result<ExecuteAnonymousResult, Error> {
 		let url = format!("{}/executeAnonymous/", self.base_path()?);
 		let params = vec![("anonymousBody".to_string(), apex_code.to_string())];
-		let response = self.client.get(&url, &params, &HashMap::new()).await?;
+		let response = self.client.get_json(&url, &params, &HashMap::new()).await?;
 
 		if response.status().is_success() {
 			Ok(response.json::<ExecuteAnonymousResult>().await?)
@@ -154,7 +154,7 @@ impl ToolingApi {
 	pub async fn get_apex_log_body(&self, log_id: &str) -> Result<String, Error> {
 		let url = format!("{}/sobjects/ApexLog/{}/Body", self.client.services_data_version_path(), log_id);
 		let params: Vec<String> = Vec::new();
-		let response = self.client.get(&url, &params, &HashMap::new()).await?;
+		let response = self.client.get_json(&url, &params, &HashMap::new()).await?;
 
 		if response.status().is_success() {
 			Ok(response.text().await?)
@@ -342,7 +342,7 @@ impl ToolingApi {
 	pub async fn query<T: DeserializeOwned>(&self, query: &str) -> Result<QueryResponse<T>, Error> {
 		let query_url = format!("{}/query/", self.base_path()?);
 		let params = vec![("q".to_string(), query.to_string())];
-		let response = self.client.get(&query_url, &params, &HashMap::new()).await?;
+		let response = self.client.get_json(&query_url, &params, &HashMap::new()).await?;
 		handle_json_response(response).await
 	}
 
@@ -350,14 +350,14 @@ impl ToolingApi {
 	pub async fn find_by_id(&self, sobject_name: &str, id: &str) -> Result<Value, Error> {
 		let url = format!("{}/sobjects/{}/{}", self.base_path()?, sobject_name, id);
 		let params : Vec<String> = Vec::new();
-		let response = self.client.get(&url, &params, &HashMap::new()).await?;
+		let response = self.client.get_json(&url, &params, &HashMap::new()).await?;
 		handle_json_response(response).await
 	}
 
 	/// Create a Tooling API SObject.
 	pub async fn create<T: Serialize + std::fmt::Debug>(&self, object_name: &str, params: T) -> Result<Value, Error> {
 		let url = format!("{}/sobjects/{}", self.base_path()?, object_name);
-		let response = self.client.post(&url, &params, &HashMap::new()).await?;
+		let response = self.client.post_json(&url, &params, &HashMap::new()).await?;
 		handle_json_response(response).await
 	}
 

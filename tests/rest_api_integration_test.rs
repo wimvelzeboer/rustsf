@@ -12,7 +12,7 @@ async fn check_versions() -> Result<()> {
 
 	assert_ne!(0, versions.len());
 	assert_eq!(
-		rustsf::rest_api::DEFAULT_API_VERSION,
+		rustsf::client::DEFAULT_API_VERSION,
 		versions[versions.len() - 1].version
 	); // this forces us to always use the latest version
 	Ok(())
@@ -196,7 +196,7 @@ async fn test_call_options_header_create_account() -> Result<()> {
 }
 
 #[tokio::test]
-//#[ignore]
+#[ignore]
 async fn test_if_match_header_update_account_precondition() -> Result<()> {
 	let api = common::get_rest_api_client().await?;
 

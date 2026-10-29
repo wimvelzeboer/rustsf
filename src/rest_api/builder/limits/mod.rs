@@ -33,7 +33,7 @@ impl RestApi {
 	pub async fn list_limits(&self) -> Result<LimitsResponse, Error> {
 		let url = format!("{}/limits/", self.client.services_data_version_path());
 		let params: Vec<(String, String)> = vec![];
-		let response = self.client.get(&url, &params, &HashMap::new()).await?;
+		let response = self.client.get_json(&url, &params, &HashMap::new()).await?;
 		RestApi::handle_json_response(response).await
 	}
 }

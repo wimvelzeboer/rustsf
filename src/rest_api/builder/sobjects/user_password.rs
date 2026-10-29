@@ -51,7 +51,7 @@ impl RestApi {
 			user_id
 		);
 		let params: Vec<(String, String)> = Vec::new();
-		let response = self.client.get(&url, &params, &HashMap::new()).await?;
+		let response = self.client.get_json(&url, &params, &HashMap::new()).await?;
 		let response: HashMap<String, bool> = RestApi::handle_json_response(response).await?;
 		match response.get("isExpired") {
 			Some(is_expired) => Ok(*is_expired),
@@ -156,7 +156,7 @@ impl RestApi {
 			user_id
 		);
 		let params = vec![("NewPassword", password)];
-		self.client.post(&url, &params, &HashMap::new()).await?;
+		self.client.post_json(&url, &params, &HashMap::new()).await?;
 		Ok(())
 	}
 }

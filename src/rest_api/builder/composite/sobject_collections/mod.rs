@@ -57,7 +57,7 @@ impl<'a> SObjectCollectionsBuilder<'a> {
 		method: HTTPMethod,
 		url: String,
 		data: &T,
-	) -> anyhow::Result<Response, Error> {
+	) -> Result<Response, Error> {
 		let url = format!("{}/{}", PATH, url);
 		self.builder.send(method, url, &data).await
 	}

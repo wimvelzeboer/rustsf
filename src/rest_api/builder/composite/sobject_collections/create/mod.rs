@@ -39,13 +39,13 @@ impl RestApi {
 	///
 	/// # Example
 	/// ```rust
-	/// use rustsf::{RestApi, AuthUrl};
+	/// use rustsf::{RestApi, SalesforceCredentials};
 	/// use serde_json::json;
-	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
-	///     let api = RestApi::new(AuthUrl::new("force://PlatformCLI::token@example.com")?).await?;
+	/// async fn main() {
+	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com").unwrap();
+	///     let api = RestApi::new(credentials).await.unwrap();
 	///
 	///     let mut accounts = vec![
 	///         json!({"attributes": {"type": "Account"}, "Name": "Acme Inc"}),
@@ -56,7 +56,6 @@ impl RestApi {
 	///         Ok(res) => println!("Success: {:?}", res),
 	///         Err(e) => println!("Failed {:?}", e),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///

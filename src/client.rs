@@ -60,30 +60,13 @@ impl Client {
 	/// - This function is asynchronous and should be awaited.
 	/// - Before sending the DELETE request, it ensures that the client state is up-to-date by calling `self.ensure_refresh()`.
 	///
-	/// # Example
-	/// ```rust
-	/// use rustsf::{Client, SalesforceCredentials};
-	/// use std::collections::HashMap;
-	///
-	/// #[tokio::main]
-	/// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com")?;
-	///     let client = Client::new(credentials).await?;
-	///
-	///     let response = client.delete("https://example.com/services/data/v62.0/sobjects/Account/001...", &HashMap::new()).await?;
-	///     println!("Status: {}", response.status());
-	///     Ok(())
-	/// }
-	/// ```
-	pub async fn delete(&self, url: &str, headers: &HashMap<String, String>) -> anyhow::Result<Response, Error> {
+	pub async fn delete(&self, url: &str, headers: &HashMap<String, String>) -> Result<Response, Error> {
 		debug!("DELETE: {} headers: {:?}", url, headers);
 
-		let response = self
-			.http_client
-			.delete(url)
-			.headers(self.create_header(headers).await?)
-			.send()
-			.await?;
+		let mut headers = self.create_header(headers).await?;
+		headers.insert("Content-Type", HeaderValue::from_static("application/json"));
+
+		let response = self.http_client.delete(url).headers(headers).send().await?;
 
 		debug!("DELETE response: {:?}", response);
 		Ok(response)
@@ -114,28 +97,7 @@ impl Client {
 	/// - Failure during the token/credential refresh process in `self.ensure_refresh()`.
 	/// - Issues with building headers in `self.create_header`.
 	/// - Errors originating from the underlying HTTP client's `send` function (e.g., connectivity issues).
-	///
-	/// # Example
-	/// ```rust
-	/// use rustsf::{Client, SalesforceCredentials};
-	/// use std::collections::HashMap;
-	/// use serde_json::json;
-	///
-	/// #[tokio::main]
-	/// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com")?;
-	///     let client = Client::new(credentials).await?;
-	///
-	///     let response = client.get(
-	///         "https://example.com/services/data/v62.0/query",
-	///         &json!({"q": "SELECT Id FROM Account"}),
-	///         &HashMap::new()
-	///     ).await?;
-	///     println!("Status: {}", response.status());
-	///     Ok(())
-	/// }
-	/// ```
-	pub async fn get<T: Debug + Serialize, S: AsRef<str> + reqwest::IntoUrl>(
+	pub async fn get_json<T: Debug + Serialize, S: AsRef<str> + reqwest::IntoUrl>(
 		&self,
 		url: S,
 		params: &T, // todo should be made optional, as some calls do not require this.
@@ -143,16 +105,30 @@ impl Client {
 	) -> Result<Response, Error> {
 		debug!("GET: {} params: {:?} headers: {:?}", url.as_ref(), params, headers);
 
-		let response = self
-			.http_client
-			.get(url)
-			.headers(self.create_header(headers).await?)
-			.query(&params)
-			.send()
-			.await?;
+		let mut headers = self.create_header(headers).await?;
+		headers.insert("Content-Type", HeaderValue::from_static("application/json"));
+
+		let response = self.http_client.get(url).headers(headers).query(&params).send().await?;
 
 		debug!("GET response: {:?}", response);
 		Ok(response)
+	}
+
+	#[cfg(feature = "bulk-api-v2")]
+	pub async fn get_raw(
+		&mut self,
+		url: &str,
+		additional_headers: &HashMap<String, String>,
+	) -> Result<Response, Error> {
+		debug!("GET: {} headers: {:?}", url, additional_headers);
+
+		let res = self
+			.http_client
+			.get(url)
+			.headers(self.create_header(additional_headers).await?)
+			.send()
+			.await?;
+		Ok(res)
 	}
 
 	pub(crate) fn instance_url(&self) -> &str {
@@ -185,36 +161,6 @@ impl Client {
 	/// - If the `ensure_refresh` internal function fails (e.g., unable to refresh client tokens).
 	/// - If there is an error serializing the parameters or constructing the HTTP headers.
 	/// - If the HTTP request fails during transmission or response handling.
-	///
-	/// # Examples
-	/// ```rust
-	/// use serde::Serialize;
-	/// use rustsf::{Client, SalesforceCredentials};
-	/// use std::collections::HashMap;
-	///
-	/// #[derive(Serialize, Debug)]
-	/// struct UpdateParams {
-	///     field: String,
-	///     value: String,
-	/// }
-	///
-	/// async fn example() -> Result<(), Box<dyn std::error::Error>> {
-	///     let credentials = SalesforceCredentials::sfdx_url("force://PlatformCLI::token@example.com")?;
-	///     let client = Client::new(credentials).await?;
-	///
-	///     let params = UpdateParams {
-	///         field: "Name".to_string(),
-	///         value: "New Name".to_string(),
-	///     };
-	///
-	///     let response = client
-	///         .patch("https://example.com/services/data/v62.0/sobjects/Account/001...", params, &HashMap::new())
-	///         .await?;
-	///
-	///     println!("Response: {:?}", response);
-	///     Ok(())
-	/// }
-	/// ```
 	pub async fn patch<T: Debug + Serialize>(
 		&self,
 		url: &str,
@@ -223,28 +169,51 @@ impl Client {
 	) -> Result<Response, Error> {
 		debug!("PATCH: {} params: {:?} headers: {:?}", url, params, headers);
 
+		let mut headers = self.create_header(headers).await?;
+		headers.insert("Content-Type", HeaderValue::from_static("application/json"));
+
 		Ok(self
 			.http_client
 			.patch(url)
-			.headers(self.create_header(headers).await?)
+			.headers(headers)
 			.json(&params)
 			.send()
 			.await?)
 	}
 
-	pub async fn post<T: Debug + Serialize>(
+	pub async fn post_json<T: Debug + Serialize>(
 		&self,
 		url: &str,
 		data: &T,
 		headers: &HashMap<String, String>,
-	) -> Result<reqwest::Response, Error> {
+	) -> Result<Response, Error> {
 		debug!("POST: {} params: {:?} headers: {:?}", url, data, headers);
+
+		let mut headers = self.create_header(headers).await?;
+		headers.insert("Content-Type", HeaderValue::from_static("application/json"));
+
+		Ok(self
+			.http_client
+			.post(url)
+			.headers(headers)
+			.json(&data)
+			.send()
+			.await?)
+	}
+
+	pub async fn post(
+		&self,
+		url: &str,
+		data: Vec<u8>,
+		headers: &HashMap<String, String>,
+	) -> Result<Response, Error> {
+		debug!("POST: {} headers: {:?}", url, headers);
 
 		Ok(self
 			.http_client
 			.post(url)
 			.headers(self.create_header(headers).await?)
-			.json(&data)
+			.body(data)
 			.send()
 			.await?)
 	}
@@ -283,20 +252,19 @@ impl Client {
 	where
 		S: AsRef<str> + reqwest::IntoUrl,
 	{
+		let mut headers = self.create_header(headers).await?;
+		headers.insert("Content-Type", HeaderValue::from_static("application/json"));
+
 		let request = self
 			.http_client
 			.post(url)
 			.multipart(form)
-			.headers(self.create_header(headers).await?)
+			.headers(headers)
 			.build()?;
 
 		debug!("Request URL: {}", request.url());
 		debug!("Request Method: {}", request.method());
 
-		// Log headers
-		for (name, value) in request.headers() {
-			debug!("Header {}: {:?}", name, value);
-		}
 
 		// Log body size (reqwest hides the exact body bytes if it's a stream/json,
 		// but you can check if a body exists)
@@ -307,6 +275,48 @@ impl Client {
 		let response = self.http_client.execute(request).await?;
 
 		Ok(response)
+	}
+
+	/// Sends an HTTP PUT request to the specified URL with the provided content.
+	///
+	/// This method ensures that necessary pre-request refresh actions are performed,
+	/// sets the proper headers (`Content-Type` as `text/csv` and `Accept` as `application/json`),
+	/// and sends the supplied data as the request body.
+	///
+	/// # Arguments
+	///
+	/// * `url` - A `String` containing the target URL for the PUT request.
+	/// * `buffer` - A `Vec<u8>` containing the binary data to be sent as the request body.
+	///
+	/// # Returns
+	///
+	/// This method returns a `Result`:
+	/// * `Ok(Response)` - The HTTP response returned by the server.
+	/// * `Err(Error)` - An error if the refresh action, header creation,
+	///   or the HTTP request itself fails.
+	///
+	/// # Errors
+	///
+	/// This function can return an error in the following cases:
+	/// * If the `ensure_refresh` method fails to complete successfully.
+	/// * If header creation fails to generate a valid set of headers.
+	/// * If the `http_client.put` request encounters an issue during sending or receiving.
+	pub async fn put<T: Into<reqwest::Body>>(&mut self, url: String, buffer: T) -> Result<Response, Error> {
+
+		debug!("PUT: {}", url);
+
+		let headers: HashMap<String, String> = HashMap::new();
+		let mut headers = self.create_header(&headers).await?;
+		headers.insert("Content-Type", HeaderValue::from_static("text/csv"));
+		headers.insert("Accept", HeaderValue::from_static("application/json"));
+		let res = self
+			.http_client
+			.put(url.as_str())
+			.headers(headers)
+			.body(buffer)
+			.send()
+			.await?;
+		Ok(res)
 	}
 
 	pub async fn post_soap(&self, action: &str, body: String) -> Result<Response, Error> {

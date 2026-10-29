@@ -2045,9 +2045,9 @@ dependencies = [
 
 [[package]]
 name = "rustsf_auth"
-version = "0.2.1"
+version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a3b92f5c4a8e31800aae5110cc1de61a9748d980466d3010ce5765bd858be546"
+checksum = "c94434c211b0393fc4c47a8dad97732db80dcbfeee967a8d99100058dd8b69b4"
 dependencies = [
  "anyhow",
  "base64 0.22.1",

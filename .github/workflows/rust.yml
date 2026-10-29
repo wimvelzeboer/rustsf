@@ -73,11 +73,11 @@ jobs:
 
       - name: Run Tooling API Integration Tests
         run: |
-          cargo test --test tooling_api_integration_test -- --include-ignored --test-threads=1
+          cargo test --test tooling_api_integration_test --features tooling-api -- --include-ignored --test-threads=1
 
       - name: Run Metadata API Integration Tests
         run: |
-          cargo test --test metadata_api_integration_test -- --include-ignored --test-threads=1
+          cargo test --test metadata_api_integration_test --features metadata-api -- --include-ignored --test-threads=1
 
       - name: Destroy Scratch Org
         if: always()  # This step runs even if 'Run Tests' failed

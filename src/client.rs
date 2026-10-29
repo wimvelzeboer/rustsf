@@ -192,21 +192,10 @@ impl Client {
 		let mut headers = self.create_header(headers).await?;
 		headers.insert("Content-Type", HeaderValue::from_static("application/json"));
 
-		Ok(self
-			.http_client
-			.post(url)
-			.headers(headers)
-			.json(&data)
-			.send()
-			.await?)
+		Ok(self.http_client.post(url).headers(headers).json(&data).send().await?)
 	}
 
-	pub async fn post(
-		&self,
-		url: &str,
-		data: Vec<u8>,
-		headers: &HashMap<String, String>,
-	) -> Result<Response, Error> {
+	pub async fn post(&self, url: &str, data: Vec<u8>, headers: &HashMap<String, String>) -> Result<Response, Error> {
 		debug!("POST: {} headers: {:?}", url, headers);
 
 		Ok(self
@@ -255,16 +244,10 @@ impl Client {
 		let mut headers = self.create_header(headers).await?;
 		headers.insert("Content-Type", HeaderValue::from_static("application/json"));
 
-		let request = self
-			.http_client
-			.post(url)
-			.multipart(form)
-			.headers(headers)
-			.build()?;
+		let request = self.http_client.post(url).multipart(form).headers(headers).build()?;
 
 		debug!("Request URL: {}", request.url());
 		debug!("Request Method: {}", request.method());
-
 
 		// Log body size (reqwest hides the exact body bytes if it's a stream/json,
 		// but you can check if a body exists)
@@ -302,7 +285,6 @@ impl Client {
 	/// * If header creation fails to generate a valid set of headers.
 	/// * If the `http_client.put` request encounters an issue during sending or receiving.
 	pub async fn put<T: Into<reqwest::Body>>(&mut self, url: String, buffer: T) -> Result<Response, Error> {
-
 		debug!("PUT: {}", url);
 
 		let headers: HashMap<String, String> = HashMap::new();

@@ -1,5 +1,5 @@
-use std::fmt::Debug;
 use serde::Serialize;
+use std::fmt::Debug;
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]

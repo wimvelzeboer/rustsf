@@ -237,17 +237,17 @@
 //!     - Upsert Records Using sObject Collections
 //!     - Delete Records Using sObject Collections
 
-use std::collections::HashMap;
-use std::fmt::Debug;
+use crate::ErrorResponse;
+use crate::client::Client;
+use crate::client::DEFAULT_API_VERSION;
+use crate::errors::Error;
 use log::trace;
 use reqwest::Response;
 use rustsf_auth::SalesforceCredentials;
-use serde::de::DeserializeOwned;
 use serde::Serialize;
-use crate::client::Client;
-use crate::ErrorResponse;
-use crate::errors::Error;
-use crate::client::DEFAULT_API_VERSION;
+use serde::de::DeserializeOwned;
+use std::collections::HashMap;
+use std::fmt::Debug;
 
 pub mod builder;
 pub mod responses;
@@ -308,7 +308,7 @@ impl RestApi {
 	/// ```
 	pub async fn new(credentials: SalesforceCredentials) -> Result<Self, Error> {
 		Ok(Self {
-			client: Client::new(credentials).await?
+			client: Client::new(credentials).await?,
 		})
 	}
 
@@ -388,7 +388,6 @@ impl RestApi {
 	}
 
 	async fn handle_json_response<T: DeserializeOwned>(response: Response) -> Result<T, Error> {
-
 		trace!("Headers: {:?}", response.headers());
 
 		if response.status().is_success() {

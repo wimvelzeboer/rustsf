@@ -1,11 +1,10 @@
-use serde::de::DeserializeOwned;
-use crate::rest_api::builder::sobjects::SObjectsBuilder;
+use crate::RestApi;
 use crate::errors::Error;
 use crate::rest_api::HTTPMethod;
-use crate::RestApi;
+use crate::rest_api::builder::sobjects::SObjectsBuilder;
+use serde::de::DeserializeOwned;
 
 impl RestApi {
-
 	/// Retrieves a record based on the value of the specified external ID field.
 	///
 	/// # See
@@ -25,7 +24,6 @@ impl RestApi {
 }
 
 impl<'a> SObjectsBuilder<'a> {
-
 	/// Retrieves a record based on the value of the specified external ID field.
 	///
 	/// # See
@@ -48,10 +46,11 @@ pub struct SObjectSelectByExtIdBuilder<'a> {
 }
 
 impl<'a> SObjectSelectByExtIdBuilder<'a> {
-	pub(crate) fn new(builder: &'a SObjectsBuilder,
-	                  sobject_name: &str,
-	                  ext_id_field: &str,
-	                  ext_id: &str,
+	pub(crate) fn new(
+		builder: &'a SObjectsBuilder,
+		sobject_name: &str,
+		ext_id_field: &str,
+		ext_id: &str,
 	) -> SObjectSelectByExtIdBuilder<'a> {
 		Self {
 			builder,
@@ -61,16 +60,16 @@ impl<'a> SObjectSelectByExtIdBuilder<'a> {
 		}
 	}
 
-	pub async fn send<T: DeserializeOwned>(
-		&self,
-	) -> Result<T, Error> {
+	pub async fn send<T: DeserializeOwned>(&self) -> Result<T, Error> {
 		let param: Vec<(&str, &str)> = vec![];
-		let response = self.builder.send(
-			HTTPMethod::GET,
-			format!("{}/{}/{}", self.sobject_type, self.ext_id_field, self.ext_id),
-			&param,
-		).await?;
+		let response = self
+			.builder
+			.send(
+				HTTPMethod::GET,
+				format!("{}/{}/{}", self.sobject_type, self.ext_id_field, self.ext_id),
+				&param,
+			)
+			.await?;
 		RestApi::handle_json_response(response).await
 	}
 }
-

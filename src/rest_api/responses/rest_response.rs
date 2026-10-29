@@ -1,14 +1,13 @@
-use log::trace;
-use serde::de::DeserializeOwned;
 use crate::ErrorResponse;
 use crate::errors::Error;
+use log::trace;
+use serde::de::DeserializeOwned;
 
 pub struct RestResponse {
 	response: reqwest::Response,
 }
 
 impl RestResponse {
-
 	pub fn new(response: reqwest::Response) -> Self {
 		Self { response }
 	}
@@ -18,7 +17,10 @@ impl RestResponse {
 	}
 
 	pub fn etag(&self) -> Option<String> {
-		self.response.headers().get("etag").and_then(|etag| Some(etag.to_str().unwrap().to_string()))
+		self.response
+			.headers()
+			.get("etag")
+			.and_then(|etag| Some(etag.to_str().unwrap().to_string()))
 	}
 
 	pub fn headers(&self) -> &reqwest::header::HeaderMap {
@@ -34,7 +36,10 @@ impl RestResponse {
 	}
 
 	pub fn limit_info(&self) -> Option<&str> {
-		self.response.headers().get("sforce-limit-info").and_then(|sforce_limit_info| sforce_limit_info.to_str().ok())
+		self.response
+			.headers()
+			.get("sforce-limit-info")
+			.and_then(|sforce_limit_info| sforce_limit_info.to_str().ok())
 	}
 
 	pub fn response(self) -> reqwest::Response {

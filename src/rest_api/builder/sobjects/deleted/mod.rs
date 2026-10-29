@@ -1,15 +1,14 @@
-use chrono::{DateTime, Utc};
-use crate::rest_api::builder::sobjects::SObjectsBuilder;
+use self::sobject_deleted_response::SObjectDeletedResponse;
+use crate::RestApi;
 use crate::errors::Error;
 use crate::rest_api::HTTPMethod;
-use crate::RestApi;
-use self::sobject_deleted_response::SObjectDeletedResponse;
+use crate::rest_api::builder::sobjects::SObjectsBuilder;
+use chrono::{DateTime, Utc};
 
-mod sobject_deleted_response;
 mod deleted_sobject;
+mod sobject_deleted_response;
 
 impl RestApi {
-
 	/// Retrieves the list of individual records that have been deleted within the given timespan for the specified object.
 	///
 	/// This resource is commonly used in data replication applications. Note the following considerations:
@@ -45,7 +44,6 @@ impl RestApi {
 }
 
 impl<'a> SObjectsBuilder<'a> {
-
 	/// sObject Get Deleted
 	///
 	/// Retrieves the list of individual records that have been deleted within the given timespan
@@ -127,8 +125,12 @@ pub struct SObjectDeletedBuilder<'a> {
 }
 
 impl<'a> SObjectDeletedBuilder<'a> {
-	pub(crate) fn new(builder: &'a SObjectsBuilder, sobject_type: &str, start_date: &DateTime<Utc>, end_date: &DateTime<Utc>) -> SObjectDeletedBuilder<'a>
-	{
+	pub(crate) fn new(
+		builder: &'a SObjectsBuilder,
+		sobject_type: &str,
+		start_date: &DateTime<Utc>,
+		end_date: &DateTime<Utc>,
+	) -> SObjectDeletedBuilder<'a> {
 		Self {
 			builder,
 			sobject_name: sobject_type.to_string(),
@@ -137,9 +139,7 @@ impl<'a> SObjectDeletedBuilder<'a> {
 		}
 	}
 
-	pub async fn send(
-		&self,
-	) -> Result<SObjectDeletedResponse, Error> {
+	pub async fn send(&self) -> Result<SObjectDeletedResponse, Error> {
 		let url = format!("{}/deleted", self.sobject_name);
 
 		let start_formatted = DateTime::parse_from_rfc3339(&self.start_date)

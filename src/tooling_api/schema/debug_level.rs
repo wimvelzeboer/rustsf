@@ -1,11 +1,10 @@
-use serde::{Deserialize, Serialize};
 use crate as rustsf;
 use rustsf::tooling_api::primary_types::log_category_level::LogCategoryLevel;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DebugLevel {
-
 	#[serde(rename = "Id")]
 	pub id: Option<String>,
 
@@ -44,7 +43,6 @@ pub struct DebugLevel {
 }
 
 impl DebugLevel {
-
 	pub fn id(&self) -> Option<&str> {
 		self.id.as_deref()
 	}

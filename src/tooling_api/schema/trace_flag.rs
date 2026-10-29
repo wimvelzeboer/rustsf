@@ -6,7 +6,6 @@ use rustsf::tooling_api::primary_types::log_category_level::LogCategoryLevel;
 #[derive(Debug, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct TraceFlag {
-
 	#[serde(rename = "Id")]
 	pub id: Option<String>,
 
@@ -19,7 +18,7 @@ pub struct TraceFlag {
 	#[serde(rename = "Callout", skip_serializing)]
 	pub callout: Option<LogCategoryLevel>,
 
-	#[serde(rename = "DataAccess",skip_serializing)]
+	#[serde(rename = "DataAccess", skip_serializing)]
 	pub data_access: Option<LogCategoryLevel>,
 
 	#[serde(rename = "Database", skip_serializing)]
@@ -60,7 +59,6 @@ pub struct TraceFlag {
 }
 
 impl TraceFlag {
-
 	pub fn new() -> Self {
 		Self::default()
 	}
@@ -72,7 +70,6 @@ impl TraceFlag {
 		self.id = id;
 	}
 }
-
 
 pub const SOBJECT_NAME: &'static str = "TraceFlag";
 

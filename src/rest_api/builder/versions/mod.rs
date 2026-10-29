@@ -1,7 +1,7 @@
-use std::collections::HashMap;
+use crate::RestApi;
 use crate::errors::Error;
 use crate::rest_api::HTTPMethod;
-use crate::RestApi;
+use std::collections::HashMap;
 
 pub mod response;
 
@@ -67,5 +67,4 @@ impl RestApi {
 		let response = self.send(HTTPMethod::GET, url, &data, &headers).await?;
 		RestApi::handle_json_response(response).await
 	}
-
 }

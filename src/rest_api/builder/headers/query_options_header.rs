@@ -1,7 +1,6 @@
 use crate::rest_api::builder::RestApiBuilder;
 
 impl<'a> RestApiBuilder<'a> {
-
 	/// Specifies options used in a query, such as the query results batch size.
 	/// Use this request header with the Query resource.
 	///
@@ -44,11 +43,10 @@ impl<'a> RestApiBuilder<'a> {
 	/// # See
 	/// https://developer.salesforce.com/docs/platform/api-rest/guide/headers-queryoptions.html
 	pub fn query_options_header(&mut self, batch_size: u16) -> &mut Self {
-
 		let batch_size = match batch_size {
 			x if x < 200 => 200,
 			x if x > 2000 => 2000,
-			x => x
+			x => x,
 		};
 
 		let value = format!("batchSize={}", batch_size);

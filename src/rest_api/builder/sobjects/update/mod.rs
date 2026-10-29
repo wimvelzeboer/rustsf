@@ -3,9 +3,9 @@ use std::fmt::Debug;
 use serde::Serialize;
 
 use crate::RestApi;
+use crate::errors::Error;
 use crate::rest_api::HTTPMethod;
 use crate::rest_api::builder::sobjects::SObjectsBuilder;
-use crate::errors::Error;
 
 impl RestApi {
 	///
@@ -64,22 +64,14 @@ impl RestApi {
 		sobject_name: &str,
 		id: &str,
 		data: T,
-	) -> Result<(), Error> { // todo Return a response here?
-		self.build()
-			.sobjects()
-			.update(sobject_name, id, data)
-			.send()
-			.await
+	) -> Result<(), Error> {
+		// todo Return a response here?
+		self.build().sobjects().update(sobject_name, id, data).send().await
 	}
 }
 
 impl<'a> SObjectsBuilder<'a> {
-	pub fn update<T: Serialize + Debug>(
-		&self,
-		object_name: &str,
-		id: &str,
-		data: T,
-	) -> SObjectUpdateBuilder<'_, T> {
+	pub fn update<T: Serialize + Debug>(&self, object_name: &str, id: &str, data: T) -> SObjectUpdateBuilder<'_, T> {
 		SObjectUpdateBuilder::new(self, object_name, id, data)
 	}
 }

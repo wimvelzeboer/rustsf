@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
 use crate::rest_api::responses::describe_sobject_result::DescribeSObjectResult;
 use crate::rest_api::responses::sobject_record::SObjectRecord;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -10,7 +10,6 @@ pub struct SObjectBasicInfoResponse {
 }
 
 impl SObjectBasicInfoResponse {
-
 	pub fn object_describe(&self) -> &DescribeSObjectResult {
 		&self.object_describe
 	}

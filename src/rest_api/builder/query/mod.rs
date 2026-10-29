@@ -15,14 +15,14 @@
 //! # See
 //! <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_query.htm>
 
-use std::collections::HashMap;
 use self::query_response::QueryResponse;
 use crate::RestApi;
+use crate::errors::Error;
 use crate::rest_api::HTTPMethod;
 use crate::rest_api::builder::RestApiBuilder;
-use serde::de::DeserializeOwned;
 use crate::rest_api::builder::query::query_response::SalesforceQueryResponse;
-use crate::errors::Error;
+use serde::de::DeserializeOwned;
+use std::collections::HashMap;
 
 mod query_response;
 
@@ -67,11 +67,7 @@ impl RestApi {
 	/// ```
 	/// - tag query
 	pub async fn query<T: DeserializeOwned>(&self, query: &str) -> Result<SalesforceQueryResponse<Vec<T>>, Error> {
-		Ok(self.build()
-			.query(query)
-			.send()
-			.await?
-			.take_response::<T>()?)
+		Ok(self.build().query(query).send().await?.take_response::<T>()?)
 	}
 
 	/// Executes a query to retrieve all matching results from the server.
@@ -115,12 +111,7 @@ impl RestApi {
 	/// }
 	/// ```
 	pub async fn query_all<T: DeserializeOwned>(&self, query: &str) -> Result<SalesforceQueryResponse<Vec<T>>, Error> {
-		Ok(self.build()
-			.query(query)
-			.all()
-			.send()
-			.await?
-			.take_response::<T>()?)
+		Ok(self.build().query(query).all().send().await?.take_response::<T>()?)
 		/*let query_url = format!("{}/queryAll/", self.client.base_version_path()?);
 		let params = vec![("q".to_string(), query.to_string())];
 		let response = self.client.get(query_url, params, vec![]).await?;
@@ -181,7 +172,10 @@ impl RestApi {
 	/// # Dependencies
 	/// - The `handle_json_response` function is used to parse and handle the JSON response from the API.
 	/// - Assumes `self.client.get` performs an HTTP GET request and returns the raw HTTP response.
-	pub async fn query_more<T: DeserializeOwned>(&self, next_records_url: &str) -> Result<SalesforceQueryResponse<Vec<T>>, Error> {
+	pub async fn query_more<T: DeserializeOwned>(
+		&self,
+		next_records_url: &str,
+	) -> Result<SalesforceQueryResponse<Vec<T>>, Error> {
 		let instance_url = self.client.instance_url();
 		let query_url = format!("{}/{}", instance_url, next_records_url);
 		let params: Vec<(String, String)> = vec![];

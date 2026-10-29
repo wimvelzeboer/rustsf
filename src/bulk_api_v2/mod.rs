@@ -252,7 +252,11 @@ impl BulkApiV2 {
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/upload_job_data.htm>
 	pub async fn upload_job_data(&mut self, job_id: &str, csv: Vec<u8>) -> Result<String, Error> {
-		let resource_url = format!("{}/jobs/ingest/{}/batches", self.client.services_data_version_path(), job_id);
+		let resource_url = format!(
+			"{}/jobs/ingest/{}/batches",
+			self.client.services_data_version_path(),
+			job_id
+		);
 		let res = self.client.put(resource_url, csv).await?;
 
 		if res.status().is_success() {
@@ -313,7 +317,7 @@ impl BulkApiV2 {
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/get_all_jobs.htm>
 	pub async fn get_all_jobs(&mut self) -> Result<Response, Error> {
 		let resource_url = format!("{}/jobs/ingest/", self.client.services_data_version_path());
-		let params: Vec<(String, String)>  = Vec::new();
+		let params: Vec<(String, String)> = Vec::new();
 		self.client.get_json(resource_url, &params, &HashMap::new()).await
 	}
 
@@ -357,7 +361,7 @@ impl BulkApiV2 {
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/get_job_info.htm>
 	pub async fn get_job_info(&mut self, job_id: &str) -> Result<Response, Error> {
 		let resource_url = format!("{}/jobs/ingest/{}", self.client.services_data_version_path(), job_id);
-		let params: Vec<(String, String)>  = Vec::new();
+		let params: Vec<(String, String)> = Vec::new();
 		self.client.get_json(resource_url, &params, &HashMap::new()).await
 	}
 

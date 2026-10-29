@@ -1,14 +1,13 @@
 use crate::RestApi;
+use crate::errors::Error;
 use crate::rest_api::HTTPMethod;
 use crate::rest_api::builder::sobjects::SObjectsBuilder;
-use chrono::{DateTime, Utc};
 use crate::rest_api::builder::sobjects::updated::sobject_updated_response::SObjectUpdatedResponse;
-use crate::errors::Error;
+use chrono::{DateTime, Utc};
 
 mod sobject_updated_response;
 
 impl RestApi {
-
 	/// sObject Get Updated
 	///
 	/// Retrieves the list of individual records that have been updated within the given timespan
@@ -89,7 +88,6 @@ impl RestApi {
 }
 
 impl<'a> SObjectsBuilder<'a> {
-
 	pub fn updated(
 		&self,
 		sobject_name: &str,
@@ -107,10 +105,13 @@ pub struct SObjectUpdatedBuilder<'a> {
 	end_date: String,
 }
 
-
 impl<'a> SObjectUpdatedBuilder<'a> {
-	pub(crate) fn new(builder: &'a SObjectsBuilder, sobject_type: &str, start_date: &DateTime<Utc>, end_date: &DateTime<Utc>) -> SObjectUpdatedBuilder<'a>
-	{
+	pub(crate) fn new(
+		builder: &'a SObjectsBuilder,
+		sobject_type: &str,
+		start_date: &DateTime<Utc>,
+		end_date: &DateTime<Utc>,
+	) -> SObjectUpdatedBuilder<'a> {
 		Self {
 			builder,
 			sobject_name: sobject_type.to_string(),
@@ -119,9 +120,7 @@ impl<'a> SObjectUpdatedBuilder<'a> {
 		}
 	}
 
-	pub async fn send(
-		&self,
-	) -> Result<SObjectUpdatedResponse, Error> {
+	pub async fn send(&self) -> Result<SObjectUpdatedResponse, Error> {
 		let url = format!("{}/updated", self.sobject_name);
 
 		let start_formatted = DateTime::parse_from_rfc3339(&self.start_date)

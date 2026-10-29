@@ -16,12 +16,12 @@
 //! <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_composite_sobjects_collections.htm>
 //!
 //!
-use std::fmt::Debug;
-use reqwest::Response;
-use serde::Serialize;
-use crate::rest_api::builder::composite::CompositeBuilder;
 use crate::errors::Error;
 use crate::rest_api::HTTPMethod;
+use crate::rest_api::builder::composite::CompositeBuilder;
+use reqwest::Response;
+use serde::Serialize;
+use std::fmt::Debug;
 
 const PATH: &'static str = "sobjects";
 
@@ -43,15 +43,15 @@ impl<'a> SObjectCollectionsBuilder<'a> {
 		SObjectCollectionsBuilder { builder }
 	}
 
-/*
-	pub(crate) async fn send_delete(
-		&self,
-		url: String,
-	) -> anyhow::Result<Response, RestApiError> {
-		let url = format!("{}/{}", PATH, url);
-		self.builder.send_delete(url).await
-	}
-*/
+	/*
+		pub(crate) async fn send_delete(
+			&self,
+			url: String,
+		) -> anyhow::Result<Response, RestApiError> {
+			let url = format!("{}/{}", PATH, url);
+			self.builder.send_delete(url).await
+		}
+	*/
 	pub(crate) async fn send<T: Debug + Serialize>(
 		&self,
 		method: HTTPMethod,

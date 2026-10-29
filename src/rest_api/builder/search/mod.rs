@@ -12,15 +12,15 @@
 //! <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_search.htm>
 //!
 
-use crate::rest_api::builder::RestApiBuilder;
-use crate::rest_api::builder::search::sosl_response::SearchResponse;
+use self::sosl_response::SoslResponse;
+use crate::RestApi;
 use crate::errors::Error;
 use crate::rest_api::HTTPMethod;
-use crate::RestApi;
-use self::sosl_response::SoslResponse;
+use crate::rest_api::builder::RestApiBuilder;
+use crate::rest_api::builder::search::sosl_response::SearchResponse;
 
-mod sosl_response;
 mod search_record;
+mod sosl_response;
 
 impl RestApi {
 	/// Executes a SOSL (Salesforce Object Search Language) query and returns the search results.
@@ -62,11 +62,7 @@ impl RestApi {
 	/// - Before executing this function, ensure that the `SalesforceClient` is properly authenticated.
 	/// - This function utilizes the Salesforce REST API `/search/` endpoint.
 	pub async fn search_sosl(&self, query: &str) -> Result<SearchResponse, Error> {
-		Ok(self.build()
-			.sosl(query)
-			.send()
-			.await?
-			.take_response())
+		Ok(self.build().sosl(query).send().await?.take_response())
 	}
 }
 
@@ -92,8 +88,7 @@ impl<'a, 'b> SoslBuilder<'a, 'b> {
 	pub async fn send(&self) -> Result<SoslResponse, Error> {
 		let url = "search".to_string();
 		let params = vec![("q".to_string(), self.query.to_string())];
-		let response = self.rest_api_builder.send(
-			HTTPMethod::GET, url, &params).await?;
+		let response = self.rest_api_builder.send(HTTPMethod::GET, url, &params).await?;
 		Ok(SoslResponse::new(RestApi::handle_json_response(response).await?))
 	}
 }

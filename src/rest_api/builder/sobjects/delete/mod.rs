@@ -1,9 +1,8 @@
-use crate::rest_api::builder::sobjects::SObjectsBuilder;
-use crate::errors::Error;
 use crate::RestApi;
+use crate::errors::Error;
+use crate::rest_api::builder::sobjects::SObjectsBuilder;
 
 impl RestApi {
-
 	/// Deletes a specific record of a given Salesforce object type (`sobject_name`) using its ID.
 	///
 	/// This asynchronous function constructs the resource URL for the given object type (`sobject_name`)
@@ -56,13 +55,12 @@ impl RestApi {
 	///
 	/// # See
 	/// https://developer.salesforce.com/docs/platform/api-rest/guide/resources-sobject-retrieve-delete.html
-	pub async fn delete_sobject(& self, sobject_type: &str, id: &str) -> Result<(), Error> {
+	pub async fn delete_sobject(&self, sobject_type: &str, id: &str) -> Result<(), Error> {
 		self.build().sobjects().delete(sobject_type, id).send().await
 	}
 }
 
 impl<'a> SObjectsBuilder<'a> {
-
 	/// Deletes a specific record of a given Salesforce object type (`sobject_name`) using its ID.
 	///
 	/// This asynchronous function constructs the resource URL for the given object type (`sobject_name`)
@@ -127,8 +125,7 @@ pub struct SObjectDeleteBuilder<'a> {
 }
 
 impl<'a> SObjectDeleteBuilder<'a> {
-	pub(crate) fn new(builder: &'a SObjectsBuilder, sobject_type: String, id: String) -> SObjectDeleteBuilder<'a>
-	{
+	pub(crate) fn new(builder: &'a SObjectsBuilder, sobject_type: String, id: String) -> SObjectDeleteBuilder<'a> {
 		Self {
 			builder,
 			id,
@@ -161,7 +158,8 @@ impl<'a> SObjectDeleteBuilder<'a> {
 	///     }
 	/// }
 	/// ```
-	pub async fn send(self) -> Result<(), Error> { // fixme - you want to have a proper error here (non anyhow)
+	pub async fn send(self) -> Result<(), Error> {
+		// fixme - you want to have a proper error here (non anyhow)
 		let http_response = self
 			.builder
 			.send_delete(format!("{}/{}", self.sobject_type, self.id))

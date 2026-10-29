@@ -1,9 +1,9 @@
-use std::fmt::Debug;
-use reqwest::Response;
-use serde::Serialize;
-use crate::rest_api::builder::RestApiBuilder;
 use crate::errors::Error;
 use crate::rest_api::HTTPMethod;
+use crate::rest_api::builder::RestApiBuilder;
+use reqwest::Response;
+use serde::Serialize;
+use std::fmt::Debug;
 
 const PATH: &'static str = "composite";
 
@@ -24,15 +24,15 @@ impl<'a> CompositeBuilder<'a> {
 		CompositeBuilder { builder }
 	}
 
-/*
-	pub(crate) async fn send_delete(
-		&self,
-		url: String,
-	) -> Result<Response, RestApiError> {
-		let url = format!("{}/{}", PATH, url);
-		self.builder.send_delete(url).await
-	}
-*/
+	/*
+		pub(crate) async fn send_delete(
+			&self,
+			url: String,
+		) -> Result<Response, RestApiError> {
+			let url = format!("{}/{}", PATH, url);
+			self.builder.send_delete(url).await
+		}
+	*/
 
 	pub(crate) async fn send<T: Debug + Serialize>(
 		&self,

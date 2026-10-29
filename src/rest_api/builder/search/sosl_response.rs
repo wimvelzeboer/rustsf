@@ -8,7 +8,7 @@ pub struct SoslResponse {
 }
 
 impl SoslResponse {
-	pub(crate) fn new(response : SearchResponse) -> Self {
+	pub(crate) fn new(response: SearchResponse) -> Self {
 		Self { response }
 	}
 

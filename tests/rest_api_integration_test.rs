@@ -262,11 +262,9 @@ async fn test_if_match_header_update_account_precondition() -> Result<()> {
 	Ok(())
 }
 
-
 #[tokio::test]
 #[ignore]
 async fn test_if_none_match_header_get_account_not_modified() -> Result<()> {
-
 	let api = common::get_rest_api_client().await?;
 
 	let account = common::Account::new()
@@ -291,10 +289,7 @@ async fn test_if_none_match_header_get_account_not_modified() -> Result<()> {
 		.build()
 		.if_none_match_header(&[&etag.unwrap()])
 		.sobjects()
-		.get_by_id(
-			"Account",
-			&id
-		)
+		.get_by_id("Account", &id)
 		.send()
 		.await;
 
@@ -312,12 +307,11 @@ async fn test_if_none_match_header_get_account_not_modified() -> Result<()> {
 }
 
 /*
-	env_logger::builder()
-		.filter_level(LevelFilter::Trace)
-		.format_target(false)
-		.init();
- */
-
+   env_logger::builder()
+	   .filter_level(LevelFilter::Trace)
+	   .format_target(false)
+	   .init();
+*/
 
 #[tokio::test]
 #[ignore]
@@ -358,7 +352,6 @@ async fn test_if_modified_since_header_get_account_not_modified() -> Result<()> 
 
 	Ok(())
 }
-
 
 #[tokio::test]
 #[ignore]
@@ -547,7 +540,10 @@ async fn test_create_account() -> Result<()> {
 	let result = api.create("Account", account).await?;
 
 	assert!(result.success, "Account creation failed");
-	assert!(result.id.is_some(), "Expected created Account response to include an Id");
+	assert!(
+		result.id.is_some(),
+		"Expected created Account response to include an Id"
+	);
 
 	let id = result.id.expect("Expected created Account response to include an Id");
 
@@ -573,9 +569,7 @@ async fn test_sobject_get_deleted_account() -> Result<()> {
 
 	assert!(result.success, "Account creation failed");
 
-	let id = result
-		.id
-		.expect("Expected created Account response to include an Id");
+	let id = result.id.expect("Expected created Account response to include an Id");
 
 	assert_eq!(18, id.len());
 
@@ -583,15 +577,10 @@ async fn test_sobject_get_deleted_account() -> Result<()> {
 
 	let end_date = chrono::Utc::now() + chrono::Duration::minutes(5);
 
-	let response = api
-		.sobject_get_deleted("Account", &start_date, &end_date)
-		.await?;
+	let response = api.sobject_get_deleted("Account", &start_date, &end_date).await?;
 
 	assert!(
-		response
-			.deleted_records
-			.iter()
-			.any(|record| record.id == id),
+		response.deleted_records.iter().any(|record| record.id == id),
 		"Expected deleted records to include deleted Account"
 	);
 
@@ -624,10 +613,7 @@ async fn test_describe_global() -> Result<()> {
 		"Expected describe_global to return at least one sObject"
 	);
 	assert!(
-		response
-			.sobjects
-			.iter()
-			.any(|sobject| sobject.name == "Account"),
+		response.sobjects.iter().any(|sobject| sobject.name == "Account"),
 		"Expected describe_global response to include Account"
 	);
 
@@ -642,15 +628,9 @@ async fn test_sobject_basic_info_account() -> Result<()> {
 	let response = api.sobject_basic_info("Account").await?;
 
 	assert_eq!("Account", response.object_describe.name);
+	assert!(response.object_describe.queryable, "Expected Account to be queryable");
 	assert!(
-		response.object_describe.queryable,
-		"Expected Account to be queryable"
-	);
-	assert!(
-		response
-			.object_describe
-			.urls
-			.contains_key("describe"),
+		response.object_describe.urls.contains_key("describe"),
 		"Expected Account basic info to include describe URL"
 	);
 
@@ -669,21 +649,19 @@ async fn test_sobject_by_ext_id_account() -> Result<()> {
 	let result = api.create("Account", account).await?;
 
 	assert!(result.success, "Account creation failed");
-	assert!(result.id.is_some(), "Expected created Account response to include an Id");
+	assert!(
+		result.id.is_some(),
+		"Expected created Account response to include an Id"
+	);
 
 	let id = result.id.expect("Expected created Account response to include an Id");
 
 	assert_eq!(18, id.len());
 
-	let fetched_account = api
-		.sobject_by_ext_id::<common::Account>("Account", "Id", &id)
-		.await?;
+	let fetched_account = api.sobject_by_ext_id::<common::Account>("Account", "Id", &id).await?;
 
 	assert_eq!(Some(id.as_str()), fetched_account.id.as_deref());
-	assert_eq!(
-		Some("External Id Lookup Test Account"),
-		fetched_account.get_name()
-	);
+	assert_eq!(Some("External Id Lookup Test Account"), fetched_account.get_name());
 
 	api.delete_sobject("Account", &id).await?;
 
@@ -702,7 +680,10 @@ async fn test_sobject_by_id_account() -> Result<()> {
 	let result = api.create("Account", account).await?;
 
 	assert!(result.success, "Account creation failed");
-	assert!(result.id.is_some(), "Expected created Account response to include an Id");
+	assert!(
+		result.id.is_some(),
+		"Expected created Account response to include an Id"
+	);
 
 	let id = result.id.expect("Expected created Account response to include an Id");
 
@@ -711,10 +692,7 @@ async fn test_sobject_by_id_account() -> Result<()> {
 	let fetched_account = api.sobject_by_id::<common::Account>("Account", &id).await?;
 
 	assert_eq!(Some(id.as_str()), fetched_account.id.as_deref());
-	assert_eq!(
-		Some("SObject By Id Test Account"),
-		fetched_account.get_name()
-	);
+	assert_eq!(Some("SObject By Id Test Account"), fetched_account.get_name());
 
 	api.delete_sobject("Account", &id).await?;
 
@@ -754,7 +732,10 @@ async fn test_update_sobject_account() -> Result<()> {
 	let result = api.create("Account", account).await?;
 
 	assert!(result.success, "Account creation failed");
-	assert!(result.id.is_some(), "Expected created Account response to include an Id");
+	assert!(
+		result.id.is_some(),
+		"Expected created Account response to include an Id"
+	);
 
 	let id = result.id.expect("Expected created Account response to include an Id");
 
@@ -767,7 +748,7 @@ async fn test_update_sobject_account() -> Result<()> {
 			"Description": "Updated SObject Test Account"
 		}),
 	)
-		.await?;
+	.await?;
 
 	let fetched_account = api.sobject_by_id::<common::Account>("Account", &id).await?;
 
@@ -781,7 +762,6 @@ async fn test_update_sobject_account() -> Result<()> {
 
 	Ok(())
 }
-
 
 #[tokio::test]
 #[ignore]
@@ -797,7 +777,10 @@ async fn test_sobject_get_updated_account() -> Result<()> {
 	let result = api.create("Account", account).await?;
 
 	assert!(result.success, "Account creation failed");
-	assert!(result.id.is_some(), "Expected created Account response to include an Id");
+	assert!(
+		result.id.is_some(),
+		"Expected created Account response to include an Id"
+	);
 
 	let id = result.id.expect("Expected created Account response to include an Id");
 
@@ -810,13 +793,11 @@ async fn test_sobject_get_updated_account() -> Result<()> {
 			"Description": "Get Updated Test Account"
 		}),
 	)
-		.await?;
+	.await?;
 
 	let end_date = chrono::Utc::now() + chrono::Duration::minutes(5);
 
-	let response = api
-		.sobject_get_updated("Account", &start_date, &end_date)
-		.await?;
+	let response = api.sobject_get_updated("Account", &start_date, &end_date).await?;
 
 	assert!(
 		response.ids.iter().any(|updated_id| updated_id == &id),
@@ -844,7 +825,10 @@ async fn test_upsert_sobject_account() -> Result<()> {
 	let result = api.create("Account", account).await?;
 
 	assert!(result.success, "Account creation failed");
-	assert!(result.id.is_some(), "Expected created Account response to include an Id");
+	assert!(
+		result.id.is_some(),
+		"Expected created Account response to include an Id"
+	);
 
 	let id = result.id.expect("Expected created Account response to include an Id");
 

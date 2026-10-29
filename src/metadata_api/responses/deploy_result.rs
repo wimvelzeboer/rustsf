@@ -5,9 +5,9 @@
 //! success or failure, and any errors that occurred during the deployment.
 //!
 
-use std::cmp::PartialEq;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::cmp::PartialEq;
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename = "deployOptions")]
@@ -174,7 +174,6 @@ impl DeployResult {
 		}
 	}
 
-
 	pub fn details(&self) -> Option<&DeployDetails> {
 		self.details.as_ref()
 	}
@@ -203,7 +202,6 @@ pub struct DeployDetails {
 }
 
 impl DeployDetails {
-
 	pub fn component_successes(&self) -> &Vec<ComponentDetails> {
 		&self.component_successes
 	}

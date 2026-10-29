@@ -32,8 +32,8 @@ use zip::ZipArchive;
    </soapenv:Body>
  </soapenv:Envelope>
 */
-use serde::{Deserialize, Serialize};
 use crate::errors::XmlError;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CheckRetrieveStatusResponse {
@@ -241,8 +241,7 @@ fn find_elements<'a, 'input>(
 	root: roxmltree::Node<'a, 'input>,
 	local_name: &'static str,
 ) -> Vec<roxmltree::Node<'a, 'input>> {
-	root
-		.descendants()
+	root.descendants()
 		.filter(|node| node.is_element() && node.tag_name().name() == local_name)
 		.collect()
 }
@@ -257,10 +256,7 @@ fn parse_text_child<'a, 'input>(
 		.ok_or(XmlError::MissingText(local_name))
 }
 
-fn parse_bool_child<'a, 'input>(
-	root: roxmltree::Node<'a, 'input>,
-	local_name: &'static str,
-) -> Result<bool, XmlError> {
+fn parse_bool_child<'a, 'input>(root: roxmltree::Node<'a, 'input>, local_name: &'static str) -> Result<bool, XmlError> {
 	let value = parse_text_child(root, local_name)?;
 	value.parse::<bool>().map_err(|_| XmlError::InvalidBool {
 		element: local_name,

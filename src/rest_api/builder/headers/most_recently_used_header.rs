@@ -1,7 +1,6 @@
 use crate::rest_api::builder::RestApiBuilder;
 
 impl<'a> RestApiBuilder<'a> {
-
 	/// Updates the "Sforce-Mru" header with a value indicating whether to update
 	/// the most recently used (MRU) record.
 	///
@@ -43,7 +42,7 @@ impl<'a> RestApiBuilder<'a> {
 	/// # See
 	/// https://developer.salesforce.com/docs/platform/api-rest/guide/headers-mru.html
 	pub fn most_recently_used_header(&mut self, update_mru: bool) -> &mut Self {
-		let value = format!("updateMru={}",update_mru);
+		let value = format!("updateMru={}", update_mru);
 		self.header("Sforce-Mru", &value);
 		self
 	}

@@ -1,10 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ApexLog {
-
 	#[serde(rename = "Id")]
 	pub id: Option<String>,
 
@@ -45,7 +43,6 @@ pub struct ApexLog {
 }
 
 impl ApexLog {
-
 	pub fn id(&self) -> Option<&str> {
 		self.id.as_deref()
 	}

@@ -1,10 +1,10 @@
 use self::global_describe_response::GlobalDescribeResponse;
 use crate::RestApi;
+use crate::errors::Error;
 use crate::rest_api::HTTPMethod;
 use crate::rest_api::builder::sobjects::SObjectsBuilder;
-use serde_json::{json};
 use chrono::Utc;
-use crate::errors::Error;
+use serde_json::json;
 
 mod global_describe_response;
 
@@ -102,8 +102,12 @@ impl RestApi {
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_describeGlobal.htm>
-	pub async fn describe_global_modified(&self, datetime: chrono::DateTime<Utc>) -> Result<GlobalDescribeResponse, Error> {
-		Ok(self.build()
+	pub async fn describe_global_modified(
+		&self,
+		datetime: chrono::DateTime<Utc>,
+	) -> Result<GlobalDescribeResponse, Error> {
+		Ok(self
+			.build()
 			.if_modified_since_header(&datetime)
 			.sobjects()
 			.describe_global()
@@ -154,9 +158,13 @@ impl RestApi {
 	/// ```
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_describeGlobal.htm>
-	pub async fn describe_global_unmodified(&self, datetime: chrono::DateTime<Utc>) -> Result<GlobalDescribeResponse, Error> {
+	pub async fn describe_global_unmodified(
+		&self,
+		datetime: chrono::DateTime<Utc>,
+	) -> Result<GlobalDescribeResponse, Error> {
 		let since = datetime.format("%a, %d %b %Y %H:%M:%S %:z").to_string();
-		Ok(self.build()
+		Ok(self
+			.build()
 			.if_unmodified_since_header(&since)
 			.sobjects()
 			.describe_global()
@@ -166,7 +174,6 @@ impl RestApi {
 }
 
 impl<'a> SObjectsBuilder<'a> {
-
 	/// Get a List of Objects Describes
 	///
 	/// Sends a request to the Salesforce API to retrieve metadata information about all
@@ -235,7 +242,6 @@ pub struct GlobalDescribeBuilder<'a> {
 }
 
 impl<'a> GlobalDescribeBuilder<'a> {
-
 	pub(crate) fn new(builder: &'a SObjectsBuilder) -> GlobalDescribeBuilder<'a> {
 		Self { builder }
 	}
@@ -266,7 +272,7 @@ impl<'a> GlobalDescribeBuilder<'a> {
 		let body = json!({});
 		let url = "sobjects".to_string();
 		let http_response = self
-			.builder// gets the SObjectBuild
+			.builder // gets the SObjectBuild
 			.builder // gets the RestApiBuild
 			.send(HTTPMethod::GET, url, &body)
 			.await?;

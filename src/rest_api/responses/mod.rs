@@ -5,7 +5,6 @@
 //! responses received from Salesforce.
 //!
 
-
 pub mod rest_response;
 
 pub mod action_override;

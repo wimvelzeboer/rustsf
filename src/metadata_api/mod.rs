@@ -31,9 +31,9 @@ use crate::rest_api::responses::error_response::ErrorResponse;
 use log::trace;
 use metadata_deployer::MetadataDeployer;
 use reqwest::{Response, multipart};
+use rustsf_auth::SalesforceCredentials;
 use serde::de::DeserializeOwned;
 use std::collections::HashMap;
-use rustsf_auth::SalesforceCredentials;
 
 pub mod metadata_deployer;
 pub mod metadata_retriever;
@@ -84,7 +84,7 @@ impl MetadataApi {
 	/// ```
 	pub async fn new(credentials: SalesforceCredentials) -> Result<Self, Error> {
 		Ok(Self {
-			client: Client::new(credentials).await?
+			client: Client::new(credentials).await?,
 		})
 	}
 
@@ -128,14 +128,7 @@ impl MetadataApi {
 			self.client.services_data_version_path(),
 			deploy_request_id,
 		);
-		let response = self
-			.client
-			.patch(
-				&url,
-				CancelRequest::new(),
-				&HashMap::new()
-			)
-			.await?;
+		let response = self.client.patch(&url, CancelRequest::new(), &HashMap::new()).await?;
 		handle_json_response(response).await
 	}
 
@@ -341,11 +334,7 @@ impl MetadataApi {
 	///   the API endpoint.
 	/// - `handle_json_response`: An asynchronous function that processes the
 	///   JSON-formatted response from the server.
-	pub async fn deploy_status(
-		&self,
-		deploy_request_id: &str,
-		include_details: bool,
-	) -> Result<DeployResponse, Error> {
+	pub async fn deploy_status(&self, deploy_request_id: &str, include_details: bool) -> Result<DeployResponse, Error> {
 		let mut params: Vec<(String, String)> = vec![];
 		if include_details {
 			params.push(("includeDetails".to_string(), "true".to_string()));

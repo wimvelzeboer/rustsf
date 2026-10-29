@@ -1,9 +1,9 @@
 use self::sobject_basic_info_response::SObjectBasicInfoResponse;
 use crate::RestApi;
-use crate::rest_api::builder::sobjects::SObjectsBuilder;
-use serde_json::json;
 use crate::errors::Error;
 use crate::rest_api::HTTPMethod;
+use crate::rest_api::builder::sobjects::SObjectsBuilder;
+use serde_json::json;
 
 mod sobject_basic_info_response;
 
@@ -45,16 +45,11 @@ impl RestApi {
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_sobject_basic_info_get.htm>
 	pub async fn sobject_basic_info(&self, object_name: &str) -> Result<SObjectBasicInfoResponse, Error> {
-		self.build()
-			.sobjects()
-			.basic_info(object_name)
-			.send()
-			.await
+		self.build().sobjects().basic_info(object_name).send().await
 	}
 }
 
 impl<'a> SObjectsBuilder<'a> {
-
 	/// Get Object Metadata Using sObject Basic Information
 	///
 	/// Gets basic metadata for a specified object, including some object properties,
@@ -109,7 +104,10 @@ pub struct SObjectBasicInfoBuilder<'a> {
 
 impl<'a> SObjectBasicInfoBuilder<'a> {
 	pub(crate) fn new(builder: &'a SObjectsBuilder, sobject_type: &str) -> SObjectBasicInfoBuilder<'a> {
-		Self { builder, sobject_type: sobject_type.to_string() }
+		Self {
+			builder,
+			sobject_type: sobject_type.to_string(),
+		}
 	}
 
 	/// Sends the request to retrieve the Salesforce SObject type sobject_basic_info.
@@ -138,9 +136,7 @@ impl<'a> SObjectBasicInfoBuilder<'a> {
 	///
 	/// # See
 	/// https://developer.salesforce.com/docs/platform/api-rest/guide/resources-sobject-basic-info-get.html
-	pub async fn send(
-		self,
-	) -> Result<SObjectBasicInfoResponse, Error> {
+	pub async fn send(self) -> Result<SObjectBasicInfoResponse, Error> {
 		let body = json!({});
 		let http_response = self
 			.builder

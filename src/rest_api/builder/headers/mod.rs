@@ -29,7 +29,6 @@ mod query_options_header;
 // todo do not forget to add the response headers, e.g. https://developer.salesforce.com/docs/platform/api-rest/guide/headers-api-usage.html
 
 impl<'a> RestApiBuilder<'a> {
-
 	/// Sets a header key-value pair in the headers map of the current object.
 	///
 	/// # Arguments

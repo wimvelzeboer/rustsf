@@ -1,11 +1,11 @@
-use std::collections::HashMap;
+use crate::RestApi;
+use crate::errors::Error;
 use crate::rest_api::HTTPMethod;
 use serde::Deserialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
+use std::collections::HashMap;
 use std::fmt::Debug;
-use crate::errors::Error;
-use crate::RestApi;
 
 pub struct QueryResponse<'a> {
 	rest_api: &'a RestApi,
@@ -14,10 +14,7 @@ pub struct QueryResponse<'a> {
 
 impl<'a> QueryResponse<'a> {
 	pub fn new(rest_api: &'a RestApi, response: SalesforceQueryResponse<Value>) -> Self {
-		Self {
-			rest_api,
-			response,
-		}
+		Self { rest_api, response }
 	}
 
 	pub fn done(&self) -> bool {
@@ -90,7 +87,10 @@ impl<'a> QueryResponse<'a> {
 		match &self.response.next_records_url {
 			Some(url) => {
 				let params: Vec<(String, String)> = vec![];
-				let response = self.rest_api.send(HTTPMethod::GET, url.to_string(), &params, &HashMap::new()).await?;
+				let response = self
+					.rest_api
+					.send(HTTPMethod::GET, url.to_string(), &params, &HashMap::new())
+					.await?;
 				self.response = RestApi::handle_json_response(response).await?;
 			}
 			None => {}
@@ -111,7 +111,7 @@ impl<'a> QueryResponse<'a> {
 			total_size: self.response.total_size,
 			done: self.response.done,
 			next_records_url: self.response.next_records_url,
-			records: serde_json::from_value(self.response.records)?
+			records: serde_json::from_value(self.response.records)?,
 		})
 	}
 }

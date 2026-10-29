@@ -26,14 +26,14 @@ pub mod bulk_api;
 #[cfg(feature = "bulk-api-v2")]
 pub mod bulk_api_v2;
 
-pub mod primary_types;
 pub mod client;
 pub(crate) mod errors;
+pub mod primary_types;
 
-pub use rustsf_auth::SalesforceCredentials;
 pub use errors::Error;
 pub use primary_types::{SObject, SObjectOwner};
 pub use rest_api::responses::error_response::ErrorResponse;
+pub use rustsf_auth::SalesforceCredentials;
 
 #[cfg(feature = "rest-api")]
 pub use rest_api::RestApi;

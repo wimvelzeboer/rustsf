@@ -1,12 +1,11 @@
-use std::fmt::Debug;
-use serde::de::DeserializeOwned;
-use crate::rest_api::builder::composite::sobject_collections::SObjectCollectionsBuilder;
+use crate::RestApi;
 use crate::errors::Error;
 use crate::rest_api::HTTPMethod;
-use crate::RestApi;
+use crate::rest_api::builder::composite::sobject_collections::SObjectCollectionsBuilder;
+use serde::de::DeserializeOwned;
+use std::fmt::Debug;
 
 impl RestApi {
-
 	/// Fetches records of a specified Salesforce object type by a list of IDs and fields.
 	///
 	/// This asynchronous function retrieves records of a Salesforce object specified by `object_name`
@@ -83,13 +82,7 @@ impl RestApi {
 }
 
 impl<'a> SObjectCollectionsBuilder<'a> {
-
-	pub fn get_by_ids(
-		&self,
-		object_name: &str,
-		ids: &[&str],
-		fields: &[&str],
-	) -> SObjectsByIdBuilder<'_, '_> {
+	pub fn get_by_ids(&self, object_name: &str, ids: &[&str], fields: &[&str]) -> SObjectsByIdBuilder<'_, '_> {
 		SObjectsByIdBuilder::new(self, object_name, ids, fields)
 	}
 }
@@ -101,12 +94,10 @@ pub struct SObjectsByIdBuilder<'builder, 'api> {
 	fields: Vec<String>,
 }
 
-impl<'builder, 'api>
-SObjectsByIdBuilder<'builder, 'api> {
-
+impl<'builder, 'api> SObjectsByIdBuilder<'builder, 'api> {
 	pub(crate) fn new(
 		builder: &'builder SObjectCollectionsBuilder<'api>,
-		sobject_type : &str,
+		sobject_type: &str,
 		ids: &[&str],
 		fields: &[&str],
 	) -> SObjectsByIdBuilder<'builder, 'api> {
@@ -118,16 +109,11 @@ SObjectsByIdBuilder<'builder, 'api> {
 		}
 	}
 
-	pub async fn send<T: Debug + DeserializeOwned>(
-		&self,
-	) -> Result<Vec<T>, Error> {
-
+	pub async fn send<T: Debug + DeserializeOwned>(&self) -> Result<Vec<T>, Error> {
 		let params = vec![("fields", self.fields.join(",")), ("ids", self.ids.join(","))];
-		let response = self.builder
-			.send(HTTPMethod::GET,
-			      self.sobject_type.clone(),
-			      &params,
-			)
+		let response = self
+			.builder
+			.send(HTTPMethod::GET, self.sobject_type.clone(), &params)
 			.await?;
 
 		// fixme - why not strait to the response but first go through option? Could there be a none in the vector?

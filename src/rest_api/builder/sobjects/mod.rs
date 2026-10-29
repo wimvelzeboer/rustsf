@@ -26,10 +26,10 @@
 use super::RestApiBuilder;
 use crate::rest_api::HTTPMethod;
 
-use reqwest::Response;
-use serde::{Serialize};
-use std::fmt::Debug;
 use crate::errors::Error;
+use reqwest::Response;
+use serde::Serialize;
+use std::fmt::Debug;
 
 mod create;
 mod delete;
@@ -37,8 +37,8 @@ mod deleted;
 
 mod global_describe;
 mod sobject_basic_info;
-mod sobject_by_id;
 mod sobject_by_ext_id;
+mod sobject_by_id;
 mod sobject_describe;
 
 mod update;
@@ -61,10 +61,7 @@ impl<'a> SObjectsBuilder<'a> {
 		SObjectsBuilder { builder }
 	}
 
-	pub(crate) async fn send_delete(
-		&self,
-		url: String,
-	) -> Result<Response, Error> {
+	pub(crate) async fn send_delete(&self, url: String) -> Result<Response, Error> {
 		let url = format!("sobjects/{}", url);
 		self.builder.send_delete(url).await
 	}

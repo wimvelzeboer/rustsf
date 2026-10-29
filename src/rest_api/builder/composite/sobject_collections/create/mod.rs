@@ -1,9 +1,9 @@
 use self::sobjects_create_request::SObjectsCreateRequest;
 use super::SObjectCollectionsBuilder;
 use crate::RestApi;
+use crate::errors::Error;
 use crate::rest_api::HTTPMethod;
 use crate::rest_api::builder::composite::sobject_collections::create::salesforce_sobjects_create_response::SalesforceSObjectsCreateResponse;
-use crate::errors::Error;
 use crate::rest_api::responses::rest_response::RestResponse;
 use serde::Serialize;
 use std::fmt::Debug;
@@ -66,8 +66,7 @@ impl RestApi {
 		records: &mut Vec<T>,
 		all_or_none: bool,
 	) -> Result<Vec<SalesforceSObjectsCreateResponse>, Error> {
-		self
-			.build()
+		self.build()
 			.composite()
 			.sobject_collections()
 			.create(records, all_or_none)
@@ -157,7 +156,6 @@ impl<'builder, 'api, 'records, T: Debug + Serialize> SObjectsCreateBuilder<'buil
 	}
 
 	pub async fn send(&mut self) -> Result<RestResponse, Error> {
-
 		// fixme - should we do automatically multiple requests if needed?
 		if self.sobjects.len() > 200 {
 			return Err(Error::Other(format!(

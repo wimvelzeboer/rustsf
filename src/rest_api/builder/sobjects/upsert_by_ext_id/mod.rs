@@ -1,11 +1,10 @@
-use std::fmt::Debug;
-use reqwest::Response;
-use serde::Serialize;
-use crate::rest_api::builder::sobjects::SObjectsBuilder;
+use crate::RestApi;
 use crate::errors::Error;
 use crate::rest_api::HTTPMethod;
-use crate::RestApi;
-
+use crate::rest_api::builder::sobjects::SObjectsBuilder;
+use reqwest::Response;
+use serde::Serialize;
+use std::fmt::Debug;
 
 impl RestApi {
 	/// Performs an upsert operation for a specified Salesforce object (sObject).
@@ -78,7 +77,6 @@ impl RestApi {
 			.await
 	}
 }
-
 
 impl<'a> SObjectsBuilder<'a> {
 	pub fn upsert_by_ext_id<T: Serialize + Debug>(

@@ -1,4 +1,5 @@
-use std::collections::HashMap;
+use crate::client::Client;
+use crate::errors::Error;
 use crate::rest_api::responses::error_response::ErrorResponse;
 use crate::rest_api::responses::query_response::QueryResponse;
 use crate::tooling_api::responses::create_result::CreateResult;
@@ -8,8 +9,7 @@ use rustsf_auth::SalesforceCredentials;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
-use crate::client::Client;
-use crate::errors::Error;
+use std::collections::HashMap;
 
 pub mod primary_types;
 pub mod responses;
@@ -27,7 +27,7 @@ pub struct ToolingApi {
 impl ToolingApi {
 	pub async fn new(credentials: SalesforceCredentials) -> Result<Self, Error> {
 		Ok(Self {
-			client : Client::new(credentials).await?
+			client: Client::new(credentials).await?,
 		})
 	}
 
@@ -149,7 +149,11 @@ impl ToolingApi {
 	/// }
 	/// ```
 	pub async fn get_apex_log_body(&self, log_id: &str) -> Result<String, Error> {
-		let url = format!("{}/sobjects/ApexLog/{}/Body", self.client.services_data_version_path(), log_id);
+		let url = format!(
+			"{}/sobjects/ApexLog/{}/Body",
+			self.client.services_data_version_path(),
+			log_id
+		);
 		let params: Vec<String> = Vec::new();
 		let response = self.client.get_json(&url, &params, &HashMap::new()).await?;
 
@@ -231,10 +235,7 @@ impl ToolingApi {
 	///     println!("Apex trace flag: {:?}", response),
 	/// }
 	/// ```
-	pub async fn create_trace_flag<T: Serialize + std::fmt::Debug>(
-		&self,
-		record: T,
-	) -> Result<String, Error> {
+	pub async fn create_trace_flag<T: Serialize + std::fmt::Debug>(&self, record: T) -> Result<String, Error> {
 		match self.create("TraceFlag", record).await {
 			Ok(response) => {
 				let result = serde_json::from_value::<CreateResult>(response)?;
@@ -342,7 +343,7 @@ impl ToolingApi {
 	/// Retrieve a Tooling API SObject by ID.
 	pub async fn find_by_id(&self, sobject_name: &str, id: &str) -> Result<Value, Error> {
 		let url = format!("{}/sobjects/{}/{}", self.base_path()?, sobject_name, id);
-		let params : Vec<String> = Vec::new();
+		let params: Vec<String> = Vec::new();
 		let response = self.client.get_json(&url, &params, &HashMap::new()).await?;
 		handle_json_response(response).await
 	}

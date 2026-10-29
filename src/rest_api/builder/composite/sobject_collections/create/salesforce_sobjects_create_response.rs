@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::rest_api::responses::sobject_error_response::SObjectErrorResponse;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]

@@ -13,11 +13,7 @@ async fn test_deployment_flow() -> Result<()> {
 
 	// Create deployment with an apex class
 	let mut request = api.new_deployment_request();
-	request.set_options(
-		DeployOptions::new()
-			.set_run_tests(TestLevel::NoTestRun)
-			.to_owned()
-	);
+	request.set_options(DeployOptions::new().set_run_tests(TestLevel::NoTestRun).to_owned());
 	request.add(
 		"ApexClass",
 		"classes",
@@ -42,7 +38,6 @@ async fn test_deployment_flow() -> Result<()> {
 	// Poll the deployment status
 	let mut max_tries = 10;
 	let deploy_response = loop {
-
 		let deploy_response = api.deploy_status(deploy_request_id, true).await?;
 
 		if *deploy_response.result().status() == DeploymentStatus::Succeeded {
@@ -64,25 +59,18 @@ async fn test_deployment_flow() -> Result<()> {
 	assert_eq!(component.component_type(), "ApexClass");
 	assert_eq!(component.file_name(), "classes/RustSfClass.cls");
 
-
 	// Create destructive deployment for the apex class
 	let mut request = api.new_deployment_request();
-	request.set_options(
-		DeployOptions::new()
-			.set_run_tests(TestLevel::NoTestRun)
-			.to_owned()
-	);
+	request.set_options(DeployOptions::new().set_run_tests(TestLevel::NoTestRun).to_owned());
 	request.delete_pre("ApexClass", vec!["RustSfClass"]);
 
 	// Deploy destructive changes
 	let deploy_response = api.deploy(request).await?;
 	let deploy_request_id = deploy_response.get_deploy_request_id();
 
-
 	// Poll the deployment status
 	let mut max_tries = 10;
 	let deploy_response = loop {
-
 		let deploy_response = api.deploy_status(deploy_request_id, true).await?;
 
 		if deploy_response.result().is_success() {

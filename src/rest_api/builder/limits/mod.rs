@@ -1,10 +1,9 @@
-use std::collections::HashMap;
+use crate::RestApi;
 use crate::errors::Error;
 use crate::rest_api::responses::limits_response::LimitsResponse;
-use crate::RestApi;
+use std::collections::HashMap;
 
 impl RestApi {
-
 	/// Lists the limits of the Salesforce environment
 	///
 	/// # Example

@@ -2,17 +2,16 @@ use self::salesforce_create_response::SalesforceCreateResponse;
 use self::sobject_create_result::SObjectsCreateResult;
 use super::SObjectsBuilder;
 use crate::RestApi;
+use crate::errors::Error;
+use crate::rest_api::HTTPMethod;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use std::fmt::Debug;
-use crate::errors::Error;
-use crate::rest_api::HTTPMethod;
 
 mod salesforce_create_response;
 mod sobject_create_result;
 
 impl<'a> SObjectsBuilder<'a> {
-
 	/// Creates a single new record in a Salesforce with the provided values.
 	///
 	/// # Generic
@@ -63,7 +62,11 @@ impl<'a> SObjectsBuilder<'a> {
 	///
 	/// # See
 	/// https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_sobject_basic_info_post.htm
-	pub fn create<T: Debug + DeserializeOwned +  Serialize>(&'a self, sobject_type: &str, record: T) -> SObjectCreateBuilder<'a, T> {
+	pub fn create<T: Debug + DeserializeOwned + Serialize>(
+		&'a self,
+		sobject_type: &str,
+		record: T,
+	) -> SObjectCreateBuilder<'a, T> {
 		SObjectCreateBuilder::new(sobject_type.to_string(), record, self)
 	}
 }
@@ -188,5 +191,3 @@ impl<'a, T: Debug + DeserializeOwned + Serialize> SObjectCreateBuilder<'a, T> {
 		))
 	}
 }
-
-

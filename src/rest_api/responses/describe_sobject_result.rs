@@ -17,7 +17,6 @@ use std::collections::HashMap;
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DescribeSObjectResult {
-
 	/// Metadata for action overrides defined on the object.
 	///
 	/// Action overrides sobject_basic_info custom behavior for standard or custom actions,

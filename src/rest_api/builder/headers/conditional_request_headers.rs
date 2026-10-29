@@ -11,11 +11,10 @@
 //! # See
 //! https://developer.salesforce.com/docs/platform/api-rest/guide/intro-rest-conditional-requests.html
 
-use chrono::{DateTime, Utc};
 use crate::rest_api::builder::RestApiBuilder;
+use chrono::{DateTime, Utc};
 
 impl<'a> RestApiBuilder<'a> {
-
 	/// The If-Match header is a request header for sObject Rows that includes a list of ETags.
 	/// If the ETag of the record that you’re requesting matches an ETag specified as a precondition
 	/// in the header, the request is processed.
@@ -29,10 +28,9 @@ impl<'a> RestApiBuilder<'a> {
 	///
 	/// # See
 	/// https://developer.salesforce.com/docs/platform/api-rest/guide/intro-rest-conditional-requests.html#if-match
-	pub fn if_match_header(&mut self, etag: &[&str] ) -> &Self {
+	pub fn if_match_header(&mut self, etag: &[&str]) -> &Self {
 		let value = etag
 			.iter()
-
 			.map(|e| {
 				if e.starts_with('"') && e.ends_with('"') {
 					e.to_string()
@@ -61,7 +59,7 @@ impl<'a> RestApiBuilder<'a> {
 	///
 	/// # See
 	/// https://developer.salesforce.com/docs/platform/api-rest/guide/intro-rest-conditional-requests.html#if-none-match
-	pub fn if_none_match_header(&mut self, etag: &[&str] ) -> &Self {
+	pub fn if_none_match_header(&mut self, etag: &[&str]) -> &Self {
 		let value = etag
 			.iter()
 			.map(|e| {
@@ -76,7 +74,6 @@ impl<'a> RestApiBuilder<'a> {
 
 		self.header("If-None-Match", &value)
 	}
-
 
 	/// Sets the `If-Modified-Since` header for the request.
 	///
@@ -110,10 +107,7 @@ impl<'a> RestApiBuilder<'a> {
 	/// # See
 	/// https://developer.salesforce.com/docs/platform/api-rest/guide/intro-rest-conditional-requests.html#if-modified-since
 	pub fn if_modified_since_header(&mut self, time: &DateTime<Utc>) -> &mut Self {
-
-		let since = time
-			.format("%a, %d %b %Y %H:%M:%S %:z")
-			.to_string();
+		let since = time.format("%a, %d %b %Y %H:%M:%S %:z").to_string();
 		self.header("If-Modified-Since", &since);
 		self
 	}

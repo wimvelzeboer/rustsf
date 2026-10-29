@@ -10,9 +10,9 @@
 //! - [user_password_reset](crate::rest_api::RestApi#method.user_password_reset), Resets a password.
 //! - [user_password_set](crate::rest_api::RestApi#method.user_password_reset), Sets the password for a user.
 //!
-use crate::rest_api::{RestApi};
-use std::collections::HashMap;
 use crate::errors::Error;
+use crate::rest_api::RestApi;
+use std::collections::HashMap;
 
 impl RestApi {
 	/// Checks if a user's password has expired in the system.

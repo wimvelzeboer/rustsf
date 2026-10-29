@@ -1,7 +1,6 @@
 use crate::rest_api::builder::RestApiBuilder;
 
 impl<'a> RestApiBuilder<'a> {
-
 	/// Specifies options for the client you’re using to access REST API resources.
 	/// For example, you can provide a default namespace prefix so that you don’t need to
 	/// specify the prefix in your code.
@@ -28,13 +27,13 @@ impl<'a> RestApiBuilder<'a> {
 		let value = match (client, namespace) {
 			(Some(client), Some(namespace)) => {
 				format!("client={}; defaultNamespace={}", client, namespace)
-			},
+			}
 			(Some(client), None) => {
 				format!("client={}", client)
-			},
+			}
 			(None, Some(namespace)) => {
 				format!("defaultNamespace={}", namespace)
-			},
+			}
 			(None, None) => return self,
 		};
 		self.header("Sforce-Call-Options", &value);

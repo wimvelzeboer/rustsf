@@ -497,7 +497,12 @@ impl BulkApi {
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_batches_get_results.htm>
-	pub async fn get_result_list(&mut self, job_id: &str, batch_id: &str, content_type: &str) -> Result<Response, Error> {
+	pub async fn get_result_list(
+		&mut self,
+		job_id: &str,
+		batch_id: &str,
+		content_type: &str,
+	) -> Result<Response, Error> {
 		let resource_url = format!("{}/job/{}/batch/{}/result", self.base_path(), job_id, batch_id);
 		let mut headers = self.get_auth_headers().await?;
 		headers.insert("Content-Type".to_string(), content_type.to_string());

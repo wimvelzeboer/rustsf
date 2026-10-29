@@ -1,7 +1,6 @@
 use crate::rest_api::builder::RestApiBuilder;
 
 impl<'a> RestApiBuilder<'a> {
-
 	/// Sets a custom header to indicate the package version for a given namespace.
 	///
 	/// Specifies the version of each package referenced by a client. A package version is a number

@@ -1,11 +1,10 @@
-use crate::rest_api::builder::sobjects::SObjectsBuilder;
+use crate::RestApi;
 use crate::errors::Error;
 use crate::rest_api::HTTPMethod;
-use crate::RestApi;
+use crate::rest_api::builder::sobjects::SObjectsBuilder;
 use crate::rest_api::responses::describe_sobject_result::DescribeSObjectResult;
 
 impl RestApi {
-
 	/// Completely describes the individual metadata at all levels for the specified object.
 	/// For example, this can be used to retrieve the fields, URLs, and child relationships for
 	/// the Account object.
@@ -34,20 +33,12 @@ impl RestApi {
 	/// # See
 	/// - https://developer.salesforce.com/docs/platform/api-rest/guide/resources-sobject-describe.html
 	/// - Builder pattern version: [describe](crate::rest_api::builder::sobjects::SObjectsBuilder::describe)
-	pub async fn sobject_describe(
-		&self,
-		sobject_name: &str,
-	) -> Result<DescribeSObjectResult, Error> {
-		self.build()
-			.sobjects()
-			.describe(sobject_name)
-			.send()
-			.await
+	pub async fn sobject_describe(&self, sobject_name: &str) -> Result<DescribeSObjectResult, Error> {
+		self.build().sobjects().describe(sobject_name).send().await
 	}
 }
 
 impl<'a> SObjectsBuilder<'a> {
-
 	/// Completely describes the individual metadata at all levels for the specified object.
 	/// For example, this can be used to retrieve the fields, URLs, and child relationships for
 	/// the Account object.
@@ -82,37 +73,30 @@ impl<'a> SObjectsBuilder<'a> {
 	/// # See
 	/// - https://developer.salesforce.com/docs/platform/api-rest/guide/resources-sobject-describe.html
 	/// - Simplified version: [sobject_describe](crate::rest_api::RestApi::sobject_describe)
-	pub fn describe(
-		&self,
-		sobject_type: &str
-	) -> SObjectDescribeBuilder<'_> {
+	pub fn describe(&self, sobject_type: &str) -> SObjectDescribeBuilder<'_> {
 		SObjectDescribeBuilder::new(self, sobject_type)
 	}
 }
 
 pub struct SObjectDescribeBuilder<'a> {
 	builder: &'a SObjectsBuilder<'a>,
-	sobject_type: String
+	sobject_type: String,
 }
 
 impl<'a> SObjectDescribeBuilder<'a> {
-	pub(crate) fn new(builder: &'a SObjectsBuilder, sobject_type: &str) -> SObjectDescribeBuilder<'a>
-	{
+	pub(crate) fn new(builder: &'a SObjectsBuilder, sobject_type: &str) -> SObjectDescribeBuilder<'a> {
 		Self {
 			builder,
 			sobject_type: sobject_type.to_string(),
 		}
 	}
 
-	pub async fn send(
-		&self,
-	) -> Result<DescribeSObjectResult, Error> {
+	pub async fn send(&self) -> Result<DescribeSObjectResult, Error> {
 		let param: Vec<(&str, &str)> = vec![];
-		let response = self.builder.send(
-			HTTPMethod::GET,
-			format!("{}/describe/", self.sobject_type),
-			&param,
-		).await?;
+		let response = self
+			.builder
+			.send(HTTPMethod::GET, format!("{}/describe/", self.sobject_type), &param)
+			.await?;
 		RestApi::handle_json_response(response).await
 	}
 }

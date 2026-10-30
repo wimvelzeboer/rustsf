@@ -5,6 +5,8 @@
 //! responses received from Salesforce.
 //!
 
+pub mod rest_response;
+
 pub mod action_override;
 pub mod child_relationship;
 pub mod create_response;

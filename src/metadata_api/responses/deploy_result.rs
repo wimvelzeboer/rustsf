@@ -7,6 +7,7 @@
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::cmp::PartialEq;
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename = "deployOptions")]
@@ -172,6 +173,17 @@ impl DeployResult {
 			zip_size: None,
 		}
 	}
+
+	pub fn details(&self) -> Option<&DeployDetails> {
+		self.details.as_ref()
+	}
+	pub fn is_success(&self) -> bool {
+		self.status == DeploymentStatus::Succeeded
+	}
+
+	pub fn status(&self) -> &DeploymentStatus {
+		&self.status
+	}
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -187,6 +199,12 @@ pub struct DeployDetails {
 
 	#[serde(rename = "runTestResult")]
 	run_test_result: TestResults,
+}
+
+impl DeployDetails {
+	pub fn component_successes(&self) -> &Vec<ComponentDetails> {
+		&self.component_successes
+	}
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -224,6 +242,16 @@ pub struct ComponentDetails {
 	problem_type: Option<String>, // e.g. "Error",
 
 	success: bool,
+}
+
+impl ComponentDetails {
+	pub fn component_type(&self) -> &str {
+		&self.component_type
+	}
+
+	pub fn file_name(&self) -> &str {
+		&self.file_name
+	}
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -292,7 +320,7 @@ pub struct CodeLocation {
 	time: Option<f32>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
 pub enum DeploymentStatus {
 	Pending,
 	InProgress,

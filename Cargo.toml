@@ -1,9 +1,9 @@
 [package]
 name = "rustsf"
-version = "0.0.6"
+version = "0.1.0"
 authors = ["Wim Velzeboer <wim@velzeboer.nl>"]
 license = "MIT"
-description = "Salesforce SDK for Rust, supports the latest API version 67.0, (Summer 2026)"
+description = "Salesforce SDK for Rust, supports the latest API version 68.0, (Winter 2026)"
 documentation = "https://docs.rs/rustsf"
 homepage = "https://github.com/wimvelzeboer/rustsf"
 repository = "https://github.com/wimvelzeboer/rustsf"
@@ -17,15 +17,18 @@ rust-version = "1.93.0"
 ## Enable Salesforce REST API v67.0 (Summer 2026)
 rest-api = []
 tooling-api = []
+bulk-api = []
+bulk-api-v2 = []
 metadata-api = ["reqwest/multipart"]
 default = ["rest-api"]
 
 [dependencies]
-anyhow = "1.0.104"
 base64 = "0.23.1"
 zip = "8.6.0"
 s-zip = "0.11.3"
+rustsf_auth = "0.2.2"
 rustsf_marcos = "0.0.6"
+#rustsf_marcos = { path = "../rustsf-marcos"}
 reqwest = { version = "0.13.4", features = ["form", "json", "query"] }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
@@ -37,8 +40,17 @@ chrono = { version = "0.4.45", features = ["serde"] }
 
 [dev-dependencies]
 #cargo-license = "0.6.1"
+chrono = { version = "0.4.45", features = ["serde"] }
 mockito = "1.7.2"
 tokio = { version = "1.53.1", features = ["rt-multi-thread", "macros"] }
-#env_logger = "0.11.3"
+env_logger = "0.11.3"
 anyhow = "1.0.32"
 html-escape = "0.2.15"
+
+[[test]]
+name = "tooling_api_integration_test"
+required-features = ["tooling-api"]
+
+[[test]]
+name = "metadata_api_integration_test"
+required-features = ["metadata-api"]

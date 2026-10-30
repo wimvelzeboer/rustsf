@@ -20,8 +20,8 @@
 //! # See
 //! <https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_rest_deploy.htm>
 //!
-
-use crate::Client;
+use crate::client::Client;
+use crate::errors::Error;
 use crate::metadata_api::metadata_retriever::MetadataRetriever;
 use crate::metadata_api::responses::async_result::AsyncResult;
 use crate::metadata_api::responses::cancel_request::CancelRequest;
@@ -31,7 +31,7 @@ use crate::rest_api::responses::error_response::ErrorResponse;
 use log::{debug, trace};
 use metadata_deployer::MetadataDeployer;
 use reqwest::{Response, multipart};
-use serde::Serialize;
+use rustsf_auth::SalesforceCredentials;
 use serde::de::DeserializeOwned;
 use std::collections::HashMap;
 
@@ -41,8 +41,6 @@ pub mod responses;
 
 const METADATA_NAMESPACE: &str = "http://soap.sforce.com/2006/04/metadata";
 const ENVELOPE_NAMESPACE: &str = "http://schemas.xmlsoap.org/soap/envelope/";
-
-pub(crate) mod errors;
 
 /// A `MetadataApi` that represents the core component for interacting with a Metadata API.
 ///
@@ -74,7 +72,7 @@ impl MetadataApi {
 	/// use rustsf::{Client, Credentials, MetadataApi};
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -82,11 +80,12 @@ impl MetadataApi {
 	///
 	///     // ... add your logic here...
 	///
-	///     Ok(())
 	/// }
 	/// ```
-	pub fn new(client: Client) -> Self {
-		MetadataApi { client }
+	pub async fn new(credentials: SalesforceCredentials) -> Result<Self, Error> {
+		Ok(Self {
+			client: Client::new(credentials).await?,
+		})
 	}
 
 	/// Cancels a deployment request with the specified `deploy_request_id`.
@@ -108,7 +107,7 @@ impl MetadataApi {
 	/// use rustsf::{Client, Credentials, MetadataApi};
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -121,22 +120,15 @@ impl MetadataApi {
 	///     // Cancel the deployment
 	///     let response = api.cancel(response.get_deploy_request_id()).await?;
 	///     println!("Cancel response {:?}", response);
-	///     Ok(())
 	/// }
 	/// ```
-	pub async fn cancel(&mut self, deploy_request_id: &str) -> Result<DeployResponse> {
-		let response = self
-			.client
-			.patch(
-				// "http://localhost:3000".to_string(),
-				format!(
-					"{}/metadata/deployRequest/{}",
-					self.client.base_version_path()?,
-					deploy_request_id,
-				),
-				CancelRequest::new(),
-			)
-			.await?;
+	pub async fn cancel(&self, deploy_request_id: &str) -> Result<DeployResponse, Error> {
+		let url = format!(
+			"{}/metadata/deployRequest/{}",
+			self.client.services_data_version_path(),
+			deploy_request_id,
+		);
+		let response = self.client.patch(&url, CancelRequest::new(), &HashMap::new()).await?;
 		handle_json_response(response).await
 	}
 
@@ -155,7 +147,7 @@ impl MetadataApi {
 	/// use rustsf::{Client, Credentials, MetadataApi};
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -164,7 +156,6 @@ impl MetadataApi {
 	///     // ... add your logic here to add things to the deployment
 	///     let response = api.deploy(request).await?;
 	///     println!("Deployment response {:?}", response);
-	///     Ok(())
 	/// }
 	/// ```
 	///
@@ -174,7 +165,7 @@ impl MetadataApi {
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_rest_deploy.htm>
-	pub async fn deploy(&mut self, request: MetadataDeployer) -> Result<DeployResponse> {
+	pub async fn deploy(&self, request: MetadataDeployer) -> Result<DeployResponse, Error> {
 		// create the form
 		let form = multipart::Form::new()
 			.part(
@@ -189,12 +180,12 @@ impl MetadataApi {
 			);
 
 		// Send request
+		let url = format!("{}/metadata/deployRequest", self.client.services_data_version_path());
 		let response = self
 			.client
 			.post_multipart(
-				// "http://localhost:3000".to_string(),
-				format!("{}/metadata/deployRequest", self.client.base_version_path()?),
-				vec![],
+				&url,
+				&HashMap::new(),
 				form,
 			)
 			.await?;
@@ -212,7 +203,7 @@ impl MetadataApi {
 	/// use rustsf::{Client, Credentials, MetadataApi};
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -222,21 +213,20 @@ impl MetadataApi {
 	///     // ... add your logic here to all things to the deployment
 	///     // e.g. request.add(....)?;
 	///     let response = api.deploy(deployer).await?;
-	///     Ok(())
 	/// }
 	/// ```
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_rest_deploy.htm>
 	pub fn new_deployment_request(&self) -> MetadataDeployer {
-		MetadataDeployer::new(&self.client)
+		MetadataDeployer::new()
 	}
 
 	pub fn new_retrieval_request(&self) -> MetadataRetriever {
 		MetadataRetriever::new()
 	}
 
-	pub async fn retrieve(&mut self, request: MetadataRetriever) -> Result<AsyncResult> {
+	pub async fn retrieve(&self, request: MetadataRetriever) -> Result<AsyncResult, Error> {
 		let body = format!(
 			r#"<?xml version="1.0" encoding="UTF-8"?>
 <soapenv:Envelope xmlns:soapenv="{}" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="{}">
@@ -252,8 +242,8 @@ impl MetadataApi {
 </soapenv:Envelope>"#,
 			ENVELOPE_NAMESPACE,
 			METADATA_NAMESPACE,
-			escape_xml(self.session_id()?),
-			self.client.version_number()?,
+			escape_xml(self.client.access_token().await?),
+			crate::client::DEFAULT_API_VERSION,
 			request.get_package(),
 		);
 
@@ -265,7 +255,7 @@ impl MetadataApi {
 		Ok(AsyncResult::from_xml(&xml)?)
 	}
 
-	pub async fn retrieve_status(&mut self, id: &str) -> Result<CheckRetrieveStatusResponse> {
+	pub async fn retrieve_status(&self, id: &str) -> Result<CheckRetrieveStatusResponse, Error> {
 		let body = format!(
 			r#"<?xml version="1.0" encoding="UTF-8"?>
 <soapenv:Envelope xmlns:soapenv="{}" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="{}">
@@ -279,7 +269,7 @@ impl MetadataApi {
 </soapenv:Envelope>"#,
 			ENVELOPE_NAMESPACE,
 			METADATA_NAMESPACE,
-			escape_xml(self.session_id()?),
+			escape_xml(self.client.access_token().await?),
 			id,
 		);
 
@@ -315,7 +305,7 @@ impl MetadataApi {
 	/// use rustsf::{Client, Credentials, MetadataApi};
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -328,7 +318,6 @@ impl MetadataApi {
 	///     // Cancel the deployment
 	///     let response = api.status(response.get_deploy_request_id(), true).await?;
 	///     println!("Status response {:?}", response);
-	///     Ok(())
 	/// }
 	/// ```
 	///
@@ -346,12 +335,7 @@ impl MetadataApi {
 	///   the API endpoint.
 	/// - `handle_json_response`: An asynchronous function that processes the
 	///   JSON-formatted response from the server.
-	pub async fn deploy_status(
-		&mut self,
-		deploy_request_id: &str,
-		include_details: bool,
-		// ) -> Result<Value> {
-	) -> Result<DeployResponse> {
+	pub async fn deploy_status(&self, deploy_request_id: &str, include_details: bool) -> Result<DeployResponse, Error> {
 		let mut params: Vec<(String, String)> = vec![];
 		if include_details {
 			params.push(("includeDetails".to_string(), "true".to_string()));
@@ -359,42 +343,38 @@ impl MetadataApi {
 
 		let response = self
 			.client
-			.get(
+			.get_json(
 				format!(
 					"{}/metadata/deployRequest/{}",
-					self.client.base_version_path()?,
+					self.client.services_data_version_path(),
 					deploy_request_id
 				),
-				params,
-				vec![],
+				&params,
+				&HashMap::new(),
 			)
 			.await?;
 
 		handle_json_response(response).await
 	}
-
-	fn session_id(&self) -> Result<&str> {
-		self.client.access_token_value().ok_or(Error::NotLoggedIn)
-	}
 }
 
-async fn handle_json_response<T: DeserializeOwned>(response: Response) -> Result<T> {
+async fn handle_json_response<T: DeserializeOwned>(response: Response) -> Result<T, Error> {
 	if response.status().is_success() {
 		Ok(response.json().await?)
 	} else {
 		let errors: Vec<ErrorResponse> = response.json().await?;
-		Err(Error::ErrorResponses(errors))
+		Err(Error::Salesforce(errors))
 	}
 }
 
-async fn handle_raw_response(response: Response) -> Result<String> {
+/*async fn handle_raw_response(response: Response) -> Result<String, Error> {
 	if response.status().is_success() {
 		Ok(response.text().await?)
 	} else {
 		let errors: Vec<ErrorResponse> = response.json().await?;
-		Err(Error::ErrorResponses(errors))
+		Err(Error::Salesforce(errors))
 	}
-}
+}*/
 
 fn generate_package_xml(version: &str, elements: &HashMap<String, Vec<String>>) -> String {
 	let header = r#"<?xml version="1.0" encoding="UTF-8"?>
@@ -423,7 +403,7 @@ fn generate_package_xml(version: &str, elements: &HashMap<String, Vec<String>>) 
 fn add_file_to_package(package: &mut HashMap<String, Vec<String>>, metadata_type: &str, file_name: &str) {
 	// Add the file to the deployment package
 	let package_file_name = file_name.split(".").next().unwrap().to_string(); // fixme remove unwrap
-	println!("Adding package file: {}", package_file_name);
+	debug!("Adding package file: {}", package_file_name);
 	package
 		.entry(metadata_type.to_string())
 		.or_insert_with(Vec::new)
@@ -432,14 +412,12 @@ fn add_file_to_package(package: &mut HashMap<String, Vec<String>>, metadata_type
 
 pub struct Deployment {}
 
-fn escape_xml(value: &str) -> String {
+fn escape_xml<S: AsRef<str>>(value: S) -> String {
 	value
+		.as_ref()
 		.replace('&', "&amp;")
 		.replace('<', "&lt;")
 		.replace('>', "&gt;")
 		.replace('"', "&quot;")
 		.replace('\'', "&apos;")
 }
-
-#[cfg(test)]
-mod tests;

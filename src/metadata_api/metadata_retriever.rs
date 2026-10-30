@@ -1,5 +1,5 @@
-const METADATA_NAMESPACE: &str = "http://soap.sforce.com/2006/04/metadata";
-const ENVELOPE_NAMESPACE: &str = "http://schemas.xmlsoap.org/soap/envelope/";
+// const METADATA_NAMESPACE: &str = "http://soap.sforce.com/2006/04/metadata";
+// const ENVELOPE_NAMESPACE: &str = "http://schemas.xmlsoap.org/soap/envelope/";
 
 /*
 The endpoint /services/data/vXX.0/metadata/deployRequest is specifically designed for deploying metadata to a Salesforce org, not for retrieving it.
@@ -82,7 +82,6 @@ DeployRequest: Uses POST to /metadata/deployRequest with a body containing zipFi
 RetrieveRequest: Uses POST to /metadata/retrieveRequest with a body containing unpackaged (the package.xml defining what to retrieve). The response provides an id to poll for the result, which includes the zipFile of the retrieved metadata.
 
  */
-use crate::Client;
 use std::collections::HashMap;
 
 pub struct MetadataRetriever {
@@ -142,7 +141,7 @@ impl MetadataRetriever {
 		self.client.access_token_value().ok_or(Error::NotLoggedIn)
 	}*/
 }
-
+/*
 fn escape_xml(value: &str) -> String {
 	value
 		.replace('&', "&amp;")
@@ -151,3 +150,4 @@ fn escape_xml(value: &str) -> String {
 		.replace('"', "&quot;")
 		.replace('\'', "&apos;")
 }
+*/

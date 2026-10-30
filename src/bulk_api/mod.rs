@@ -28,7 +28,7 @@
 //! #[tokio::main]
 //! async fn main() -> Result<()> {
 //!     let mut client= Client::new(Credentials::new()).await?;
-//!     // Perform authentication...
+//!     // Perform client...
 //!     
 //!     let mut bulk_api = BulkApi::new(client);
 //!     
@@ -56,8 +56,8 @@
 //! For more information about Salesforce Bulk API, see:
 //! <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/>
 
-use crate::client::client::Client;
-use anyhow::{Context, Result};
+use crate::client::Client;
+use crate::errors::Error;
 use reqwest::Response;
 use serde::Serialize;
 use std::collections::HashMap;
@@ -85,11 +85,10 @@ impl BulkApi {
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let mut client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///     let bulk_api = BulkApi::new(client);
-	///     Ok(())
 	/// }
 	/// ```
 	pub fn new(client: Client) -> Self {
@@ -116,17 +115,16 @@ impl BulkApi {
 	///     let base_path = bulk_api.base_path()?;
 	///     println!("Base path: {}", base_path);
 	/// ```
-	fn base_path(&self) -> Result<String> {
-		let instance_url = self.client.instance_url().context("Not logged in")?;
+	fn base_path(&self) -> String {
+		let instance_url = self.client.instance_url();
 
-		let version = &self.client.version[1..];
-		Ok(format!("{}/services/async/{}", instance_url, version))
+		format!("{}/services/async/{}", instance_url, crate::client::DEFAULT_API_VERSION)
 	}
 
 	/// Asynchronously creates a new job with the specified parameters.
 	///
 	/// This method sends a POST request to the "/job" endpoint using the provided parameters
-	/// and authentication headers to create a new job resource.
+	/// and client headers to create a new job resource.
 	///
 	/// # Type Parameters
 	/// - `T`: The type of the payload to be serialized and sent as the request body.
@@ -157,7 +155,7 @@ impl BulkApi {
 	/// }
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -172,7 +170,6 @@ impl BulkApi {
 	///         Ok(resp) => println!("Job created successfully: {:?}", resp),
 	///         Err(err) => eprintln!("Failed to create job: {}", err),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///
@@ -183,10 +180,10 @@ impl BulkApi {
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_jobs_create.htm>
-	pub async fn create_job<T: Serialize + Debug>(&mut self, params: T) -> Result<Response> {
-		let resource_url = format!("{}/job", self.base_path()?);
-		let headers = self.get_auth_headers()?;
-		self.client.post(resource_url, params, headers).await
+	pub async fn create_job<T: Serialize + Debug>(&mut self, params: T) -> Result<Response, Error> {
+		let resource_url = format!("{}/job", self.base_path());
+		let headers = self.get_auth_headers().await?;
+		self.client.post_json(&resource_url, &params, &headers).await
 	}
 
 	/// Asynchronously adds a batch job to the specified job ID with the provided CSV data.
@@ -201,12 +198,12 @@ impl BulkApi {
 	/// - `Ok(Response)`: A `Response` object containing the server's response if the
 	///   operation is successful.
 	/// - `Err(Error)`: An `Error` object if an error occurs during the operation, such as
-	///   authentication issues, network errors, or invalid input.
+	///   client issues, network errors, or invalid input.
 	///
 	/// # Errors
 	/// This function can return errors under the following conditions:
 	/// - If constructing the base path (`self.base_path()`) fails.
-	/// - If generating the authentication headers (`self.get_auth_headers()`) fails.
+	/// - If generating the client headers (`self.get_auth_headers()`) fails.
 	/// - If the HTTP POST request fails due to network issues or server-side errors.
 	///
 	/// # Example
@@ -215,7 +212,7 @@ impl BulkApi {
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let mut client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -230,7 +227,6 @@ impl BulkApi {
 	///             eprintln!("Failed to add batch job: {:?}", error);
 	///         }
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///
@@ -241,11 +237,11 @@ impl BulkApi {
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_quickstart_add_batch.htm>
-	pub async fn add_batch_job(&mut self, job_id: &str, csv: Vec<u8>) -> Result<Response> {
-		let resource_url = format!("{}/job/{}/batch", self.base_path()?, job_id);
-		let mut headers = self.get_auth_headers()?;
-		headers.push(("Content-Type".to_string(), "text/csv".to_string()));
-		self.client.post_raw_buffer(resource_url, csv, headers).await
+	pub async fn add_batch_job(&mut self, job_id: &str, csv: Vec<u8>) -> Result<Response, Error> {
+		let resource_url = format!("{}/job/{}/batch", self.base_path(), job_id);
+		let mut headers = self.get_auth_headers().await?;
+		headers.insert("Content-Type".to_string(), "text/csv".to_string());
+		self.client.post(&resource_url, csv, &headers).await
 	}
 
 	/// Fetches the details of a specific batch associated with a given job.
@@ -253,7 +249,7 @@ impl BulkApi {
 	/// This asynchronous function retrieves data for the specified batch, identified by its `batch_id`,
 	/// which is associated with the provided `job_id`. The function constructs the appropriate URL
 	/// using the job and batch identifiers and sends a GET request to the remote service.
-	/// The request includes authentication headers for authorization.
+	/// The request includes client headers for authorization.
 	///
 	/// # Parameters
 	/// - `job_id`: A reference to a string slice representing the unique identifier of the job.
@@ -268,7 +264,7 @@ impl BulkApi {
 	/// # Errors
 	/// This function can return an error in the following cases:
 	/// - If the base path cannot be determined (`self.base_path()` fails).
-	/// - If authentication headers cannot be generated (`self.get_auth_headers()` fails).
+	/// - If client headers cannot be generated (`self.get_auth_headers()` fails).
 	/// - If the HTTP request to the remote service fails.
 	///
 	/// # Example
@@ -277,7 +273,7 @@ impl BulkApi {
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let mut client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -287,15 +283,14 @@ impl BulkApi {
 	///         Ok(data) => println!("Batch details: {:?}", data),
 	///         Err(e) => eprintln!("Error fetching batch: {:?}", e),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_quickstart_check_status.htm>
-	pub async fn get_batch(&mut self, job_id: &str, batch_id: &str) -> Result<Response> {
-		let resource_url = format!("{}/job/{}/batch/{}/", self.base_path()?, job_id, batch_id);
-		let headers = self.get_auth_headers()?;
-		self.client.get_raw(&resource_url, headers).await
+	pub async fn get_batch(&mut self, job_id: &str, batch_id: &str) -> Result<Response, Error> {
+		let resource_url = format!("{}/job/{}/batch/{}/", self.base_path(), job_id, batch_id);
+		let headers = self.get_auth_headers().await?;
+		self.client.get_raw(&resource_url, &headers).await
 	}
 
 	/// Closes a job by updating its state to "Closed".
@@ -307,12 +302,12 @@ impl BulkApi {
 	/// An asynchronous `Result` containing:
 	/// - `Response`: The server's response if the job closure is successful.
 	/// - `Error`: An error indicating what went wrong (e.g., network issues, invalid job ID, or
-	/// authentication failure).
+	/// client failure).
 	///
 	/// # Errors
 	/// This function will return an error in the following cases:
 	/// - If `base_path` fails to retrieve the base URL for the request.
-	/// - If `get_auth_headers` fails to retrieve the necessary authentication headers.
+	/// - If `get_auth_headers` fails to retrieve the necessary client headers.
 	/// - If the HTTP POST request to update the job state fails.
 	///
 	/// # Example
@@ -321,7 +316,7 @@ impl BulkApi {
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let mut client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -337,12 +332,12 @@ impl BulkApi {
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_jobs_close.htm>
-	pub async fn close_job(&mut self, job_id: &str) -> Result<Response> {
-		let resource_url = format!("{}/job/{}", self.base_path()?, job_id);
-		let headers = self.get_auth_headers()?;
+	pub async fn close_job(&mut self, job_id: &str) -> Result<Response, Error> {
+		let resource_url = format!("{}/job/{}", self.base_path(), job_id);
+		let headers = self.get_auth_headers().await?;
 		let mut params = HashMap::new();
 		params.insert("state", "Closed");
-		self.client.post(resource_url, params, headers).await
+		self.client.post_json(&resource_url, &params, &headers).await
 	}
 
 	/// Asynchronously fetches the details of a specific job from the server.
@@ -361,7 +356,7 @@ impl BulkApi {
 	///
 	/// This function will return an error in the following cases:
 	/// * If the `base_path()` method fails to generate a valid base URL.
-	/// * If the `get_auth_headers()` method fails to generate the required authentication headers.
+	/// * If the `get_auth_headers()` method fails to generate the required client headers.
 	/// * If the HTTP GET request to the server fails.
 	///
 	/// # Examples
@@ -371,7 +366,7 @@ impl BulkApi {
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let mut client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -380,21 +375,20 @@ impl BulkApi {
 	///         Ok(response) => println!("Job details: {:?}", response),
 	///         Err(e) => eprintln!("Failed to fetch job details: {:?}", e),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///
 	/// # Remarks
 	///
 	/// The function constructs the resource URL by appending the job ID to the base path.
-	/// It adds the required authentication headers before sending the GET request using the HTTP client.
+	/// It adds the required client headers before sending the GET request using the HTTP client.
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_jobs_get_details.htm>
-	pub async fn get_job_details(&mut self, job_id: &str) -> Result<Response> {
-		let resource_url = format!("{}/job/{}", self.base_path()?, job_id);
-		let headers = self.get_auth_headers()?;
-		self.client.get_raw(&resource_url, headers).await
+	pub async fn get_job_details(&mut self, job_id: &str) -> Result<Response, Error> {
+		let resource_url = format!("{}/job/{}", self.base_path(), job_id);
+		let headers = self.get_auth_headers().await?;
+		self.client.get_raw(&resource_url, &headers).await
 	}
 
 	/// Retrieves the batches associated with a specific job in an asynchronous manner.
@@ -412,7 +406,7 @@ impl BulkApi {
 	///
 	/// This function will return an `Error` if:
 	/// - The `base_path` method fails to generate the base URL.
-	/// - The authentication headers cannot be generated.
+	/// - The client headers cannot be generated.
 	/// - The HTTP GET request to the resource URL fails.
 	///
 	/// # Example
@@ -422,7 +416,7 @@ impl BulkApi {
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let mut client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -438,17 +432,16 @@ impl BulkApi {
 	///             eprintln!("Error occurred while retrieving batches: {:?}", e);
 	///         },
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_batches_get_info_all.htm>
-	pub async fn get_batches(&mut self, job_id: &str, content_type: &str) -> Result<Response> {
-		let resource_url = format!("{}/job/{}/batch", self.base_path()?, job_id);
-		let mut headers = self.get_auth_headers()?;
-		headers.push(("Content-Type".to_string(), content_type.to_string()));
-		self.client.get_raw(&resource_url, headers).await
+	pub async fn get_batches(&mut self, job_id: &str, content_type: &str) -> Result<Response, Error> {
+		let resource_url = format!("{}/job/{}/batch", self.base_path(), job_id);
+		let mut headers = self.get_auth_headers().await?;
+		headers.insert("Content-Type".to_string(), content_type.to_string());
+		self.client.get_raw(&resource_url, &headers).await
 	}
 
 	/// Asynchronously retrieves the list of results for a specific job and batch.
@@ -460,12 +453,12 @@ impl BulkApi {
 	///
 	/// # Returns
 	/// - `Ok(Response)`: A successful HTTP response containing the result list for the specified job and batch.
-	/// - `Err(Error)`: An error if the operation fails, such as issues with authentication, URL construction, or the HTTP request.
+	/// - `Err(Error)`: An error if the operation fails, such as issues with client, URL construction, or the HTTP request.
 	///
 	/// # Errors
 	/// This function may return an error in the following cases:
 	/// - If the `base_path` retrieval fails.
-	/// - If there's an issue generating the authentication headers.
+	/// - If there's an issue generating the client headers.
 	/// - If the HTTP `GET` request fails (e.g., network issues or a non-success HTTP status).
 	///
 	/// # Example
@@ -474,7 +467,7 @@ impl BulkApi {
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let mut client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -491,7 +484,6 @@ impl BulkApi {
 	///             eprintln!("Error retrieving results: {:?}", err);
 	///         }
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///
@@ -505,18 +497,23 @@ impl BulkApi {
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_batches_get_results.htm>
-	pub async fn get_result_list(&mut self, job_id: &str, batch_id: &str, content_type: &str) -> Result<Response> {
-		let resource_url = format!("{}/job/{}/batch/{}/result", self.base_path()?, job_id, batch_id);
-		let mut headers = self.get_auth_headers()?;
-		headers.push(("Content-Type".to_string(), content_type.to_string()));
-		self.client.get_raw(&resource_url, headers).await
+	pub async fn get_result_list(
+		&mut self,
+		job_id: &str,
+		batch_id: &str,
+		content_type: &str,
+	) -> Result<Response, Error> {
+		let resource_url = format!("{}/job/{}/batch/{}/result", self.base_path(), job_id, batch_id);
+		let mut headers = self.get_auth_headers().await?;
+		headers.insert("Content-Type".to_string(), content_type.to_string());
+		self.client.get_raw(&resource_url, &headers).await
 	}
 
 	/// Fetches the result of a specific job batch operation asynchronously.
 	///
 	/// This function builds the URL for accessing the result of a job by taking
 	/// the job ID, batch ID, and result ID, and it includes the necessary
-	/// authentication headers for the request. The result is retrieved
+	/// client headers for the request. The result is retrieved
 	/// using an HTTP GET request.
 	///
 	/// # Arguments
@@ -535,7 +532,7 @@ impl BulkApi {
 	///
 	/// This function will return an error in the following cases:
 	/// * If the base URL cannot be retrieved through `self.base_path()`.
-	/// * If there is an issue generating authentication headers via `self.get_auth_headers()`.
+	/// * If there is an issue generating client headers via `self.get_auth_headers()`.
 	/// * If the HTTP GET request fails.
 	///
 	/// # Example
@@ -545,7 +542,7 @@ impl BulkApi {
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let mut client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -554,34 +551,33 @@ impl BulkApi {
 	///         Ok(response) => println!("Result fetched: {:?}", response),
 	///         Err(error) => println!("Failed to fetch result: {:?}", error),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///
 	/// # Notes
 	///
 	/// Ensure that the `client` instance is properly configured with the
-	/// required base path and authentication capabilities before calling this function.
+	/// required base path and client capabilities before calling this function.
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_code_curl_walkthrough_pk_chunking.htm>
-	pub async fn get_result(&mut self, job_id: &str, batch_id: &str, result_id: &str) -> Result<Response> {
+	pub async fn get_result(&mut self, job_id: &str, batch_id: &str, result_id: &str) -> Result<Response, Error> {
 		let resource_url = format!(
 			"{}/job/{}/batch/{}/result/{}",
-			self.base_path()?,
+			self.base_path(),
 			job_id,
 			batch_id,
 			result_id
 		);
-		let mut headers = self.get_auth_headers()?;
-		headers.push(("Content-Type".to_string(), "application/xml".to_string()));
-		self.client.get_raw(&resource_url, headers).await
+		let mut headers = self.get_auth_headers().await?;
+		headers.insert("Content-Type".to_string(), "application/xml".to_string());
+		self.client.get_raw(&resource_url, &headers).await
 	}
 
 	/// Aborts a job with the specified `job_id`.
 	///
 	/// This function sends a `POST` request to the resource URL corresponding to the job,
-	/// updating its state to "Aborted". The request includes authentication headers
+	/// updating its state to "Aborted". The request includes client headers
 	/// and a JSON content type header.
 	///
 	/// # Arguments
@@ -609,7 +605,7 @@ impl BulkApi {
 	/// use anyhow::Result;
 	///
 	/// #[tokio::main]
-	/// async fn main() -> Result<()> {
+	/// async fn main() {
 	///     let mut client= Client::new(Credentials::new()).await?;
 	///     // Authentication logic...
 	///
@@ -618,24 +614,23 @@ impl BulkApi {
 	///         Ok(response) => println!("Job aborted successfully: {:?}", response),
 	///         Err(error) => eprintln!("Failed to abort job: {:?}", error),
 	///     }
-	///     Ok(())
 	/// }
 	/// ```
 	///
 	/// # See
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_jobs_abort.htm>
-	pub async fn abort_job(&mut self, job_id: &str) -> Result<Response> {
-		let resource_url = format!("{}/job/{}", self.base_path()?, job_id);
-		let mut headers = self.get_auth_headers()?;
-		headers.push(("Content-Type".to_string(), "application/json".to_string()));
+	pub async fn abort_job(&mut self, job_id: &str) -> Result<Response, Error> {
+		let resource_url = format!("{}/job/{}", self.base_path(), job_id);
+		let mut headers = self.get_auth_headers().await?;
+		headers.insert("Content-Type".to_string(), "application/json".to_string());
 
 		let mut params = HashMap::new();
 		params.insert("state", "Aborted");
 
-		self.client.post(resource_url, params, headers).await
+		self.client.post_json(&resource_url, &params, &headers).await
 	}
 
-	/// Retrieves the authentication headers required for making API requests.
+	/// Retrieves the client headers required for making API requests.
 	///
 	/// # Returns
 	/// * `Ok(Vec<(String, String)>)` - A vector of header key-value pairs, where each pair represents
@@ -649,15 +644,10 @@ impl BulkApi {
 	///
 	/// # Notes
 	/// * The `X-SFDC-Session` header is specifically required for API version 1 requests.
-	fn get_auth_headers(&self) -> Result<Vec<(String, String)>> {
-		let binding = self.client.credentials.access_token();
-		let token = binding.as_ref().context("Not logged in")?;
-		Ok(vec![
-			//X-SFDC-Session is needed for API v1 we can just pass it our access token
-			("X-SFDC-Session".to_string(), token.value.clone()),
-		])
+	async fn get_auth_headers(&self) -> Result<HashMap<String, String>, Error> {
+		let token = self.client.access_token().await?;
+		let mut headers = HashMap::new();
+		headers.insert("X-SFDC-Session".to_string(), token);
+		Ok(headers)
 	}
 }
-
-#[cfg(test)]
-mod test;

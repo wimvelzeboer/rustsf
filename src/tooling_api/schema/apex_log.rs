@@ -1,9 +1,11 @@
-use crate::DefSObject;
+use serde::{Deserialize, Serialize};
 
-use crate as rustsf;
-
-#[DefSObject(sobject_type = "ApexLog")]
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ApexLog {
+	#[serde(rename = "Id")]
+	pub id: Option<String>,
+
 	/// The name of the application that created the log entry.
 	#[serde(rename = "Application")]
 	pub application: String,
@@ -38,6 +40,12 @@ pub struct ApexLog {
 
 	#[serde(rename = "Status")]
 	pub status: String,
+}
+
+impl ApexLog {
+	pub fn id(&self) -> Option<&str> {
+		self.id.as_deref()
+	}
 }
 
 pub const SOBJECT_NAME: &'static str = "ApexLog";

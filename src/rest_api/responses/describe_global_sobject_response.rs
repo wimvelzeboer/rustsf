@@ -14,7 +14,7 @@ pub struct DescribeSObjectResult {
 	pub activateable: bool,
 
 	/// Indicates that the object can be used in describeCompactLayouts().
-	pub compact_layoutable: bool,
+	pub compact_layoutable: Option<bool>,
 
 	/// Indicates whether the object can be created or not
 	pub createable: bool,

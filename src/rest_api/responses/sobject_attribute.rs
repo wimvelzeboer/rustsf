@@ -8,7 +8,7 @@ pub struct SObjectAttribute {
 
 impl SObjectAttribute {
 	pub fn new(sobject_type: &str) -> Self {
-		let url = format!("/services/data/v67.0/sobjects/{}/describe", sobject_type);
+		let url = format!("/services/data/v67.0/sobjects/{}/sobject_basic_info", sobject_type);
 		Self {
 			sobject_type: sobject_type.to_string(),
 			url,
@@ -21,7 +21,7 @@ impl SObjectAttribute {
 				self.url = format!("{}/{}", self.url, id);
 			}
 			None => {
-				self.url = format!("/services/data/v67.0/sobjects/{}/describe", self.sobject_type);
+				self.url = format!("/services/data/v67.0/sobjects/{}/sobject_basic_info", self.sobject_type);
 			}
 		}
 		self

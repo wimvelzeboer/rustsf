@@ -232,16 +232,14 @@ impl Client {
 	/// Note: Ensure that the given `url` is valid and accessible and that proper error handling is implemented
 	/// for production use.
 	#[cfg(feature = "metadata-api")]
-	pub async fn post_multipart<S>(
+	pub async fn post_multipart(
 		&self,
-		url: S,
+		url: &str,
 		headers: &HashMap<String, String>,
 		form: Form,
 	) -> Result<Response, Error>
-	where
-		S: AsRef<str> + reqwest::IntoUrl,
 	{
-		debug!("POST: {} form: {:?} headers: {:?}", url, form, headers);
+		debug!("POST: {:?} form: {:?} headers: {:?}", url, form, headers);
 
 		let mut headers = self.create_header(headers).await?;
 		headers.insert("Accept", HeaderValue::from_static("application/json"));

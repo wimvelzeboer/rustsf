@@ -28,7 +28,7 @@ use crate::metadata_api::responses::cancel_request::CancelRequest;
 use crate::metadata_api::responses::check_retrieve_status_response::CheckRetrieveStatusResponse;
 use crate::metadata_api::responses::deploy_response::DeployResponse;
 use crate::rest_api::responses::error_response::ErrorResponse;
-use log::trace;
+use log::{debug, trace};
 use metadata_deployer::MetadataDeployer;
 use reqwest::{Response, multipart};
 use rustsf_auth::SalesforceCredentials;
@@ -180,10 +180,11 @@ impl MetadataApi {
 			);
 
 		// Send request
+		let url = format!("{}/metadata/deployRequest", self.client.services_data_version_path());
 		let response = self
 			.client
 			.post_multipart(
-				format!("{}/metadata/deployRequest", self.client.services_data_version_path()),
+				&url,
 				&HashMap::new(),
 				form,
 			)
@@ -402,7 +403,7 @@ fn generate_package_xml(version: &str, elements: &HashMap<String, Vec<String>>) 
 fn add_file_to_package(package: &mut HashMap<String, Vec<String>>, metadata_type: &str, file_name: &str) {
 	// Add the file to the deployment package
 	let package_file_name = file_name.split(".").next().unwrap().to_string(); // fixme remove unwrap
-	println!("Adding package file: {}", package_file_name);
+	debug!("Adding package file: {}", package_file_name);
 	package
 		.entry(metadata_type.to_string())
 		.or_insert_with(Vec::new)

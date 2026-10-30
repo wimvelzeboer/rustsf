@@ -2,8 +2,6 @@ extern crate rustsf;
 
 use anyhow::Result;
 use chrono::{Duration, Utc};
-use log::Level::Trace;
-use rustsf::SObject;
 use rustsf::tooling_api::schema::trace_flag::TraceFlag;
 use std::collections::HashMap;
 

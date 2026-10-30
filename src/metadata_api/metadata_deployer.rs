@@ -17,6 +17,7 @@ use crate::metadata_api::{add_file_to_package, generate_package_xml};
 use s_zip::{SZipError, StreamingZipWriter};
 use std::collections::HashMap;
 use std::io::Cursor;
+use log::debug;
 
 /**
 fix me refactor s-zip into zip
@@ -323,7 +324,7 @@ impl MetadataDeployer {
 	///
 	fn add_package(&mut self, name: &str, content: HashMap<String, Vec<String>>) -> Result<(), Error> {
 		let package = generate_package_xml(crate::client::DEFAULT_API_VERSION, &content);
-		println!("Adding package: {}\n{}", name, package);
+		debug!("Adding package: {}\n{}", name, package);
 
 		self.writer
 			.start_entry(name)

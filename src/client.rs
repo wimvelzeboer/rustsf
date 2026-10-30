@@ -241,19 +241,12 @@ impl Client {
 	where
 		S: AsRef<str> + reqwest::IntoUrl,
 	{
+		debug!("POST: {} form: {:?} headers: {:?}", url, form, headers);
+
 		let mut headers = self.create_header(headers).await?;
-		headers.insert("Content-Type", HeaderValue::from_static("application/json"));
+		headers.insert("Accept", HeaderValue::from_static("application/json"));
 
 		let request = self.http_client.post(url).multipart(form).headers(headers).build()?;
-
-		debug!("Request URL: {}", request.url());
-		debug!("Request Method: {}", request.method());
-
-		// Log body size (reqwest hides the exact body bytes if it's a stream/json,
-		// but you can check if a body exists)
-		if let Some(body) = request.body() {
-			debug!("Body: {:?}", body.as_bytes());
-		}
 
 		let response = self.http_client.execute(request).await?;
 
@@ -368,9 +361,6 @@ impl Client {
 
 		let auth_value = format!("Bearer {}", self.session.access_token().await?);
 		headers.insert(AUTHORIZATION, HeaderValue::from_str(&auth_value)?);
-
-		//Default header
-		headers.insert("Accept", HeaderValue::from_static("application/json"));
 
 		for (key, value) in additional_headers {
 			let header_name: HeaderName = key.parse()?;

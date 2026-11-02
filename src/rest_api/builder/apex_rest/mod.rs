@@ -13,7 +13,7 @@ impl RestApi {
 		data: &T,
 		headers: &HashMap<String, String>,
 	) -> Result<Response, Error> {
-		let url = format!("{}/services/apexrest/{}", self.client.instance_url(), url);
+		let url = format!("services/apexrest/{}", url);
 
 		self.send(
 			method,

@@ -363,6 +363,10 @@ impl RestApi {
 		self.client.user_id()
 	}
 
+	pub fn services_data_version_path(&self) -> String {
+		self.client.services_data_version_path()
+	}
+
 	pub fn user_id(&self) -> Option<&str> {
 		self.client.user_id()
 	}

@@ -63,7 +63,7 @@ impl RestApi {
 	/// <https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_composite_sobjects_collections_create.htm>
 	pub async fn create_sobjects<T: Serialize + Debug>(
 		&self,
-		records: &mut Vec<T>,
+		records: &Vec<T>,
 		all_or_none: bool,
 	) -> Result<Vec<SalesforceSObjectsCreateResponse>, Error> {
 		self.build()
@@ -129,23 +129,23 @@ impl<'a> SObjectCollectionsBuilder<'a> {
 	/// https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_composite_sobjects_collections_create.htm
 	pub fn create<'builder, 'records, T: Debug + Serialize>(
 		&'builder self,
-		records: &'records mut Vec<T>,
+		records: &'records Vec<T>,
 		all_or_none: bool,
 	) -> SObjectsCreateBuilder<'builder, 'a, 'records, T> {
-		SObjectsCreateBuilder::new(self, records.as_mut_slice(), all_or_none)
+		SObjectsCreateBuilder::new(self, records.as_slice(), all_or_none)
 	}
 }
 
 pub struct SObjectsCreateBuilder<'builder, 'api, 'records, T: Debug + Serialize> {
 	builder: &'builder SObjectCollectionsBuilder<'api>,
-	sobjects: &'records mut [T],
+	sobjects: &'records [T],
 	all_or_none: bool,
 }
 
 impl<'builder, 'api, 'records, T: Debug + Serialize> SObjectsCreateBuilder<'builder, 'api, 'records, T> {
 	pub(crate) fn new(
 		builder: &'builder SObjectCollectionsBuilder<'api>,
-		sobjects: &'records mut [T],
+		sobjects: &'records [T],
 		all_or_none: bool,
 	) -> SObjectsCreateBuilder<'builder, 'api, 'records, T> {
 		SObjectsCreateBuilder {

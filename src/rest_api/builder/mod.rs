@@ -5,6 +5,7 @@ use serde::Serialize;
 use std::collections::HashMap;
 use std::fmt::Debug;
 
+mod apex_rest;
 mod composite;
 mod headers;
 mod limits;

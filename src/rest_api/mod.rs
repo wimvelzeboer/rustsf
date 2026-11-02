@@ -367,6 +367,10 @@ impl RestApi {
 		self.client.user_id()
 	}
 
+	pub fn version(&self) -> &str {
+		DEFAULT_API_VERSION
+	}
+
 	pub(crate) async fn send_delete(
 		&self,
 		url: String,

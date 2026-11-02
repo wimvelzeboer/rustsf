@@ -312,6 +312,10 @@ impl RestApi {
 		})
 	}
 
+	pub fn instance_url(&self) -> &str {
+		self.client.instance_url()
+	}
+
 	/// List Available REST Resources
 	///
 	/// # Returns

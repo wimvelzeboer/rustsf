@@ -157,6 +157,28 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2af50177e190e07a26ab74f8b1efbfe2ef87da2116221318cb1c2e82baf7de06"
 
 [[package]]
+name = "bincode-next"
+version = "3.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d262d0b897a7057038a9a42ba67ff34427760a66911d8c6f24bb2a7b6bec3e70"
+dependencies = [
+ "bincode_derive-next",
+ "pastey",
+ "rapidhash",
+ "serde",
+ "unty-next",
+]
+
+[[package]]
+name = "bincode_derive-next"
+version = "3.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "65f2ebb0598587317df2b1b7dfa9d8d5287f52d8c4a62083b48c1be1807800b1"
+dependencies = [
+ "virtue-next",
+]
+
+[[package]]
 name = "bitflags"
 version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1473,6 +1495,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "pastey"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2ee67f1008b1ba2321834326597b8e186293b049a023cdef258527550b9935b4"
+
+[[package]]
 name = "pbkdf2"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1745,6 +1773,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "caa0f4137e1c0a72f4c651489402276c8e8e1cf081f3b0ba156d2cbeef09e86a"
 dependencies = [
  "rand_core 0.10.1",
+]
+
+[[package]]
+name = "rapidhash"
+version = "4.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5da7e78a036ce858e8d55b7e7dc8ba3a88b78350fd2155d3591bbd966b58589e"
+dependencies = [
+ "rustversion",
 ]
 
 [[package]]
@@ -2021,7 +2058,7 @@ dependencies = [
 
 [[package]]
 name = "rustsf"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "anyhow",
  "base64 0.23.1",
@@ -2045,12 +2082,13 @@ dependencies = [
 
 [[package]]
 name = "rustsf_auth"
-version = "0.2.3"
+version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f5d5f52721b14e62ea99b0be6ad01d206f1e245ce4e6fb09fadeb539788831d6"
+checksum = "b441ef0c988ceddb6af16150c257c2d8499d59c1387e6fab13caa074804056b9"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
+ "bincode-next",
  "env_logger",
  "log",
  "oauth2",
@@ -2684,6 +2722,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
 
 [[package]]
+name = "unty-next"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "16062d030850f35054e37746427b9febb74a2f24c9c6dd6fa2d0c13c5f53221e"
+
+[[package]]
 name = "url"
 version = "2.5.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2719,6 +2763,12 @@ name = "version_check"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
+
+[[package]]
+name = "virtue-next"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8d5208a9710a6ca1c2da0d64289a5dcca13deb05afdedf651f4e11bcd9fc53eb"
 
 [[package]]
 name = "walkdir"

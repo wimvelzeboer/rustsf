@@ -8,6 +8,26 @@ mod common;
 
 #[tokio::test]
 #[ignore]
+async fn test_describe_metadata() -> Result<()> {
+	let api = common::get_metadata_api_client().await?;
+	let result = api.describe_metadata().await?;
+
+	println!("{:?}", result);
+
+	let custom_object = result
+		.metadata_objects()
+		.iter()
+		.find(|metadata| metadata.xml_name() == "CustomObject")
+		.expect("CustomObject metadata type should be available");
+
+	assert_eq!(custom_object.directory_name(), "objects");
+	assert_eq!(custom_object.suffix(), Some("object"));
+
+	Ok(())
+}
+
+#[tokio::test]
+#[ignore]
 async fn test_deployment_flow() -> Result<()> {
 	let api = common::get_metadata_api_client().await?;
 

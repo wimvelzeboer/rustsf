@@ -7,3 +7,4 @@ pub mod deploy_result;
 pub mod async_result;
 
 pub mod check_retrieve_status_response;
+pub mod describe_metadata_result;

@@ -6,6 +6,7 @@ pub enum XmlError {
 	MissingElement(&'static str),
 	MissingText(&'static str),
 	Parse(roxmltree::Error),
+	SoapFault(String),
 }
 
 impl fmt::Display for XmlError {
@@ -17,6 +18,7 @@ impl fmt::Display for XmlError {
 			Self::MissingElement(element) => write!(f, "missing required element: {element}"),
 			Self::MissingText(element) => write!(f, "missing text for element: {element}"),
 			Self::Parse(err) => write!(f, "xml parse error: {err}"),
+			Self::SoapFault(message) => write!(f, "SOAP fault: {message}"),
 		}
 	}
 }

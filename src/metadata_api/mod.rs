@@ -10,6 +10,7 @@
 //! - [deploy](crate::metadata_api::MetadataApi#method.deploy), for sending deployments to the Salesforce queue
 //! - [status](crate::metadata_api::MetadataApi#method.status), reports on the status of a deployment
 //! - [cancel](crate::metadata_api::MetadataApi#method.cancel), cancelles a running or queued deployment
+//! - [describe_metadata](crate::metadata_api::MetadataApi#method.describe_metadata), describes the metadata types available in an organization
 //!
 //! # Notes
 //! You can deploy or retrieve up to 10,000 files at once. The maximum size of the deployed or
@@ -27,10 +28,11 @@ use crate::metadata_api::responses::async_result::AsyncResult;
 use crate::metadata_api::responses::cancel_request::CancelRequest;
 use crate::metadata_api::responses::check_retrieve_status_response::CheckRetrieveStatusResponse;
 use crate::metadata_api::responses::deploy_response::DeployResponse;
+use crate::metadata_api::responses::describe_metadata_result::DescribeMetadataResult;
 use crate::rest_api::responses::error_response::ErrorResponse;
 use log::{debug, trace};
 use metadata_deployer::MetadataDeployer;
-use reqwest::{Response, multipart};
+use reqwest::{Response, StatusCode, multipart};
 use rustsf_auth::SalesforceCredentials;
 use serde::de::DeserializeOwned;
 use std::collections::HashMap;
@@ -255,6 +257,22 @@ impl MetadataApi {
 		Ok(AsyncResult::from_xml(&xml)?)
 	}
 
+	/// Describes the metadata types available in the connected Salesforce organization.
+	///
+	/// # Errors
+	/// Returns an error if authentication, the SOAP request, or the response parsing fails.
+	///
+	/// # See
+	/// https://developer.salesforce.com/docs/platform/api-metadata/references/utility-calls/meta-describe.html
+	pub async fn describe_metadata(&self) -> Result<DescribeMetadataResult, Error> {
+		let body = describe_metadata_request(&self.client.access_token().await?);
+		let response = self.client.post_soap("describeMetadata", body).await?;
+		let status = response.status();
+		let xml = response.text().await?;
+		trace!("SOAP Metadata API describeMetadata response: {}", xml);
+		handle_describe_metadata_response(status, &xml)
+	}
+
 	pub async fn retrieve_status(&self, id: &str) -> Result<CheckRetrieveStatusResponse, Error> {
 		let body = format!(
 			r#"<?xml version="1.0" encoding="UTF-8"?>
@@ -420,4 +438,68 @@ fn escape_xml<S: AsRef<str>>(value: S) -> String {
 		.replace('>', "&gt;")
 		.replace('"', "&quot;")
 		.replace('\'', "&apos;")
+}
+
+fn describe_metadata_request(session_id: &str) -> String {
+	format!(
+		r#"<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="{}" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="{}">
+  <soapenv:Header><SessionHeader><sessionId>{}</sessionId></SessionHeader></soapenv:Header>
+  <soapenv:Body>
+    <describeMetadata>
+      <asOfVersion>{}</asOfVersion>
+    </describeMetadata>
+  </soapenv:Body>
+</soapenv:Envelope>"#,
+		ENVELOPE_NAMESPACE,
+		METADATA_NAMESPACE,
+		escape_xml(session_id),
+		crate::client::DEFAULT_API_VERSION,
+	)
+}
+
+fn handle_describe_metadata_response(status: StatusCode, xml: &str) -> Result<DescribeMetadataResult, Error> {
+	if status.is_success() {
+		return Ok(DescribeMetadataResult::from_xml(xml)?);
+	}
+
+	match DescribeMetadataResult::from_xml(xml) {
+		Err(error @ crate::errors::XmlError::SoapFault(_)) => Err(Error::Xml(error)),
+		_ => Err(Error::Other(format!("Metadata API HTTP error {status}: {xml}"))),
+	}
+}
+
+#[cfg(test)]
+mod describe_metadata_tests {
+	use super::*;
+
+	#[test]
+	fn builds_authenticated_describe_metadata_request() {
+		let body = describe_metadata_request("session&token");
+		assert!(body.contains("<sessionId>session&amp;token</sessionId>"));
+		assert!(body.contains(&format!(
+			"<asOfVersion>{}</asOfVersion>",
+			crate::client::DEFAULT_API_VERSION
+		)));
+		assert!(body.contains("<describeMetadata>"));
+	}
+
+	#[test]
+	fn reports_soap_fault_on_successful_or_failed_http_response() {
+		let xml = r#"<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"><soapenv:Body><soapenv:Fault><faultstring>Insufficient access</faultstring></soapenv:Fault></soapenv:Body></soapenv:Envelope>"#;
+		for status in [StatusCode::OK, StatusCode::INTERNAL_SERVER_ERROR] {
+			assert!(matches!(
+				handle_describe_metadata_response(status, xml),
+				Err(Error::Xml(crate::errors::XmlError::SoapFault(message))) if message == "Insufficient access"
+			));
+		}
+	}
+
+	#[test]
+	fn includes_http_status_and_body_for_non_soap_http_errors() {
+		assert!(matches!(
+			handle_describe_metadata_response(StatusCode::BAD_REQUEST, "upstream failed"),
+			Err(Error::Other(message)) if message.contains("400 Bad Request") && message.contains("upstream failed")
+		));
+	}
 }

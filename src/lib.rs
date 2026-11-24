@@ -33,7 +33,14 @@ pub mod primary_types;
 pub use errors::Error;
 pub use primary_types::{SObject, SObjectOwner};
 pub use rest_api::responses::error_response::ErrorResponse;
-pub use rustsf_auth::SalesforceCredentials;
+pub use rustsf_auth::{
+	OAuthWebService,
+	SalesforceAuthSession,
+	SalesforceCredentials,
+	SfdxAuthJson,
+	SalesforceAuthFlow,
+	SalesforceAuthError,
+};
 
 #[cfg(feature = "rest-api")]
 pub use rest_api::RestApi;

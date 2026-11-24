@@ -33,7 +33,7 @@ use crate::rest_api::responses::error_response::ErrorResponse;
 use log::{debug, trace};
 use metadata_deployer::MetadataDeployer;
 use reqwest::{Response, StatusCode, multipart};
-use rustsf_auth::SalesforceCredentials;
+use rustsf_auth::SalesforceAuthSession;
 use serde::de::DeserializeOwned;
 use std::collections::HashMap;
 
@@ -84,9 +84,9 @@ impl MetadataApi {
 	///
 	/// }
 	/// ```
-	pub async fn new(credentials: SalesforceCredentials) -> Result<Self, Error> {
+	pub async fn new(session: SalesforceAuthSession) -> Result<Self, Error> {
 		Ok(Self {
-			client: Client::new(credentials).await?,
+			client: Client::new(session).await?,
 		})
 	}
 

@@ -2,7 +2,7 @@ use crate::errors::Error;
 use log::debug;
 use reqwest::Response;
 use reqwest::header::{AUTHORIZATION, HeaderMap, HeaderName, HeaderValue};
-use rustsf_auth::{SalesforceAuthSession, SalesforceCredentials};
+use rustsf_auth::SalesforceAuthSession;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::fmt::Debug;
@@ -21,7 +21,7 @@ pub struct Client {
 }
 
 impl Client {
-	pub async fn new(session: SalesforceCredentials) -> Result<Self, Error> {
+	pub async fn new(session: SalesforceAuthSession) -> Result<Self, Error> {
 		let http_client = reqwest::Client::builder()
 			.redirect(reqwest::redirect::Policy::none())
 			.connect_timeout(std::time::Duration::from_secs(CONNECT_TIMEOUT))
@@ -30,7 +30,7 @@ impl Client {
 
 		Ok(Self {
 			http_client,
-			session: session.connect().await?,
+			session,
 		})
 	}
 

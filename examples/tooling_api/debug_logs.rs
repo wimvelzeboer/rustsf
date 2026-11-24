@@ -1,4 +1,4 @@
-use rustforce::{Client, Error, ToolingApi};
+use rustsf::{Client, Error, ToolingApi};
 use std::env;
 
 #[tokio::main]
@@ -12,8 +12,9 @@ async fn main() -> Result<(), Error> {
     client.set_client_id(&client_id);
     client.set_client_secret(&client_secret);
     client.login_with_credential(&username, &password).await?;
+    let session = client.connect().await?;
 
-    let mut tooling = ToolingApi::new(client);
+    let mut tooling = ToolingApi::new(session);
 
     // Get the most recent log ID
     let logs = tooling.get_latest_apex_logs(1).await?;

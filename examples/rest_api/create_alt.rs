@@ -37,8 +37,8 @@ impl Account {
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     let auth_url = env::var("SFDC_AUTH_URL").unwrap();
-    let credentials = SalesforceCredentials::sfdx_url(auth_url).unwrap();
-    let api = RestApi::new(credentials).await.unwrap();
+    let session = SalesforceCredentials::sfdx_url(auth_url).unwrap().connect().await?;
+    let api = RestApi::new(session).await.unwrap();
 
     let new_account = NewAccount {
         name: "Test Account".to_string(),

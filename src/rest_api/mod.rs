@@ -243,7 +243,7 @@ use crate::client::DEFAULT_API_VERSION;
 use crate::errors::Error;
 use log::trace;
 use reqwest::Response;
-use rustsf_auth::SalesforceCredentials;
+use rustsf_auth::SalesforceAuthSession;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use std::collections::HashMap;
@@ -306,9 +306,9 @@ impl RestApi {
 	///
 	/// }
 	/// ```
-	pub async fn new(credentials: SalesforceCredentials) -> Result<Self, Error> {
+	pub async fn new(session: SalesforceAuthSession) -> Result<Self, Error> {
 		Ok(Self {
-			client: Client::new(credentials).await?,
+			client: Client::new(session).await?,
 		})
 	}
 

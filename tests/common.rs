@@ -16,7 +16,7 @@ pub async fn get_metadata_api_client() -> Result<MetadataApi> {
 	let url = env::var("SCRATCH_AUTH_URL")
 		.expect("SCRATCH_AUTH_URL not set")
 		.to_string();
-	let credentials = SalesforceCredentials::sfdx_url(url)?;
+	let credentials = SalesforceCredentials::sfdx_url(url)?.connect().await?;
 	Ok(MetadataApi::new(credentials).await?)
 }
 
@@ -26,7 +26,7 @@ pub async fn get_rest_api_client() -> Result<RestApi> {
 	let url = env::var("SCRATCH_AUTH_URL")
 		.expect("SCRATCH_AUTH_URL not set")
 		.to_string();
-	let credentials = SalesforceCredentials::sfdx_url(url)?;
+	let credentials = SalesforceCredentials::sfdx_url(url)?.connect().await?;
 	Ok(RestApi::new(credentials).await?)
 }
 
@@ -36,7 +36,7 @@ pub async fn get_tooling_api_client() -> Result<ToolingApi> {
 	let url = env::var("SCRATCH_AUTH_URL")
 		.expect("SCRATCH_AUTH_URL not set")
 		.to_string();
-	let credentials = SalesforceCredentials::sfdx_url(url)?;
+	let credentials = SalesforceCredentials::sfdx_url(url)?.connect().await?;
 	Ok(ToolingApi::new(credentials).await?)
 }
 

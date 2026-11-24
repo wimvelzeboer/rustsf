@@ -5,7 +5,7 @@ use crate::rest_api::responses::query_response::QueryResponse;
 use crate::tooling_api::responses::create_result::CreateResult;
 use crate::tooling_api::responses::execute_anonymous_result::ExecuteAnonymousResult;
 use reqwest::Response;
-use rustsf_auth::SalesforceCredentials;
+use rustsf_auth::SalesforceAuthSession;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
@@ -25,9 +25,9 @@ pub struct ToolingApi {
 }
 
 impl ToolingApi {
-	pub async fn new(credentials: SalesforceCredentials) -> Result<Self, Error> {
+	pub async fn new(session: SalesforceAuthSession) -> Result<Self, Error> {
 		Ok(Self {
-			client: Client::new(credentials).await?,
+			client: Client::new(session).await?,
 		})
 	}
 

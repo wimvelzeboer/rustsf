@@ -1,4 +1,4 @@
-use rustforce::{Client, Error, ToolingApi};
+use rustsf::{Client, Error, ToolingApi};
 use std::env;
 
 #[tokio::main]

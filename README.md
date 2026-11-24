@@ -1,5 +1,5 @@
-[![crate-name at crates.io](https://img.shields.io/crates/v/rustforce.svg)](https://crates.io/crates/rustforce)
-[![crate-name at docs.rs](https://docs.rs/rustforce/badge.svg)](https://docs.rs/rustforce)
+[![crate-name at crates.io](https://img.shields.io/crates/v/rustsf.svg)](https://crates.io/crates/rustsf)
+[![crate-name at docs.rs](https://docs.rs/rustsf/badge.svg)](https://docs.rs/rustsf)
 
 ## RustSF
 
@@ -36,7 +36,7 @@ features and had some design flows around API versioning.
 
 ```toml
 [dependencies]
-rustsf = { version = "0.0.2", features = ["rest-api", "tooling-api", "metadata-api"] }
+rustsf = { version = "0.1.5", features = ["rest-api", "tooling-api", "metadata-api"] }
 ```
 
 ```rust
@@ -60,8 +60,8 @@ async fn main() -> Result<()> {
     credentials.set_username(env::var("SFDC_USERNAME").unwrap());
     credentials.set_password(env::var("SFDC_PASSWORD").unwrap());
 
-    let mut client = Client::new(credentials).await?;
-    let mut api = RestApi::new(client);
+    let mut session = Client::new(credentials).await?.connect().await?;
+    let mut api = RestApi::new(session);
 
     let res: QueryResponse<Account> = api.query("SELECT Id, Name FROM Account").await?;
     println!("{:?}", res);
@@ -82,6 +82,7 @@ credentials.set_username(env::var("SFDC_USERNAME").unwrap());
 credentials.set_password(env::var("SFDC_PASSWORD").unwrap());
 
 let mut client = Client::new(credentials).await?;
+let session = client.connect().await?;
 ```
 
 #### Using an Existing Access Token
@@ -95,116 +96,40 @@ credentials.set_access_token(Some(AccessToken {
 }));
 credentials.set_instance_url("https://na1.salesforce.com");
 let mut client = Client::new(credentials).await?;
+let session = client.connect().await?;
 ```
 
 #### SFDX AUTH URL
 
 ```rust
 let mut client = Client::new(AuthUrl::new("...SFDX_AUTH_URL...")).await?;
+let session = client.connect().await?;
 ```
 
 ### REST API
 
 All REST API methods are accessed through `RestApi`:
 
-[Example:](./examples/rest_api/new.rs)
+**Examples:**
 ```rust
 let mut api = RestApi::new(client);
-```
 
+// Query records
+let accounts = api.query::<Account>("SELECT Id, Name FROM Account")
+println!("{:?}", accounts);
 
-#### Query Records
-
-```rust
-let res: QueryResponse<Account> = api.query("SELECT Id, Name FROM Account").await?;
-```
-Examples: [Query](./examples/rest_api/query.rs), [Query All](./examples/rest_api/query_all.rs), [Query More](./examples/rest_api/query_more.rs) 
-
-#### Find By Id
-Finds a single record by its Salesforce ID. [Example:](./examples/rest_api/find_by_id.rs)
-```rust
+// Find by Id
 let account = api.find_by_id::<Account>("Account", "{sf_id}").await?;
-```
+println!("{:?}", account);
 
-
-#### CRUD Record operations
-
-```rust
+// Create a new records
 let account = Account { name: "Test Account"};
+let res = api.create_sobject("Account", account).await?; // Single
+let res = api.create("Account", vec![account]).await?; // Multiple
 
-let res = api.create_sobject("Account", account).await?;
-let res = api.create("Account", vec![account]).await?;
-```
-
-Examples:
-- Create a single record [Simple example](./examples/rest_api/create.rs) or [Alternative example](./examples/rest_api/create_alt.rs)
-- [Create](./examples/rest_api/create.rs)
-
-#### Update Record
-
-```rust
-api.update("Account", "{sobject_id}", params).await?;
-```
-
-#### Upsert Record
-
-```rust
-let res = api.upsert("Account", "{external_key_name}", "{external_key}", params).await?;
-println!("{:?}", res.status()); // 200 = updated, 201 = created
-```
-
-#### Delete Record
-
-```rust
-api.destroy("Account", "{sobject_id}").await?;
-```
-
-#### Describe Global
-
-```rust
-use rustsf::rest_api::responses::DescribeGlobalResponse;
-
-let res: DescribeGlobalResponse = api.describe_global().await?;
-```
-
-#### Describe SObject
-
-```rust
-use rustforce::DescribeResponse;
-
-let res: DescribeResponse = api.describe("Account").await?;
-```
-
-#### Versions
-
-```rust
-use rustforce::VersionResponse;
-
-let versions: Vec<VersionResponse> = api.versions().await?;
-```
-
-#### Search (SOSL)
-
-```rust
-use rustforce::SearchResponse;
-
-let res: SearchResponse = api.search_sosl("FIND {Rust}").await?;
-```
-
-### Bulk API v1
-
-```rust
-use rustforce::BulkApi;
-
-let mut bulk = BulkApi::new(client);
-let res = bulk.create_job(params).await?;
-```
-
-### Bulk API v2
-
-```rust
-use rustforce::BulkApiV2;
-
-let mut bulk = BulkApiV2::new(client);
-let res = bulk.create_job(params).await?;
+// Update Record
+api.update("Account", "0012K00001drfGYQAY", json!({"Name": "hello rust updated"})).await?;
+  
+// Delete Record
+api.delete_sobject("Account", "0011t00001FfDoaAAF").await?;
 ```

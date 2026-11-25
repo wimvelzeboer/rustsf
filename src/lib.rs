@@ -17,6 +17,8 @@ pub mod rest_api;
 #[cfg(feature = "tooling-api")]
 pub mod tooling_api;
 
+pub mod manifest;
+
 #[cfg(feature = "metadata-api")]
 pub mod metadata_api;
 
@@ -31,6 +33,7 @@ pub(crate) mod errors;
 pub mod primary_types;
 
 pub use errors::Error;
+pub use manifest::Manifest;
 pub use primary_types::{SObject, SObjectOwner};
 pub use rest_api::responses::error_response::ErrorResponse;
 pub use rustsf_auth::{

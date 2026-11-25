@@ -133,3 +133,8 @@ api.update("Account", "0012K00001drfGYQAY", json!({"Name": "hello rust updated"}
 // Delete Record
 api.delete_sobject("Account", "0011t00001FfDoaAAF").await?;
 ```
+
+
+## Structs
+Some useful structs:
+- Manifest, to generate package.xml files. 

@@ -30,7 +30,7 @@ use crate::metadata_api::responses::check_retrieve_status_response::CheckRetriev
 use crate::metadata_api::responses::deploy_response::DeployResponse;
 use crate::metadata_api::responses::describe_metadata_result::DescribeMetadataResult;
 use crate::rest_api::responses::error_response::ErrorResponse;
-use log::{debug, trace};
+use log::trace;
 use metadata_deployer::MetadataDeployer;
 use reqwest::{Response, StatusCode, multipart};
 use rustsf_auth::SalesforceAuthSession;
@@ -393,40 +393,6 @@ async fn handle_json_response<T: DeserializeOwned>(response: Response) -> Result
 		Err(Error::Salesforce(errors))
 	}
 }*/
-
-fn generate_package_xml(version: &str, elements: &HashMap<String, Vec<String>>) -> String {
-	let header = r#"<?xml version="1.0" encoding="UTF-8"?>
-    <Package xmlns="http://soap.sforce.com/2006/04/metadata">"#;
-	let footer = format!("  <version>{}</version>\n</Package>", version);
-
-	let mut metadata_type = "".to_string();
-	for (metadata, objects) in elements {
-		let members = objects
-			.iter()
-			.map(|object| format!("        <members>{}</members>", object))
-			.collect::<Vec<String>>()
-			.join("\n");
-
-		metadata_type.push_str(
-			format!(
-				"<types>\n{}\n        <name>{}</name>\n    </types>\n",
-				members, metadata
-			)
-			.as_str(),
-		);
-	}
-	format!("{}\n{}\n{}", header, metadata_type, footer)
-}
-
-fn add_file_to_package(package: &mut HashMap<String, Vec<String>>, metadata_type: &str, file_name: &str) {
-	// Add the file to the deployment package
-	let package_file_name = file_name.split(".").next().unwrap().to_string(); // fixme remove unwrap
-	debug!("Adding package file: {}", package_file_name);
-	package
-		.entry(metadata_type.to_string())
-		.or_insert_with(Vec::new)
-		.push(package_file_name);
-}
 
 pub struct Deployment {}
 

@@ -13,11 +13,10 @@
 use crate::errors::Error;
 use crate::metadata_api::responses::deploy_options::DeployOptions;
 use crate::metadata_api::responses::deploy_request::DeployRequest;
-use crate::metadata_api::{add_file_to_package, generate_package_xml};
 use s_zip::{SZipError, StreamingZipWriter};
-use std::collections::HashMap;
 use std::io::Cursor;
-use log::debug;
+use log::trace;
+use crate::Manifest;
 
 /**
 fix me refactor s-zip into zip
@@ -53,9 +52,9 @@ fn create_zip_in_memory() -> Vec<u8> {
 pub struct MetadataDeployer {
 	options: DeployOptions,
 	writer: StreamingZipWriter<Cursor<Vec<u8>>>,
-	package: HashMap<String, Vec<String>>,
-	pre_destructive: HashMap<String, Vec<String>>,
-	post_destructive: HashMap<String, Vec<String>>,
+	package: crate::Manifest,
+	pre_destructive: crate::Manifest,
+	post_destructive: crate::Manifest,
 }
 
 impl MetadataDeployer {
@@ -74,7 +73,7 @@ impl MetadataDeployer {
 	/// - `version`: The version number retrieved from the client. Defaults to `"67.0"` if unable to fetch the version.
 	/// - `options`: A new instance of `DeployOptions`.
 	/// - `writer`: A `StreamingZipWriter` with a cursor-based underlying buffer for writing deployment packages.
-	/// - `package`, `pre_destructive`, `post_destructive`: Empty `HashMap` instances to hold deployment metadata.
+	/// - `package`, `pre_destructive`, `post_destructive`: Empty `Manifest` instances to hold deployment metadata.
 	///
 	/// # Example
 	///
@@ -86,9 +85,9 @@ impl MetadataDeployer {
 		MetadataDeployer {
 			options: DeployOptions::new(),
 			writer: StreamingZipWriter::from_writer(Cursor::new(Vec::new())).unwrap(),
-			package: HashMap::new(),
-			pre_destructive: HashMap::new(),
-			post_destructive: HashMap::new(),
+			package: Manifest::new(),
+			pre_destructive: Manifest::new(),
+			post_destructive: Manifest::new(),
 		}
 	}
 
@@ -198,7 +197,7 @@ impl MetadataDeployer {
 			_ => {}
 		}
 
-		add_file_to_package(&mut self.package, metadata_type, file_name);
+		self.package.add_filename(metadata_type, file_name);
 
 		Ok(self)
 	}
@@ -239,7 +238,7 @@ impl MetadataDeployer {
 	/// ```
 	pub fn delete_post(&mut self, metadata_type: &str, objects: Vec<&str>) -> &mut Self {
 		for file_name in objects {
-			add_file_to_package(&mut self.post_destructive, metadata_type, file_name);
+			self.post_destructive.add_filename(metadata_type, file_name);
 		}
 		self
 	}
@@ -280,7 +279,7 @@ impl MetadataDeployer {
 	/// ```
 	pub fn delete_pre(&mut self, metadata_type: &str, objects: Vec<&str>) -> &mut Self {
 		for file_name in objects {
-			add_file_to_package(&mut self.pre_destructive, metadata_type, file_name);
+			self.pre_destructive.add_filename(metadata_type, file_name);
 		}
 		self
 	}
@@ -322,9 +321,8 @@ impl MetadataDeployer {
 	/// - `start_entry`: An error occurs while starting the entry creation process for the package.
 	/// - `write_data`: An error occurs while writing the generated package metadata to the output stream.
 	///
-	fn add_package(&mut self, name: &str, content: HashMap<String, Vec<String>>) -> Result<(), Error> {
-		let package = generate_package_xml(crate::client::DEFAULT_API_VERSION, &content);
-		debug!("Adding package: {}\n{}", name, package);
+	fn add_package(&mut self, name: &str, package: String) -> Result<(), Error> {
+		trace!("Adding package: {}\n{}", name, package);
 
 		self.writer
 			.start_entry(name)
@@ -394,12 +392,15 @@ impl MetadataDeployer {
 	///
 	pub(crate) fn get_zip_file(mut self) -> Result<Vec<u8>, Error> {
 		// Add the package.xml files to the zip
-		self.add_package("package.xml", self.package.clone())?;
+		let package = self.package.to_xml(crate::client::DEFAULT_API_VERSION);
+		self.add_package("package.xml", package)?;
 		if !self.pre_destructive.is_empty() {
-			self.add_package("destructiveChangesPre.xml", self.pre_destructive.clone())?;
+			let package = self.pre_destructive.to_xml(crate::client::DEFAULT_API_VERSION);
+			self.add_package("destructiveChangesPre.xml", package)?;
 		}
 		if !self.post_destructive.is_empty() {
-			self.add_package("destructiveChangesPost.xml", self.post_destructive.clone())?;
+			let package = self.post_destructive.to_xml(crate::client::DEFAULT_API_VERSION);
+			self.add_package("destructiveChangesPost.xml", package)?;
 		}
 
 		Ok(self

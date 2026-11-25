@@ -1,7 +1,7 @@
 use crate::ErrorResponse;
 use reqwest::header::{InvalidHeaderName, InvalidHeaderValue};
 use rustsf_auth::SalesforceAuthError;
-use std::fmt;
+use std::{fmt, io};
 #[cfg(feature = "metadata-api")]
 use zip::result::ZipError;
 
@@ -14,6 +14,7 @@ pub use xml_error::XmlError;
 #[derive(Debug)]
 pub enum Error {
 	Authentication(SalesforceAuthError),
+	Io(io::Error),
 	Json(serde_json::Error),
 	Http(reqwest::Error),
 	Salesforce(Vec<ErrorResponse>),
@@ -31,14 +32,15 @@ impl fmt::Display for Error {
 		match self {
 			Error::Authentication(e) => write!(f, "Authentication error: {}", e),
 			Error::Http(e) => write!(f, "Http error: {}", e),
+			Error::Io(e) => write!(f, "Io error: {}", e),
 			Error::Json(e) => write!(f, "Json error: {}", e),
+
 			Error::Salesforce(e) => write!(f, "Salesforce error: {:?}", e),
 
 			Error::Other(e) => write!(f, "Error: {}", e),
 
 			#[cfg(feature = "metadata-api")]
 			Error::Xml(e) => write!(f, "XML Error: {}", e),
-
 			#[cfg(feature = "metadata-api")]
 			Error::CompressionError(e) => write!(f, "Zip Error: {}", e),
 		}
@@ -46,6 +48,12 @@ impl fmt::Display for Error {
 }
 
 impl std::error::Error for Error {}
+
+impl From<io::Error> for Error {
+	fn from(err: io::Error) -> Self {
+		Error::Io(err)
+	}
+}
 
 impl From<chrono::ParseError> for Error {
 	fn from(err: chrono::ParseError) -> Self {

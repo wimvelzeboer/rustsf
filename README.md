@@ -136,5 +136,6 @@ api.delete_sobject("Account", "0011t00001FfDoaAAF").await?;
 
 
 ## Structs
-Some useful structs:
+Other useful structs:
 - Manifest, to generate package.xml files. 
+- SfdxProject, to read sfdx-project.json files.

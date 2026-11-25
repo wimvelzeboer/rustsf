@@ -32,6 +32,8 @@ pub mod client;
 pub(crate) mod errors;
 pub mod primary_types;
 
+pub mod sfdx_project;
+
 pub use errors::Error;
 pub use manifest::Manifest;
 pub use primary_types::{SObject, SObjectOwner};
@@ -61,3 +63,5 @@ pub use bulk_api::BulkApi;
 pub use bulk_api_v2::BulkApiV2;
 
 pub use rustsf_marcos::def_sobject as DefSObject;
+
+pub use sfdx_project::SfdxProject;

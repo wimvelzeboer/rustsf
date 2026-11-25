@@ -52,5 +52,9 @@ name = "tooling_api_integration_test"
 required-features = ["tooling-api"]
 
 [[test]]
+name = "rest_api_integration_test"
+required-features = ["rest-api"]
+
+[[test]]
 name = "metadata_api_integration_test"
 required-features = ["metadata-api"]
